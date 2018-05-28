@@ -33,9 +33,9 @@
 
 # MCMC MAIN ALGORITHM
 jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.freq=1000, 
-				ncat=1, beta.param=0.3, ngen=5000000, burnin=0, update.freq=NULL)
+				ncat=1, beta.param=0.3, ngen=5000000, burnin=0, discr.time = 5000, learn.time = 20000, update.freq=NULL)
 {
-	
+
 			 
 	# counter for the total chain length 
 	real.iter <- 1 
@@ -58,6 +58,7 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 			  temperature <- beta.class[i.beta]
 				   acc <- 0 #acceptance count
 				   for (iteration in 1:(it + burnin)) {
+
 						hasting.ratio <- 0
 						if (real.iter == 1){
 
@@ -67,23 +68,21 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 							
 							# initialize MCMC parameters
 							mspA  <- jive$lik$mspinit # initialize means for species
-							sspA  <- jive$lik$sspinit # initialize sigma.sq for species
-							smvnA <- jive$prior_mean$init[1] # could be a random number, initialize sigma.sq for MVN
-							mmvnA <- jive$prior_mean$init[2] # could be a random number, initialize mean for MVN
+							sspA  <- jive$lik$sspinit # initialize sigma.sq for species, log scaled
+							mbmA  <- jive$prior_mean$init
 							bmouA <- jive$prior_var$init # could be aither more realistic values such as means and sds of true data
 							 
 						}
 						
 						msp  <- mspA
 						ssp  <- sspA
-						mmvn <- mmvnA
-						smvn <- smvnA
+						mbm  <- mbmA
 						bmou <- bmouA
 						
 						r    <- runif(1)
 						
 						# Update on all parameters level
-
+		
 						# update msp, ssp 
 						if (r < update.freq[1]) {
 						
@@ -92,39 +91,52 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 							
 							 if (runif(1) < 0.5) {
 								  # updating random 5 values from the vector of means 
-								  msp[ind] <- slidingWin(mspA[ind], jive$lik$mspws[ind]) 
+								  msp[ind] <- jive$lik$prop$msp(i=mspA[ind], d=jive$lik$mspws[ind])$v
+								  
+								  
 							 } else {
 								  # updating random 5 values from the vector of sigmas
-								  ssp[ind] <- abs(slidingWin(sspA[ind], jive$lik$sspws[ind]))
+								  u = runif(5)
+								  tmp <- jive$lik$prop$ssp(i=sspA[ind], d=jive$lik$sspws[ind], u)
+								  #print(tmp)
+								  ssp[ind] <- tmp$v # log scaled in/out, transformed in prop
+								  hasting.ratio <- sum(tmp$lnHastingsRatio)
+								  #print(hasting.ratio)
+								  
+
+								  
+
 							 }
 						}
 						# update MVN parameters <-----------------------------  code refactoring is needed to allow other than BM models
 						else if (r < update.freq[2]) {
 						
-							 if (runif(1) < 0.5){
-								  # updating mmvn - negative values allowed
-								  mmvn <- slidingWin(mmvnA, jive$prior_mean$ws[2]) 
+							 ind <- sample(1:length(jive$prior_mean$ws), 1)
+							 u = runif(1)
+							 tmp <- jive$prior_mean$prop[[ind]](i=mbmA[ind], d=jive$prior_mean$ws[ind], u)
+				 			 mbm[ind] <- tmp$v
+							 hasting.ratio <- tmp$lnHastingsRatio
 
-							 } else {
-								  # updating smvn
-								  smvn <- abs(slidingWin(smvnA, jive$prior_mean$ws[1]) )
-							 }
 							 
 						} else {# update BMOU parameters 
 												 
 							 ind <- sample(1:length(jive$prior_var$ws), 1)
-							 bmou[ind] <- abs(slidingWin(bmouA[ind], jive$prior_var$ws[ind])) # updating bmou parameters
-							 
+							 u = runif(1)
+							 tmp <- jive$prior_var$prop[[ind]](i=bmouA[ind], d=jive$prior_var$ws[ind], u)
+							 bmou[ind] <- tmp$v
+							 hasting.ratio <- tmp$lnHastingsRatio
+
+
 						}
 						
 
 						# Hyperpriors on all parameters level
 						# mean of MVN can be negative due to PCA - mean hprior
 
-						hprior_mean <- mapply(do.call, jive$prior_mean$hprior, lapply(c(smvn, mmvn), list))
+						hprior_mean <- mapply(do.call, jive$prior_mean$hprior, lapply(mbm, list))
 						hprior_var <- mapply(do.call, jive$prior_var$hprior, lapply(bmou, list))
 						hprior <- c(hprior_mean, hprior_var)
-						
+
 						if (real.iter > 1) {
 							 Lik <- LikA
 							 Prior_mean <- Prior_meanA #priorMVNA
@@ -133,20 +145,20 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 						
 						# do this for first step always (because we need to have all probabiliiles)     
 						if (r < update.freq[1] || real.iter == 1) {
-						
-							 Lik 		<- jive$lik$model(msp, ssp, jive$data$traits, jive$data$counts) # traits, counts
-							 #print(Lik)
-							 Prior_mean <- jive$prior_mean$model(c(smvn, mmvn), msp, jive$data$tree) # tree Conditional prior level
-							 #print(paste("Prior mean ", Prior_mean))
 							 
-							 Prior_var 	<- jive$prior_var$model(bmou, ssp, jive$data$tree, jive$data$map)
-							 #print(paste("Prior var ", Prior_var))
+							 Lik 		<- jive$lik$model(msp, ssp, jive$data$traits, jive$data$counts) # traits, counts
+							 #Lik 		<- jive$lik$model(msp, exp(ssp), jive$data$traits, jive$data$counts) # traits, counts
+						
+							 Prior_mean <- jive$prior_mean$model(mbm, msp, jive$data$tree) # tree Conditional prior level
+					
+							 Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)
+					
 							 										 
 						} else if (r<update.freq[2]) {
-							 Prior_mean <- jive$prior_mean$model(c(smvn, mmvn), msp, jive$data$tree)
+							 Prior_mean <- jive$prior_mean$model(mbm, msp, jive$data$tree)
 						} else {
 							 
-							 Prior_var 	<- jive$prior_var$model(bmou, ssp, jive$data$tree, jive$data$map)
+							 Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)
 						}
 
 						# Posterior calculation
@@ -161,6 +173,7 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 						}
 						post <- (sum(Lik) + Prior_mean + Prior_var * temperature + sum(hprior))
 						# acceptance probability
+
 						tryCatch(
 						{
 						if (post - postA + hasting.ratio >= log(runif(1))){
@@ -172,25 +185,44 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 							 postA = post
 							 mspA = msp
 							 sspA = ssp
-							 mmvnA = mmvn
-							 smvnA = smvn
+							 mbmA  = mbm
 							 bmouA = bmou
+							 
+							 
+							 
 							}
 						}
 						,error = function(e) NULL
 						)
-
+						
+						
 						# log to file with frequency sampling.freq
 						if (real.iter == 1){
 							cat("generation",'\t',"posterior",'\n')
 							cat(sprintf("%s\t", jive$prior_var$header), "\n", append=FALSE, file=log.file)
 							} 
 						
+						
 						if (real.iter %% sampling.freq == 0 & real.iter >= burnin) {
+							 # if (length(bmouA) == 2){	
+
+								# bmouA_tmp = c(bmouA[1],exp(bmouA[2])) # BM
+
+							 # }
+							 # else{
+								# bmouA_tmp = c(bmouA[1:2],exp(bmouA[-(1:2)])) #OU
+							 # }
+							 
+							 # cat(sprintf("%s\t", c(real.iter, postA, sum(LikA),
+							 # Prior_meanA, Prior_varA, sum(hpriorA), mbmA, 
+							 # bmouA_tmp, mspA, sspA, (acc/iteration), temperature)),
+							 # "\n", append=TRUE, file=log.file) 
+							 
 							 cat(sprintf("%s\t", c(real.iter, postA, sum(LikA),
-							 Prior_meanA, Prior_varA, sum(hpriorA), smvnA, mmvnA, 
+							 Prior_meanA, Prior_varA, sum(hpriorA), mbmA, 
 							 bmouA, mspA, sspA, (acc/iteration), temperature)),
 							 "\n", append=TRUE, file=log.file) 
+							 
 						}
 						
 						if (real.iter %% print.freq == 0 & real.iter >= burnin) {

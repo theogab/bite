@@ -1,5 +1,5 @@
 #conditional prior on sd of species-specific normal likelihoods under BM model, x - vector of values
-likBM<-function(pars, x, tree, ...){#M - ancestral mean, S - trend, S0 - starting point of a trend, ti - total phylogenetic time, sig.sq  - sigma^2 (phylogenetic variance)
+likBMM<-function(pars, x, tree, ...){#M - ancestral mean, S - trend, S0 - starting point of a trend, ti - total phylogenetic time, sig.sq  - sigma^2 (phylogenetic variance)
 	
 	Y      <- as.matrix(x)	
 

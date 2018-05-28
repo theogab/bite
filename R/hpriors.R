@@ -54,6 +54,15 @@ make.hpfun <-function(hpf="Uniform", hp.pars, ...){
 			}
 		}	
 		
+		if (hpf == "Loggamma"){
+			my.f <- function(x, ...){
+				hp <- sum(dgamma(exp(x), shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
+				return(hp)
+			}
+		}
+		
+		
+
 		
 	return(my.f)
 }

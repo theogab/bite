@@ -16,6 +16,7 @@ defClasses <- function(ncat=10, beta.param=0.3){
     k <- 0:K
     b <- k/K
     temp<- rev(b^(1/beta.param))
+    temp[length(temp)] <- 0.00001 # last category is not exactly 0 to avoid -inf likelihoods
 	return(temp)
 }
 
@@ -92,13 +93,39 @@ relSim <- function(x) {
 				
 }
 
+calcLogSD <- function(x){
+
+	x <- log(apply(x, 1, var, na.rm = T))
+	return(x)
+
+}
+
+
+calcSD <- function(x){
+
+	x <- apply(x, 1, var, na.rm = T)
+	return(x)
+
+}
+
+
+calcSDtrue <- function(x){
+
+	x <- apply(x, 1, sd, na.rm = T)
+	return(x)
+
+}
+
+
+
 
 ##-------------------------- initialize windows sizes functions
 initWinSizeMVN <- function (x){
 
 	ws		<- list()
-	ws$msp	<- (apply(x, 1, sd, na.rm = T))/4 # <--------------- may need further tuning
-	ws$ssp	<- apply(x, 1, sd, na.rm = T) 
+	ws$msp	<- (apply(x, 1, sd, na.rm = T))/2 # <--------------- may need further tuning
+	ws$ssp	<- (calcSDtrue(x)*5)
+	#ws$ssp	<- 0.01
 	
 	return(ws)
 
@@ -108,7 +135,18 @@ initWinSizeMVN <- function (x){
 initWinSizeMBM <- function(x){
 	
 	xx <- sd(apply(x, 1, sd, na.rm = T)) # CHECK IF ITS SD OR VAR
-	ws <- c(xx, 2 * xx) # evol rate of sigmas window size, anc.state of sigmas windows size, 
+	ws <- c(xx, xx) # evol rate of mean window size, anc.state of mean windows size, 
+
+	return(ws)
+	
+}
+
+
+initWinSizeVWN <- function(x){
+	
+	xx <- sd(calcSD(x)) # CHECK IF ITS SD OR VAR
+	xx1 <- 2
+	ws <- c(0.5, xx1) # evol rate of sigmas window size, anc.state of sigmas windows size,
 
 	return(ws)
 	
@@ -116,8 +154,9 @@ initWinSizeMBM <- function(x){
 
 initWinSizeVBM <- function(x){
 	
-	xx <- sd(apply(x, 1, sd, na.rm = T)) # CHECK IF ITS SD OR VAR
-	ws <- c(xx, 2 * xx) # evol rate of sigmas window size, anc.state of sigmas windows size,
+	xx <- sd(calcSD(x)) # CHECK IF ITS SD OR VAR
+	xx1 <- 2
+	ws <- c(0.5, xx1) # evol rate of sigmas window size, anc.state of sigmas windows size,
 
 	return(ws)
 	
@@ -126,12 +165,15 @@ initWinSizeVBM <- function(x){
 # input is trait matrix, rows are species, cols - observations
 initWinSizeVOU <- function(x, nreg){
 	
-	xx <- sd(apply(x, 1, sd, na.rm = T)) # CHECK IF ITS SD OR VAR
-	ws <- c(1.5, xx, 2 * xx, rep(2 * xx, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust
+	xx <- sd(calcSD(x) ) # CHECK IF ITS SD OR VAR
+	xx1 <- 2
+	ws <- c(2, 0.5, xx1, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust
 	
 	return(ws)
 	
 }
+
+
 
 ##-------------------------- initialize start parameters values functions
 # initialize MCMC parameters
@@ -139,7 +181,7 @@ initParamMVN <- function (x){
 
 	init  <- list()
 	init$mspA  <- apply(x, 1, mean, na.rm = T) # initialize means for species
-	init$sspA  <- apply(x, 1, var, na.rm = T) # initialize sigma.sq for species
+	init$sspA  <- calcSD(x) # initialize sigma.sq for species because of the variance
 	
 	return(init)
 }
@@ -150,6 +192,16 @@ initParamMBM <- function(x){
 		
 	# initialize MCMC parameters
 	init <- c(var(apply(x, 1, mean, na.rm = T)), mean(apply(x, 1, mean, na.rm = T))) 
+	
+	return(init)
+
+}
+
+# initialize WN
+initParamVWN <- function(x){
+		
+	init <- c(runif(2, 0.5, 3)) # could be aither more realistic values such as means and sds of true data (
+	#init <- c(2.941516,2.139533,1.299683,1.364224) just a check
 	
 	return(init)
 
@@ -172,6 +224,10 @@ initParamVOU <- function(x, nreg){
 	return(init)
 
 }	
+
+
+
+
 
 
 

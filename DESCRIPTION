@@ -13,24 +13,11 @@ Description: macroevolutionary analysis of joint intra- and interspecific
     variance evolution using comparative phylogenetic models. In addition, it
     can traitgrams through time based on various comparative models such as
     Brownian motion, Ornstein-Uhlenbeck, etc.
-Depends:
-    R (>= 3.0.3)
-Imports:
-    OUwie,
-    nloptr,
-    ape,
-    MASS,
-    phytools,
-    TeachingDemos,
-    hdrcde,
-    akima,
-    coda,
-    scales,
-    TreeSim,
-    gtools,
-    geiger,
-    picante,
-    MCMCpack,
-    phyclust
+Depends: R (>= 3.0.3)
+Imports: OUwie, nloptr, ape, MASS, phytools, TeachingDemos, hdrcde,
+        akima, coda, scales, TreeSim, gtools, geiger, picante,
+        MCMCpack, phyclust
 License: GPL-2
 Repository: CRAN
+NeedsCompilation: no
+Packaged: 2018-02-15 17:01:47 UTC; simjoly

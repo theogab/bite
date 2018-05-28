@@ -21,7 +21,6 @@
 #' @author Anna Kostikova
 #' @return An object of class jive
 #' @examples
-#' library(geiger)
 #' library(OUwie)
 #' library(phytools)
 #' library(MASS)
@@ -83,7 +82,7 @@
 
 
 
-jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm"){
+jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm", map=NULL){
 
 	jive <- list()
 	
@@ -94,11 +93,18 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 	} else {
 
 		traits<-traits[simmap$tip.label,]
-		
+					
 		if (model.var %in% c("BM", "OU1")) { # this is needed to overcome phytools limitation about making simmap obj from a trait with a single regime# td$phy$node.label <- rep("1", n - 1)
 			jive$data$map <- matrix(rep(1, ((dim(traits)[1]) * 2) - 2))
+
 		} else {
-			jive$data$map <- relSim(simmap)$mapped.edge
+			if (is.null(map)){
+				jive$data$map <- relSim(simmap)$mapped.edge
+			} else {
+				jive$data$map <- map
+				
+			}
+
 		}
 				
 		jive$data$traits 					<- traits
@@ -113,28 +119,50 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		if (model.lik == "Multinorm") {
 			jive$lik$model 					<- likMultinorm
 			jive$lik$mspws 					<- initWinSizeMVN(jive$data$traits)$msp
-			jive$lik$sspws 					<- initWinSizeMVN(jive$data$traits)$ssp
+			jive$lik$sspws 					<- initWinSizeMVN(jive$data$traits)$ssp # normal scale
 			jive$lik$mspinit				<- initParamMVN(jive$data$traits)$mspA
-			jive$lik$sspinit				<- initParamMVN(jive$data$traits)$sspA
+			jive$lik$sspinit				<- initParamMVN(jive$data$traits)$sspA # log scale
+			jive$lik$prop$msp				<- make.proposal("slidingWin") 
+			jive$lik$prop$ssp				<- make.proposal("logSlidingWinAbs") ######### <- HERE
 				
 		}
 		
 		if (model.mean == "BM" ) {
-			jive$prior_mean$model 			<- likBM
+			jive$prior_mean$model 			<- likBMM
 			jive$prior_mean$init  			<- initParamMBM(jive$data$traits)  # check
 			jive$prior_mean$ws	  			<- initWinSizeMBM(jive$data$traits)  # check
 			jive$prior_mean$hprior$r		<- make.hpfun("Gamma", c(1.1,5))		  # sigma
-			jive$prior_mean$hprior$m		<- make.hpfun("Uniform", c(-10000,10000)) # anc.mean
-
+			jive$prior_mean$hprior$m		<- make.hpfun("Uniform", c(-10,10)) # anc.mean
+			jive$prior_mean$prop$r			<- make.proposal("multiplierProposalLakner") 
+			jive$prior_mean$prop$m			<- make.proposal("slidingWin")
 		
 		}
+		
+		if (model.var == "WN" ) {
+			jive$prior_var$model 			<- likWN
+			jive$prior_var$init  			<- initParamVWN(jive$data$traits) # check
+			jive$prior_var$ws	  			<- initWinSizeVWN(jive$data$traits) # check
+			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
+			jive$prior_var$hprior$m			<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
+			jive$prior_var$prop$r			<- make.proposal("multiplierProposalLakner") 
+			jive$prior_var$prop$m			<- make.proposal("slidingWin") ######### <- HERE logsliding window
+			jive$prior_var$header			<- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+												"mbm_sig.sq", "mbm_anc.st",  "vbm_sig.sq", "vbm_anc.st", 
+												paste(rownames(jive$data$traits), "_m", sep=""),
+												paste(rownames(jive$data$traits), "_v", sep=""),
+												"acc", "temperature")
+
+		}
+		
 		
 		if (model.var == "BM" ) {
 			jive$prior_var$model 			<- likBM
 			jive$prior_var$init  			<- initParamVBM(jive$data$traits) # check
 			jive$prior_var$ws	  			<- initWinSizeVBM(jive$data$traits) # check
 			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
-			jive$prior_var$hprior$m			<- make.hpfun("Gamma", c(1.1,5)) # anc.mean
+			jive$prior_var$hprior$m			<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
+			jive$prior_var$prop$r			<- make.proposal("multiplierProposalLakner") 
+			jive$prior_var$prop$m			<- make.proposal("slidingWin") ######### <- HERE logsliding window
 			jive$prior_var$header			<- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 												"mbm_sig.sq", "mbm_anc.st",  "vbm_sig.sq", "vbm_anc.st", 
 												paste(rownames(jive$data$traits), "_m", sep=""),
@@ -150,11 +178,20 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			jive$prior_var$ws	  			<- initWinSizeVOU(jive$data$traits, jive$data$nreg)  # check
 			jive$prior_var$hprior$a			<- make.hpfun("Gamma", c(1.1,5)) # alpha
 			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
-			jive$prior_var$hprior$m			<- make.hpfun("Gamma", c(1.1,5)) # anc.mean
+			jive$prior_var$hprior$m			<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
 			for (i in 1:jive$data$nreg){									 # theta
 				ti = paste("t",i,sep="")
-				jive$prior_var$hprior[[ti]]	<- make.hpfun("Gamma", c(1.1,5))
+				jive$prior_var$hprior[[ti]]	<- make.hpfun("Uniform", c(-20,10))  ######### <- HERE Loggamma
 			}
+			
+			jive$prior_var$prop$a			<- make.proposal("multiplierProposalLakner") 
+			jive$prior_var$prop$r			<- make.proposal("multiplierProposalLakner") 
+			jive$prior_var$prop$m			<- make.proposal("slidingWin") ######### <- HERE
+			for (i in 1:jive$data$nreg){									 # theta
+				ti = paste("t",i,sep="")
+				jive$prior_var$prop[[ti]]	<- make.proposal("slidingWin") ######### <- HERE
+			}
+			
 			jive$prior_var$header			<- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 												"mbm_sig.sq", "mbm_anc.st", "vou_alpha", "vou_sig.sq", "vou_anc.st", 
 												paste("vou_theta", seq(1:jive$data$nreg),sep=""),

@@ -32,7 +32,7 @@ nothing
 Plots jive MCMC output
 }
 \details{
-This function plots estimated species-specific variances on the tree. The spec
+This function plots estimated species-specific variances on the tree.
 The species-specific variances are calculated by \code{\link{jiveProc}}
 }
 \examples{
