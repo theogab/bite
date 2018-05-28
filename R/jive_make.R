@@ -82,7 +82,7 @@
 
 
 
-jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm", map=NULL){
+jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm", map=NULL, root.station=TRUE){
 
 	jive <- list()
 	
@@ -112,6 +112,12 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		jive$data$tree   					<- simmap
 		jive$data$vcv    					<- vcv(simmap)
 		jive$data$nreg   					<- dim(jive$data$map)[2]
+		if (model.var=="OUM") {
+			jive$data$regimes   			<- getStates(simmap,type ="tips")			
+		} else {
+			jive$data$regimes   			<- "oneregime"
+		}
+
 		
 		print(jive$data$nreg)
 		
@@ -123,6 +129,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			jive$lik$mspinit				<- initParamMVN(jive$data$traits)$mspA
 			jive$lik$sspinit				<- initParamMVN(jive$data$traits)$sspA # log scale
 			jive$lik$prop$msp				<- make.proposal("slidingWin") 
+			#jive$lik$prop$ssp				<- make.proposal("slidingWin") ######### <- HERE
 			jive$lik$prop$ssp				<- make.proposal("logSlidingWinAbs") ######### <- HERE
 				
 		}
@@ -140,6 +147,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		
 		if (model.var == "WN" ) {
 			jive$prior_var$model 			<- likWN
+			jive$prior_var$modelname 		<- model.var
 			jive$prior_var$init  			<- initParamVWN(jive$data$traits) # check
 			jive$prior_var$ws	  			<- initWinSizeVWN(jive$data$traits) # check
 			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
@@ -156,7 +164,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		
 		
 		if (model.var == "BM" ) {
-			jive$prior_var$model 			<- likBM
+			jive$prior_var$modelname 		<- "BM1"
 			jive$prior_var$init  			<- initParamVBM(jive$data$traits) # check
 			jive$prior_var$ws	  			<- initWinSizeVBM(jive$data$traits) # check
 			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
@@ -173,9 +181,10 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 
 		
 		if (model.var == "OU1" || model.var == "OUM") {
-			jive$prior_var$model 			<- likOU
-			jive$prior_var$init  			<- initParamVOU(jive$data$traits, jive$data$nreg)  # check
-			jive$prior_var$ws	  			<- initWinSizeVOU(jive$data$traits, jive$data$nreg)  # check
+			jive$prior_var$modelname 		<- model.var
+			jive$prior_var$root.station		<- root.station
+			jive$prior_var$init  			<- initParamVOU(jive$data$traits, jive$data$nreg, root.station)  # check
+			jive$prior_var$ws	  			<- initWinSizeVOU(jive$data$traits, jive$data$nreg, root.station)  # check
 			jive$prior_var$hprior$a			<- make.hpfun("Gamma", c(1.1,5)) # alpha
 			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
 			jive$prior_var$hprior$m			<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
@@ -192,12 +201,22 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 				jive$prior_var$prop[[ti]]	<- make.proposal("slidingWin") ######### <- HERE
 			}
 			
-			jive$prior_var$header			<- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+			if (root.station==TRUE) {
+				jive$prior_var$header		<- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+												"mbm_sig.sq", "mbm_anc.st", "vou_alpha", "vou_sig.sq", 
+												paste("vou_theta", seq(1:jive$data$nreg),sep=""),
+												paste(rownames(jive$data$traits), "_m", sep=""),
+												paste(rownames(jive$data$traits), "_v", sep=""),
+												"acc", "temperature")
+			}
+			if (root.station==FALSE) {
+				jive$prior_var$header		<- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 												"mbm_sig.sq", "mbm_anc.st", "vou_alpha", "vou_sig.sq", "vou_anc.st", 
 												paste("vou_theta", seq(1:jive$data$nreg),sep=""),
 												paste(rownames(jive$data$traits), "_m", sep=""),
 												paste(rownames(jive$data$traits), "_v", sep=""),
 												"acc", "temperature")
+			}
 		
 		}
 		

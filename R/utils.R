@@ -123,8 +123,10 @@ calcSDtrue <- function(x){
 initWinSizeMVN <- function (x){
 
 	ws		<- list()
-	ws$msp	<- (apply(x, 1, sd, na.rm = T))/2 # <--------------- may need further tuning
-	ws$ssp	<- (calcSDtrue(x)*5)
+	ws$msp	<- (apply(x, 1, sd, na.rm = T))*2 # <--------------- may need further tuning
+	ws$ssp	<- (calcSDtrue(x)*10)
+	#ws$msp	<- (apply(x, 1, sd, na.rm = T))/2 # <--------------- may need further tuning
+	#ws$ssp	<- (calcSDtrue(x)*5)
 	#ws$ssp	<- 0.01
 	
 	return(ws)
@@ -163,11 +165,12 @@ initWinSizeVBM <- function(x){
 }
 
 # input is trait matrix, rows are species, cols - observations
-initWinSizeVOU <- function(x, nreg){
+initWinSizeVOU <- function(x, nreg, root.station){
 	
 	xx <- sd(calcSD(x) ) # CHECK IF ITS SD OR VAR
 	xx1 <- 2
-	ws <- c(2, 0.5, xx1, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust
+	if (root.station==TRUE)	ws <- c(2, xx1, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust	
+	if (root.station==FALSE) ws <- c(2, 0.5, xx1, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust
 	
 	return(ws)
 	
@@ -216,10 +219,13 @@ initParamVBM <- function(x){
 
 }	
 
-# initialize MCMC parameters (order: alpha, anc.state, sig, theta1, theta2...
-initParamVOU <- function(x, nreg){
+# initialize MCMC parameters (order: alpha, sig, anc.state, theta1, theta2...
+initParamVOU <- function(x, nreg, root.station){
 		
-	init <- c(runif((nreg+3), 0.5, 3)) # could be aither more realistic values such as means and sds of true data
+	# if (root.station==TRUE) init <- c(runif(2, 0.1, 1), -6, -6) # could be aither more realistic values such as means and sds of true data
+	# if (root.station==FALSE) init <- c(runif((nreg+3), 0.5, 3)) # could be aither more realistic values such as means and sds of true data
+	if (root.station==TRUE) init <- c(runif((nreg+2), 0.1, 1)) # could be aither more realistic values such as means and sds of true data
+	if (root.station==FALSE) init <- c(runif((nreg+3), 0.5, 3)) # could be aither more realistic values such as means and sds of true data
 	#init <- c(2.941516,2.139533,1.299683,1.364224) just a check
 	return(init)
 

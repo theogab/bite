@@ -17,7 +17,7 @@
 #' @param burnin a burning phase of MCMC chain (has to be specified for thermodynamic integration)
 #' @param update.freq update frequencies for likelihood and prior level parameters
 #' @export
-#' @author Anna Kostikova and Daniele Silvestro
+#' @author Anna Kostikova, Daniele Silvestro, and Simon Joly
 #' @return none
 #' @examples
 #' ## Load test data
@@ -68,7 +68,7 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 							
 							# initialize MCMC parameters
 							mspA  <- jive$lik$mspinit # initialize means for species
-							sspA  <- jive$lik$sspinit # initialize sigma.sq for species, log scaled
+							sspA  <- jive$lik$sspinit # initialize sigma.sq for species, log scaled ** NOT TRUE **
 							mbmA  <- jive$prior_mean$init
 							bmouA <- jive$prior_var$init # could be aither more realistic values such as means and sds of true data
 							 
@@ -77,7 +77,7 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 						msp  <- mspA
 						ssp  <- sspA
 						mbm  <- mbmA
-						bmou <- bmouA
+						bmou <- bmouA # Variance parameters, in that order: alpha, sigma, anc.state (if appropriate), theta1, theta2, ...
 						
 						r    <- runif(1)
 						
@@ -102,29 +102,27 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 								  ssp[ind] <- tmp$v # log scaled in/out, transformed in prop
 								  hasting.ratio <- sum(tmp$lnHastingsRatio)
 								  #print(hasting.ratio)
-								  
-
-								  
 
 							 }
 						}
 						# update MVN parameters <-----------------------------  code refactoring is needed to allow other than BM models
 						else if (r < update.freq[2]) {
 						
-							 ind <- sample(1:length(jive$prior_mean$ws), 1)
-							 u = runif(1)
-							 tmp <- jive$prior_mean$prop[[ind]](i=mbmA[ind], d=jive$prior_mean$ws[ind], u)
-				 			 mbm[ind] <- tmp$v
-							 hasting.ratio <- tmp$lnHastingsRatio
+							ind <- sample(1:length(jive$prior_mean$ws), 1)
+							u = runif(1)
+							tmp <- jive$prior_mean$prop[[ind]](i=mbmA[ind], d=jive$prior_mean$ws[ind], u)
+				 			mbm[ind] <- tmp$v
+							hasting.ratio <- tmp$lnHastingsRatio
 
 							 
 						} else {# update BMOU parameters 
-												 
-							 ind <- sample(1:length(jive$prior_var$ws), 1)
-							 u = runif(1)
-							 tmp <- jive$prior_var$prop[[ind]](i=bmouA[ind], d=jive$prior_var$ws[ind], u)
-							 bmou[ind] <- tmp$v
-							 hasting.ratio <- tmp$lnHastingsRatio
+							
+							#TODO: update thetas simultaneously to get better posterior distribution
+							ind <- sample(1:length(jive$prior_var$ws), 1)
+							u = runif(1)
+							tmp <- jive$prior_var$prop[[ind]](i=bmouA[ind], d=jive$prior_var$ws[ind], u)
+							bmou[ind] <- tmp$v
+							hasting.ratio <- tmp$lnHastingsRatio
 
 
 						}
@@ -138,27 +136,43 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 						hprior <- c(hprior_mean, hprior_var)
 
 						if (real.iter > 1) {
-							 Lik <- LikA
-							 Prior_mean <- Prior_meanA #priorMVNA
-							 Prior_var <- Prior_varA #priorBMOUA
+							Lik <- LikA
+							Prior_mean <- Prior_meanA #priorMVNA
+							Prior_var <- Prior_varA #priorBMOUA
 						}
 						
 						# do this for first step always (because we need to have all probabiliiles)     
 						if (r < update.freq[1] || real.iter == 1) {
 							 
-							 Lik 		<- jive$lik$model(msp, ssp, jive$data$traits, jive$data$counts) # traits, counts
-							 #Lik 		<- jive$lik$model(msp, exp(ssp), jive$data$traits, jive$data$counts) # traits, counts
+							Lik 		<- jive$lik$model(msp, ssp, jive$data$traits, jive$data$counts) # traits, counts
 						
-							 Prior_mean <- jive$prior_mean$model(mbm, msp, jive$data$tree) # tree Conditional prior level
+							Prior_mean <- jive$prior_mean$model(mbm, msp, jive$data$tree) # tree Conditional prior level
 					
-							 Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)
+							if (jive$prior_var$modelname == "BM1") {
+								ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$data$regimes, traits=log(ssp))
+								Prior_var 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=FALSE, root.station=jive$prior_var$root.station, alpha=0.0000001, sigma.sq=bmou[1], theta=bmou[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+							} else if (jive$prior_var$modelname == "WN") {
+								Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)						 	
+							} else {
+								ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$data$regimes, traits=log(ssp))
+								Prior_var 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=FALSE, root.station=jive$prior_var$root.station, alpha=bmou[1], sigma.sq=bmou[2], theta=bmou[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+							} # Model = OU1 or OUM
+							#Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)
 					
 							 										 
 						} else if (r<update.freq[2]) {
-							 Prior_mean <- jive$prior_mean$model(mbm, msp, jive$data$tree)
+							Prior_mean <- jive$prior_mean$model(mbm, msp, jive$data$tree)
 						} else {
-							 
-							 Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)
+							if (jive$prior_var$modelname == "BM1") {
+							 	ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$data$regimes, traits=log(ssp))
+								Prior_var 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=FALSE, root.station=jive$prior_var$root.station, alpha=0.0000001, sigma.sq=bmou[1], theta=bmou[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+							} else if (jive$prior_var$modelname == "WN") {
+								Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)						 	
+							} else { # Model = OU1 or OUM
+								ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$data$regimes, traits=log(ssp))
+								Prior_var 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=FALSE, root.station=jive$prior_var$root.station, alpha=bmou[1], sigma.sq=bmou[2], theta=bmou[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+							}
+							#Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)
 						}
 
 						# Posterior calculation
@@ -187,9 +201,6 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 							 sspA = ssp
 							 mbmA  = mbm
 							 bmouA = bmou
-							 
-							 
-							 
 							}
 						}
 						,error = function(e) NULL
@@ -226,6 +237,7 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 						}
 						
 						if (real.iter %% print.freq == 0 & real.iter >= burnin) {
+							#cat(real.iter,'\t',postA,'\t',bmouA,'\n')
 							cat(real.iter,'\t',postA,'\n') 
 						}
 						  
