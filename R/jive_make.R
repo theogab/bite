@@ -17,6 +17,7 @@
 #' @param model.var sampling frequency of the MCMC chain (how often chain will be saved into output file
 #' @param model.mean printing frequency of the MCMC chain (how often chain will be printed in the R console)					
 #' @param model.lik number of classes for thermodynamic integration (see details)
+#' @param root.station boolean indicating whether the theta_0 should be dropped from the model (see details)
 #' @export
 #' @author Anna Kostikova
 #' @return An object of class jive
@@ -104,7 +105,6 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 				jive$data$map <- map
 				
 			}
-
 		}
 				
 		jive$data$traits 					<- traits
@@ -112,7 +112,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		jive$data$tree   					<- simmap
 		jive$data$vcv    					<- vcv(simmap)
 		jive$data$nreg   					<- dim(jive$data$map)[2]
-		if (model.var=="OUM") {
+		if (model.var %in% c("OUM", "WNM", "BMM")) {
 			jive$data$regimes   			<- getStates(simmap,type ="tips")			
 		} else {
 			jive$data$regimes   			<- "oneregime"
@@ -148,8 +148,8 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		if (model.var == "WN" ) {
 			jive$prior_var$model 			<- likWN
 			jive$prior_var$modelname 		<- model.var
-			jive$prior_var$init  			<- initParamVWN(jive$data$traits) # check
-			jive$prior_var$ws	  			<- initWinSizeVWN(jive$data$traits) # check
+			jive$prior_var$init  			<- initParamVWN(jive$data$traits, 1) # check
+			jive$prior_var$ws	  			<- initWinSizeVWN(jive$data$traits, 1) # check
 			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
 			jive$prior_var$hprior$m			<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
 			jive$prior_var$prop$r			<- make.proposal("multiplierProposalLakner") 
@@ -160,6 +160,31 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 												paste(rownames(jive$data$traits), "_v", sep=""),
 												"acc", "temperature")
 
+		}
+
+		if (model.var == "WNM" ) {
+			jive$prior_var$model 			<- likWNM
+			jive$prior_var$modelname 		<- model.var
+			jive$prior_var$init  			<- initParamVWN(jive$data$traits, jive$data$nreg) # check
+			jive$prior_var$ws	  			<- initWinSizeVWN(jive$data$traits, jive$data$nreg) # check
+			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
+#			jive$prior_var$hprior$m			<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
+			for (i in 1:jive$data$nreg){									 # different means
+				ti = paste("t",i,sep="")
+				jive$prior_var$hprior[[ti]]	<- make.hpfun("Uniform", c(-20,10))
+			}
+			jive$prior_var$prop$r			<- make.proposal("multiplierProposalLakner") 
+			# jive$prior_var$prop$m			<- make.proposal("slidingWin") ######### <- HERE logsliding window
+			for (i in 1:jive$data$nreg){									 # theta
+				ti = paste("t",i,sep="")
+				jive$prior_var$prop[[ti]]	<- make.proposal("slidingWin") ######### <- HERE
+			}
+			jive$prior_var$header			<- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+												"mbm_sig.sq", "mbm_anc.st",  "vbm_sig.sq", 
+												paste("vwn_theta", seq(1:jive$data$nreg),sep=""),
+												paste(rownames(jive$data$traits), "_m", sep=""),
+												paste(rownames(jive$data$traits), "_v", sep=""),
+												"acc", "temperature")
 		}
 		
 		
@@ -187,7 +212,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			jive$prior_var$ws	  			<- initWinSizeVOU(jive$data$traits, jive$data$nreg, root.station)  # check
 			jive$prior_var$hprior$a			<- make.hpfun("Gamma", c(1.1,5)) # alpha
 			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
-			jive$prior_var$hprior$m			<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
+			if (!root.station) jive$prior_var$hprior$m			<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
 			for (i in 1:jive$data$nreg){									 # theta
 				ti = paste("t",i,sep="")
 				jive$prior_var$hprior[[ti]]	<- make.hpfun("Uniform", c(-20,10))  ######### <- HERE Loggamma

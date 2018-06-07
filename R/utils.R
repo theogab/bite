@@ -39,7 +39,7 @@ initUpdateFreq <- function(update.freq=NULL){
 	if (!is.null(update.freq)) {
 		update.freq	<- cumsum(update.freq/sum(update.freq))
 	} else {
-		update.freq	<- cumsum(c(0.4,0.1,0.5))
+		update.freq	<- cumsum(c(0.35,0.2,0.45))
 	}
 	
 	return(update.freq)
@@ -144,11 +144,11 @@ initWinSizeMBM <- function(x){
 }
 
 
-initWinSizeVWN <- function(x){
+initWinSizeVWN <- function(x, nreg){
 	
 	xx <- sd(calcSD(x)) # CHECK IF ITS SD OR VAR
 	xx1 <- 2
-	ws <- c(0.5, xx1) # evol rate of sigmas window size, anc.state of sigmas windows size,
+	ws <- c(0.5, rep(xx1,nreg)) # evol rate of sigmas window size, anc.state of sigmas windows size,
 
 	return(ws)
 	
@@ -201,9 +201,9 @@ initParamMBM <- function(x){
 }
 
 # initialize WN
-initParamVWN <- function(x){
+initParamVWN <- function(x, nreg){
 		
-	init <- c(runif(2, 0.5, 3)) # could be aither more realistic values such as means and sds of true data (
+	init <- c(runif((nreg+1), 0.5, 3)) # could be aither more realistic values such as means and sds of true data (
 	#init <- c(2.941516,2.139533,1.299683,1.364224) just a check
 	
 	return(init)
