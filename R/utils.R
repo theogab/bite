@@ -134,20 +134,55 @@ initWinSizeMVN <- function (x){
 }
  
 # input is trait matrix, rows are species, cols - observations
-initWinSizeMBM <- function(x){
+initWinSizeMBM <- function(x, nreg, root.station){
 	
-	xx <- sd(apply(x, 1, sd, na.rm = T)) # CHECK IF ITS SD OR VAR
-	ws <- c(xx, xx) # evol rate of mean window size, anc.state of mean windows size, 
+	xx <- sd(apply(x, 1, mean, na.rm = T)) # Standard deviation of the species means
+	if (root.station==TRUE)	ws <- c(2, rep(xx, nreg)) # evol rate of mean window size, mean windows sizes, 
+	if (root.station==FALSE) ws <- c(2, rep(xx, (nreg+1))) 
 
 	return(ws)
 	
 }
 
+initWinSizeVOU <- function(x, nreg, root.station){
+	
+	#xx <- sd(calcSD(x) ) # CHECK IF ITS SD OR VAR
+	xx1 <- 2
+	if (root.station==TRUE)	ws <- c(2, 0.5, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust	
+	if (root.station==FALSE) ws <- c(2, 0.5, xx1, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust
+	
+	return(ws)
+	
+}
+
+initWinSizeMWN <- function(x, nreg){
+	
+#	xx <- sd(calcSD(x)) # CHECK IF ITS SD OR VAR
+#	xx1 <- 2
+	xx1 <- mean(apply(x, 1, sd, na.rm = T)) * 2 # Test; TODO: check if mixing appropriate
+	ws <- c(0.5, rep(xx1,nreg)) # evol rate of sigmas window size, anc.state of sigmas windows size,
+
+	return(ws)
+	
+}
+
+# input is trait matrix, rows are species, cols - observations
+initWinSizeMOU <- function(x, nreg, root.station){
+	
+	#xx <- sd(calcSD(x) ) # CHECK IF ITS SD OR VAR
+	xx1 <- 2
+	if (root.station==TRUE)	ws <- c(2, 0.5, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust	
+	if (root.station==FALSE) ws <- c(2, 0.5, xx1, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust
+	
+	return(ws)
+	
+}
 
 initWinSizeVWN <- function(x, nreg){
 	
-	xx <- sd(calcSD(x)) # CHECK IF ITS SD OR VAR
+#	xx <- sd(calcSD(x)) # CHECK IF ITS SD OR VAR
 	xx1 <- 2
+#	xx1 <- mean(apply(x, 1, sd, na.rm = T)) * 2 # Test; TODO: check if mixing appropriate
 	ws <- c(0.5, rep(xx1,nreg)) # evol rate of sigmas window size, anc.state of sigmas windows size,
 
 	return(ws)
@@ -165,11 +200,12 @@ initWinSizeVBM <- function(x){
 }
 
 # input is trait matrix, rows are species, cols - observations
+# order: alpha, sig, anc.state, theta1, theta2...
 initWinSizeVOU <- function(x, nreg, root.station){
 	
-	xx <- sd(calcSD(x) ) # CHECK IF ITS SD OR VAR
+	#xx <- sd(calcSD(x) ) # CHECK IF ITS SD OR VAR
 	xx1 <- 2
-	if (root.station==TRUE)	ws <- c(2, xx1, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust	
+	if (root.station==TRUE)	ws <- c(2, 0.5, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust	
 	if (root.station==FALSE) ws <- c(2, 0.5, xx1, rep(xx1, nreg)) # alpha from max likelihood on observed std dev <------------------------ alpha parameter to adjust
 	
 	return(ws)
@@ -190,12 +226,37 @@ initParamMVN <- function (x){
 }
 
 
-# initialize MCMC parameters				   
-initParamMBM <- function(x){
+# initialize MCMC parameters for means
+initParamMBM <- function(x, nreg, root.station){
 		
 	# initialize MCMC parameters
-	init <- c(var(apply(x, 1, mean, na.rm = T)), mean(apply(x, 1, mean, na.rm = T))) 
+	# vector of two values: the variance and the mean of the species means
+	var.init <- var(apply(x, 1, mean, na.rm = T))
+	mean.init <- mean(apply(x, 1, mean, na.rm = T))
+	#init <- c(var(apply(x, 1, mean, na.rm = T)), mean(apply(x, 1, mean, na.rm = T))) 
+	if (root.station==TRUE) init <- c(runif(1, 0.5, 3),rep(mean.init,nreg)) # could be aither more realistic values such as means and sds of true data
+	if (root.station==FALSE) init <- c(runif(1, 0.5, 3),rep(mean.init,(nreg+1))) # could be aither more realistic values such as means and sds of true data
 	
+	return(init)
+
+}
+
+
+# initialize MCMC parameters for means
+initParamMWN <- function(x, nreg){
+		
+	# Initialize MCMC parameters
+	# sigma and regimes means 
+	init <- c(runif(1, 0.5, 3), rep(mean(apply(x, 1, mean, na.rm = T)), nreg))
+	return(init)
+
+}
+
+# initialize MCMC parameters (order: alpha, sig, anc.state, theta1, theta2...
+initParamMOU <- function(x, nreg, root.station){
+		
+	if (root.station==TRUE) init <- c(runif((nreg+2), 0.1, 1)) # could be aither more realistic values such as means and sds of true data
+	if (root.station==FALSE) init <- c(runif((nreg+3), 0.1, 1)) # could be aither more realistic values such as means and sds of true data
 	return(init)
 
 }
