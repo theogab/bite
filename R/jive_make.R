@@ -18,6 +18,7 @@
 #' @param model.mean printing frequency of the MCMC chain (how often chain will be printed in the R console)					
 #' @param model.lik number of classes for thermodynamic integration (see details)
 #' @param root.station boolean indicating whether the theta_0 should be dropped from the model (see details)
+#' @param scaleHeight boolean indicating whether the tree should be scaled to unit length for the model fitting (see details)
 #' @export
 #' @author Anna Kostikova
 #' @return An object of class jive
@@ -83,7 +84,7 @@
 
 
 
-jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm", map=NULL, root.station=TRUE){
+jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm", map=NULL, root.station=TRUE, scaleHeight=FALSE){
 
 	jive <- list()
 	
@@ -102,6 +103,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		jive$data$counts 					<- apply(traits, 1, function (x) {sum( !is.na(x) )})
 		jive$data$tree   					<- simmap
 		jive$data$vcv    					<- vcv(simmap)
+		jive$data$scaleHeight    			<- scaleHeight
 
 		
 		#print(jive$data$nreg)
