@@ -7,7 +7,7 @@ export(jiveProc)
 export(make.hpfun)
 export(plotTraitgram)
 
-importFrom(MASS)
+importFrom(MASS, ginv)
 importFrom(ape, vcv)
 importFrom(OUwie, OUwie.fixed)
 importFrom(geiger, name.check)
