@@ -2,13 +2,12 @@
 # require(ape)
 # require(MASS)
 
-likWNM<-function(pars, x, tree, regimes, scaleHeight){
+likWNM<-function(pars, x, tree, regimes){
 
 	# pars: [1] = sigma^2, [2:nreg] = ancestral means
 	# x = vector of observed values
 	# regimes: a vector of character regimes
 	# tree: a simmap tree
-	# scaleHeight: Whether the tree should be rescale to have a length of 1
 
 	Y      <- as.matrix(x)	
 	sig.sq <- pars[1] # sigma
@@ -16,7 +15,7 @@ likWNM<-function(pars, x, tree, regimes, scaleHeight){
 	n      <- dim(tvcv)[1]
 	vcv.m  <- matrix(nrow=n,ncol=n,0)
 	if (scaleHeight) { # Rescale tree to unit length
-		vcv.m <- vcv.m/max(diag(vcv.m))
+		diag(vcv.m) <- 1
 	} else { # Keep original tree length
 		diag(vcv.m) <- tvcv[1]		
 	}	

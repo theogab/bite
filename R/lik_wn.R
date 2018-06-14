@@ -10,7 +10,7 @@ likWN<-function(pars, x, tree, scaleHeight, ...){#M - ancestral mean, S - trend,
 	n      <- dim(tvcv)[1]
 	vcv.m  <- matrix(nrow=n,ncol=n,0)
 	if (scaleHeight) { # Rescale tree to unit length
-		vcv.m <- vcv.m/max(diag(vcv.m))
+		diag(vcv.m) <- 1
 	} else { # Keep original tree length
 		diag(vcv.m) <- tvcv[1]		
 	}	
