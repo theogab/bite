@@ -5,7 +5,7 @@
 \usage{
 jiveMCMC(jive, log.file = "jive_mcmc.log", sampling.freq = 1000,
   print.freq = 1000, ncat = 1, beta.param = 0.3, ngen = 5e+06,
-  burnin = 0, discr.time = 5000, learn.time = 20000, update.freq = NULL)
+  burnin = 0, discr.time = 5000, learn.time = 20000, update.freq = c(0.35,0.2,0.45))
 }
 \arguments{
 \item{jive}{an object of class "jive" (see details)}
@@ -27,10 +27,11 @@ jiveMCMC(jive, log.file = "jive_mcmc.log", sampling.freq = 1000,
 \item{update.freq}{update frequencies for likelihood and prior level parameters}
 }
 \value{
-none
+The function will print the acceptance ratios for [1] the mean and species specific variances, [2] the parameters of the evolutionary model
+for the species means, and [3] the parameters of the evolutionary model for the species variances.
 }
 \description{
-Implements Markov chain Monte Carlo sampling for trait evolutionary models with intraspecific data
+Implements Markov chain Monte Carlo sampling for trait evolutionary models with intraspecific data.
 }
 \details{
 This function runs MCMC sampling on jive object \code{\link{jiveMake}}. The jive object contains
@@ -38,7 +39,21 @@ both the dataset and set of model to be used in MCMC. This function implements b
 and an MCMC with thermodynamic integration. The latter option is turned off by default and can be changed by
 setting ncat to values > 1. The recommended ncat for TI is 10. When setting ncat > 1, make sure to specify burning.
 As a rule of thumb set burning to 1/10 fraction of ngen.
+
+For the evolutionary models BM ad OU, the \code{\link{OUwie.fixed}} function is used for model fitting.
+
+It is possible to provide specific values to specify how frequent the different parameters are updated in the chain
+using the update.freq option. update.freq takes a vector of three values that determines how frequently the following 
+parameters are updated (in this order): [1] the mean and species specific variances, [2] the parameters of the evolutionary model
+for the species means, and [3] the parameters of the evolutionary model for the species variances. 
 }
+
+\author{Anna Kostikova, Daniele Silvestro and Simon Joly}
+
+\seealso{
+  \code{\link{jiveMake}}
+}
+
 \examples{
 ## Load test data
 data(traitsOU1)
@@ -50,7 +65,3 @@ jiveMCMC(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100,
 ## Run an MCMC chain with thermodynamic integration
 jiveMCMC(my.jive, log.file="my.jive_MCMC.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500)
 }
-\author{
-Anna Kostikova and Daniele Silvestro
-}
-

@@ -20,7 +20,7 @@
 #' @param root.station boolean indicating whether the theta_0 should be dropped from the model (see details)
 #' @param scaleHeight boolean indicating whether the tree should be scaled to unit length for the model fitting (see details)
 #' @export
-#' @author Anna Kostikova
+#' @author Anna Kostikova and Simon Joly
 #' @return An object of class jive
 #' @examples
 #' library(OUwie)
@@ -82,7 +82,7 @@
 #' rownames(traits) <- tree$tip.label
 #' my.jive <- jiveMake(treeb, traits,  model.var="OU1", model.mean="BM", model.lik="Multinorm")
 
-
+#TODO: allow non simmap phylo
 
 jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm", map=NULL, root.station=TRUE, scaleHeight=FALSE){
 

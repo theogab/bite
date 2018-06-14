@@ -4,7 +4,7 @@
 \title{Make jive object}
 \usage{
 jiveMake(simmap, traits, model.var = "OU1", model.mean = "BM",
-  model.lik = "Multinorm", map = NULL)
+  model.lik = "Multinorm", map = NULL, root.station=TRUE, scaleHeight=FALSE)
 }
 \arguments{
 \item{simmap}{an object of class "jive" (see details)}
@@ -16,24 +16,37 @@ jiveMake(simmap, traits, model.var = "OU1", model.mean = "BM",
 \item{model.mean}{printing frequency of the MCMC chain (how often chain will be printed in the R console)}
 
 \item{model.lik}{number of classes for thermodynamic integration (see details)}
+
+\item{root.station}{a boolean indicating whether the estimation of the ancestral state should be dropped from the model}
+
+\item{scaleHeight}{A boolean indicating if the trees should be scaled to have a total length of 1}
 }
 \value{
-An object of class jive
+An object of class jive.
 }
 \description{
-This function makes a jive object from a matrix of intraspecific observations
-and species phylogeny. The obtained jive object can than be used as an input to \code{\link{jiveMCMC}} function
-Intraspecific observations should be stored as matrix, where lines are vector of observations for each species,
-with NA for no data. Phylogenetic tree can be either a simmap object (\code{\link{make.simmap}}) or phylo object (\code{\link{as.phylo}})
+This function makes a jive object from a matrix of intraspecific observations and species phylogeny. The obtained jive object can than be used as an input to \code{\link{jiveMCMC}} function. Intraspecific observations should be stored as matrix, where lines are vector of observations for each species,
+with NA for no data. Phylogenetic tree can be either a simmap object (\code{\link{make.simmap}}) or phylo object (\code{\link{as.phylo}}).
 }
 \details{
 This function creates a jive object needed for \code{\link{jiveMCMC}} function.
 Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data.
 Rownames are species names. Phylogenetic tree must be provided as either simmap object (for models with multiple regimes)
-or as a phylo object (for BM or OU1 models). Rownames and tip labels of a phylogenetic tree should match exactly.
-There are three models implemeted for estimation of species variances evolution - BM, OU1 and OUM. Evolution of
-species means is only implemented with BM model. Species-specific distribution are models as multivariate normal distribution
+or as a phylo object for models with one regimes (WN, BM1 or OU1 models). Rownames and tip labels of a phylogenetic tree should match exactly.
+
+There are six models implemeted for the evolution of species means and species variances. The white noise model assumes no phylogenetic correlation
+in the evolution of means of variance; models with one selective regime (WN) or multiple regimes (WNM) are available. The models BM1 and BMM are 
+implement the Brownian motion model with respectivement one and multiple selective regimes. For more information on the fitting of BMM models
+with and without the root.station option set to true, users should refer to the \code{\link{OUwie}} function of the OUwie package. Finally, the models OU1
+and OUM implement the Ornstein-Ouhlenbeck models of evolution with respectively one and multiple regimes. Species-specific distribution are modeled as multivariate normal distribution.
+
+Because the ancestral states (at the root of the phylogeny) are difficult to estimate accurately and can someties results in other parameters being 
+estimated strangely, we remcommend to drop them from the models (root.station=TRUE), which is the default. For more information on this parameter, check the 
+\code{\link{OUwie}} function.
 }
+
+\author{Anna Kostikova and Simon Joly}
+
 \examples{
 library(OUwie)
 library(phytools)
@@ -94,7 +107,3 @@ traits <- as.matrix(t(apply(traits, 1, foo)))
 rownames(traits) <- tree$tip.label
 my.jive <- jiveMake(treeb, traits,  model.var="OU1", model.mean="BM", model.lik="Multinorm")
 }
-\author{
-Anna Kostikova
-}
-
