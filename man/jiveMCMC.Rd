@@ -5,7 +5,7 @@
 \usage{
 jiveMCMC(jive, log.file = "jive_mcmc.log", sampling.freq = 1000,
   print.freq = 1000, ncat = 1, beta.param = 0.3, ngen = 5e+06,
-  burnin = 0, discr.time = 5000, learn.time = 20000, update.freq = c(0.35,0.2,0.45))
+  burnin = 0, update.freq = c(0.35,0.2,0.45))
 }
 \arguments{
 \item{jive}{an object of class "jive" (see details)}

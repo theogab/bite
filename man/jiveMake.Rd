@@ -4,7 +4,8 @@
 \title{Make jive object}
 \usage{
 jiveMake(simmap, traits, model.var = "OU1", model.mean = "BM",
-  model.lik = "Multinorm", map = NULL, root.station=TRUE, scaleHeight=FALSE)
+  model.lik = "Multinorm", map = NULL, root.station=TRUE, 
+  scaleHeight=FALSE)
 }
 \arguments{
 \item{simmap}{an object of class "jive" (see details)}
