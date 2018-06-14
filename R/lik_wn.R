@@ -2,7 +2,7 @@
 # require(ape)
 # require(MASS)
 
-likWN<-function(pars, x, tree, scaleHeight=FALSE, ...){#M - ancestral mean, S - trend, S0 - starting point of a trend, ti - total phylogenetic time, sig.sq  - sigma^2 (phylogenetic variance)
+likWN<-function(pars, x, tree, scaleHeight, ...){#M - ancestral mean, S - trend, S0 - starting point of a trend, ti - total phylogenetic time, sig.sq  - sigma^2 (phylogenetic variance)
 	
 	Y      <- as.matrix(x)	
 	sig.sq <- pars[1] # sigma
