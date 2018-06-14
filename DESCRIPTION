@@ -7,8 +7,8 @@ Author: Anna Kostikova <anna.kostikova@unil.ch>, Daniele Silvestro
     <daniele.Silvestro@unil.ch>, Sacha Laurent <Sacha.Laurent@unil.ch>, Martha
     Serrano <martha.serrano@unil.ch>, Glenn Litsios <glenn.litsios@unil.ch>,
     Wim Hordijk <wim@WorldWideWanderings.net>, Nicolas Salamin
-    <nicolas.salamin@unil.ch>
-Maintainer: Anna Kostikova <anna.kostikova@unil.ch>
+    <nicolas.salamin@unil.ch>, Simon Joly <joly.simon@gmail.com>
+Maintainer: Simon Joly <joly.simon@gmail.com>
 Description: macroevolutionary analysis of joint intra- and interspecific
     variance evolution using comparative phylogenetic models. In addition, it
     can traitgrams through time based on various comparative models such as

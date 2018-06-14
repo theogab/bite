@@ -85,7 +85,7 @@
 #TODO: allow non simmap phylo
 
 jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm", map=NULL, root.station=TRUE, scaleHeight=FALSE){
-
+	
 	jive <- list()
 	
 	if (name.check(simmap, traits) != "OK") {
