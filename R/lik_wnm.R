@@ -2,12 +2,13 @@
 # require(ape)
 # require(MASS)
 
-likWNM<-function(pars, x, tree, regimes){
+likWNM<-function(pars, x, tree, regimes, scaleHeight){
 
 	# pars: [1] = sigma^2, [2:nreg] = ancestral means
 	# x = vector of observed values
 	# regimes: a vector of character regimes
 	# tree: a simmap tree
+	# scaleHeight: Whether the total length of the tree should be set to 1
 
 	Y      <- as.matrix(x)	
 	sig.sq <- pars[1] # sigma
