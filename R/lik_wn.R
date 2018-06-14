@@ -2,14 +2,18 @@
 # require(ape)
 # require(MASS)
 
-likWN<-function(pars, x, tree, ...){#M - ancestral mean, S - trend, S0 - starting point of a trend, ti - total phylogenetic time, sig.sq  - sigma^2 (phylogenetic variance)
+likWN<-function(pars, x, tree, scaleHeight=FALSE, ...){#M - ancestral mean, S - trend, S0 - starting point of a trend, ti - total phylogenetic time, sig.sq  - sigma^2 (phylogenetic variance)
 	
 	Y      <- as.matrix(x)	
 	sig.sq <- pars[1] # sigma
 	tvcv   <- vcv(tree)
 	n      <- dim(tvcv)[1]
 	vcv.m  <- matrix(nrow=n,ncol=n,0)
-	diag(vcv.m) <- tvcv[1]
+	if (scaleHeight) { # Rescale tree to unit length
+		vcv.m <- vcv.m/max(diag(vcv.m))
+	} else { # Keep original tree length
+		diag(vcv.m) <- tvcv[1]		
+	}	
 	m      <- matrix(1, n, 1)
 	m[, ]  <- pars[2] # ancestral mean
 	DET    <- determinant(sig.sq * vcv.m, logarithm=T)
