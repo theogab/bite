@@ -355,7 +355,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		if (model.mean == "WNM" && model.var == "WN") {
 			jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 								"mwn_sig.sq", 
-								paste("mwnm_theta", seq(1:jive$prior_mean$data$nreg),sep=""), 
+								paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""), 
 								"vwn_sig.sq", "vwn_anc.st", 
 								paste(rownames(jive$data$traits), "_m", sep=""),
 								paste(rownames(jive$data$traits), "_v", sep=""),
@@ -365,7 +365,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 		if (model.mean == "WNM" && model.var == "WNM") {
 			jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 								"mwn_sig.sq", 
-								paste("mwnm_theta", seq(1:jive$prior_mean$data$nreg),sep=""), 
+								paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""), 
 								"vwn_sig.sq",  
 								paste("vwn_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 								paste(rownames(jive$data$traits), "_m", sep=""),
@@ -417,7 +417,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mwn_sig.sq",
-									paste("mwnm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
+									paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
 									"vbm_sig.sq", 
 									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste(rownames(jive$data$traits), "_m", sep=""),
@@ -427,7 +427,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			if (root.station==FALSE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mwn_sig.sq",
-									paste("mwnm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
+									paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
 									"vbm_sig.sq", "vbm_anc.st",
 									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste(rownames(jive$data$traits), "_m", sep=""),
@@ -440,7 +440,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mwn_sig.sq",
-									paste("mwnm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
+									paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
 									"vou_alpha", "vou_sig.sq", 
 									paste("vou_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste(rownames(jive$data$traits), "_m", sep=""),
@@ -450,7 +450,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			if (root.station==FALSE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mwn_sig.sq",
-									paste("mwnm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
+									paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
 									"vou_alpha", "vou_sig.sq", "vou_anc.st",
 									paste("vou_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste(rownames(jive$data$traits), "_m", sep=""),
