@@ -127,13 +127,11 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 					
 		if (model.mean %in% c("WN", "BM1", "OU1")) { # this is needed to overcome phytools limitation about making simmap obj from a trait with a single regime# td$phy$node.label <- rep("1", n - 1)
 			jive$prior_mean$data$map <- matrix(rep(1, ((dim(traits)[1]) * 2) - 2))
-
 		} else {
 			if (is.null(map)){
 				jive$prior_mean$data$map <- relSim(simmap)$mapped.edge
 			} else {
 				jive$prior_mean$data$map <- map
-				
 			}
 		}
 				
@@ -182,20 +180,60 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 				jive$prior_mean$modelname 	<- "BMS" #This is how it is called in OUwie
 			}
 			jive$prior_mean$root.station	<- root.station			
-			jive$prior_mean$init	  		<- initParamMBM(jive$data$traits, jive$prior_mean$data$nreg, root.station)  # check
-			jive$prior_mean$ws	  			<- initWinSizeMBM(jive$data$traits, jive$prior_mean$data$nreg, root.station)  # check
-			jive$prior_mean$hprior$r		<- make.hpfun("Gamma", c(1.1,5)) # sigma
-			if (!root.station) jive$prior_mean$hprior$m		<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
-			for (i in 1:jive$prior_mean$data$nreg){									 # theta
-				ti = paste("t",i,sep="")
-				jive$prior_mean$hprior[[ti]]	<- make.hpfun("Uniform", c(-20,10))  ######### <- HERE Loggamma
+			jive$prior_mean$init	  		<- initParamMBM(jive$data$traits, jive$prior_mean$data$nreg, jive$prior_mean$modelname, root.station)  # check
+			jive$prior_mean$ws	  			<- initWinSizeMBM(jive$data$traits, jive$prior_mean$data$nreg, jive$prior_mean$modelname, root.station)  # check
+			# Initialize hyperpriors for the sigmas
+			jive$prior_mean$hprior$r		<- make.hpfun("Gamma", c(1.1,5))
+			if (jive$prior_mean$data$nreg > 1) {
+				for (i in 2:jive$prior_mean$data$nreg){
+					ri = paste("r",i,sep="")
+					jive$prior_mean$hprior[[ri]]	<- make.hpfun("Gamma", c(1.1,5))
+				}			
 			}
-			jive$prior_mean$prop$r			<- make.proposal("multiplierProposalLakner") 
-			if (!root.station) jive$prior_mean$prop$m	<- make.proposal("slidingWin") ######### <- HERE
-			for (i in 1:jive$prior_mean$data$nreg){									 # theta
-				ti = paste("t",i,sep="")
-				jive$prior_mean$prop[[ti]]	<- make.proposal("slidingWin") ######### <- HERE
-			}		
+			# Initialize hyperpriors for the thetas
+			if (model.mean == "BM1") {
+				jive$prior_mean$hprior$m	<- make.hpfun("Uniform", c(-20,10)) # theta ######### <- HERE Loggamma
+			} else if (model.mean == "BMM") {
+				if (!root.station) {
+					jive$prior_mean$hprior$m	<- make.hpfun("Uniform", c(-20,10)) # theta ######### <- HERE Loggamma
+				} else { # root.station == TRUE; one theta per regime
+					for (i in 1:jive$prior_mean$data$nreg){									 # theta
+						ti = paste("t",i,sep="")
+						jive$prior_mean$hprior[[ti]]	<- make.hpfun("Uniform", c(-20,10))  ######### <- HERE Loggamma
+					}
+				}
+			}
+			#print(jive$prior_mean$hprior)
+			# Initialize hyperpriors for the sigmas
+			jive$prior_mean$prop$r		<- make.proposal("multiplierProposalLakner")
+			if (jive$prior_mean$data$nreg > 1) {
+				for (i in 2:jive$prior_mean$data$nreg){
+					ri = paste("r",i,sep="")
+					jive$prior_mean$prop[[ri]]	<- make.proposal("multiplierProposalLakner")
+				}			
+			}
+			# Initialize proposals for the thetas
+			if (model.mean == "BM1") {
+				jive$prior_mean$prop$m	<- make.proposal("slidingWin") 
+			} else if (model.mean == "BMM") {
+				if (!root.station) {
+					jive$prior_mean$prop$m	<- make.proposal("slidingWin")  
+				} else { # root.station == TRUE; one theta per regime
+					#jive$prior_mean$prop$m	<- make.proposal("slidingWin") 
+					for (i in 1:jive$prior_mean$data$nreg){								
+						ti = paste("t",i,sep="")
+						jive$prior_mean$prop[[ti]]	<- make.proposal("slidingWin")  
+					}
+				}
+			}
+			#print(jive$prior_mean$prop)
+
+			# jive$prior_mean$prop$r			<- make.proposal("multiplierProposalLakner") 
+			# if (!root.station) jive$prior_mean$prop$m	<- make.proposal("slidingWin") ######### <- HERE
+			# for (i in 1:jive$prior_mean$data$nreg){									 # theta
+			# 	ti = paste("t",i,sep="")
+			# 	jive$prior_mean$prop[[ti]]	<- make.proposal("slidingWin") ######### <- HERE
+			# }		
 		}
 
 		if (model.mean == "OU1" || model.mean == "OUM") {
@@ -294,20 +332,66 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 				jive$prior_var$modelname 	<- "BMS" #This is how it is called in OUwie
 			}
 			jive$prior_var$root.station		<- root.station			
-			jive$prior_var$init	  			<- initParamMBM(jive$data$traits, jive$prior_var$data$nreg, root.station)  # check
-			jive$prior_var$ws	  			<- initWinSizeMBM(jive$data$traits, jive$prior_var$data$nreg, root.station)  # check
-			jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
-			if (!root.station) jive$prior_var$hprior$m		<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
-			for (i in 1:jive$prior_var$data$nreg){									 # theta
-				ti = paste("t",i,sep="")
-				jive$prior_var$hprior[[ti]]	<- make.hpfun("Uniform", c(-20,10))  ######### <- HERE Loggamma
+			jive$prior_var$init	  			<- initParamVBM(jive$data$traits, jive$prior_var$data$nreg, jive$prior_var$modelname, root.station)  # check
+			jive$prior_var$ws	  			<- initWinSizeMBM(jive$data$traits, jive$prior_var$data$nreg, jive$prior_var$modelname, root.station)  # check
+			# Initialize hyperpriors for the sigmas
+			jive$prior_var$hprior$r		<- make.hpfun("Gamma", c(1.1,5))
+			if (jive$prior_var$data$nreg > 1) {
+				for (i in 2:jive$prior_var$data$nreg){
+					ri = paste("r",i,sep="")
+					jive$prior_var$hprior[[ri]]	<- make.hpfun("Gamma", c(1.1,5))
+				}			
 			}
-			jive$prior_var$prop$r			<- make.proposal("multiplierProposalLakner") 
-			if (!root.station) jive$prior_var$prop$m	<- make.proposal("slidingWin") ######### <- HERE
-			for (i in 1:jive$prior_var$data$nreg){									 # theta
-				ti = paste("t",i,sep="")
-				jive$prior_var$prop[[ti]]	<- make.proposal("slidingWin") ######### <- HERE
-			}		
+			# Initialize hyperpriors for the thetas
+			if (model.var == "BM1") {
+				jive$prior_var$hprior$m	<- make.hpfun("Uniform", c(-20,10)) # theta ######### <- HERE Loggamma
+			} else if (model.var == "BMM") {
+				if (!root.station) {
+					jive$prior_var$hprior$m	<- make.hpfun("Uniform", c(-20,10)) # theta ######### <- HERE Loggamma
+				} else { # root.station == TRUE; one theta per regime
+					for (i in 1:jive$prior_var$data$nreg){									 # theta
+						ti = paste("t",i,sep="")
+						jive$prior_var$hprior[[ti]]	<- make.hpfun("Uniform", c(-20,10))  ######### <- HERE Loggamma
+					}
+				}
+			}
+			#print(jive$prior_mean$hprior)
+			# Initialize hyperpriors for the sigmas
+			jive$prior_var$prop$r		<- make.proposal("multiplierProposalLakner")
+			if (jive$prior_var$data$nreg > 1) {
+				for (i in 2:jive$prior_var$data$nreg){
+					ri = paste("r",i,sep="")
+					jive$prior_var$prop[[ri]]	<- make.proposal("multiplierProposalLakner")
+				}			
+			}
+			# Initialize proposals for the thetas
+			if (model.var == "BM1") {
+				jive$prior_var$prop$m	<- make.proposal("slidingWin") 
+			} else if (model.var == "BMM") {
+				if (!root.station) {
+					jive$prior_var$prop$m	<- make.proposal("slidingWin")  
+				} else { # root.station == TRUE; one theta per regime
+					#jive$prior_mean$prop$m	<- make.proposal("slidingWin") 
+					for (i in 1:jive$prior_var$data$nreg){								
+						ti = paste("t",i,sep="")
+						jive$prior_var$prop[[ti]]	<- make.proposal("slidingWin")  
+					}
+				}
+			}
+
+
+			# jive$prior_var$hprior$r			<- make.hpfun("Gamma", c(1.1,5)) # sigma
+			# if (!root.station) jive$prior_var$hprior$m		<- make.hpfun("Uniform", c(-20,10)) # anc.mean ######### <- HERE Loggamma
+			# for (i in 1:jive$prior_var$data$nreg){									 # theta
+			# 	ti = paste("t",i,sep="")
+			# 	jive$prior_var$hprior[[ti]]	<- make.hpfun("Uniform", c(-20,10))  ######### <- HERE Loggamma
+			# }
+			# jive$prior_var$prop$r			<- make.proposal("multiplierProposalLakner") 
+			# if (!root.station) jive$prior_var$prop$m	<- make.proposal("slidingWin") ######### <- HERE
+			# for (i in 1:jive$prior_var$data$nreg){									 # theta
+			# 	ti = paste("t",i,sep="")
+			# 	jive$prior_var$prop[[ti]]	<- make.proposal("slidingWin") ######### <- HERE
+			# }		
 		}
 
 		
@@ -373,12 +457,11 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 								"acc", "temperature")				
 		}
 
-		if ((model.mean == "WN") && (model.var %in% c("BM1", "BMM"))) {
+		if ((model.mean == "WN") && (model.var == "BM1")) {
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mwn_sig.sq", "mwn_anc.st", 
-									"vbm_sig.sq", 
-									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									"vbm_sig.sq", "vbm_anc.st",
 									paste(rownames(jive$data$traits), "_m", sep=""),
 									paste(rownames(jive$data$traits), "_v", sep=""),
 									"acc", "temperature")				
@@ -387,7 +470,27 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mwn_sig.sq", "mwn_anc.st", 
 									"vbm_sig.sq", "vbm_anc.st",
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+		}
+
+		if ((model.mean == "WN") && (model.var == "BMM")) {
+			if (root.station==TRUE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									"mwn_sig.sq", "mwn_anc.st", 
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+			if (root.station==FALSE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									"mwn_sig.sq", "mwn_anc.st", 
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
+									"vbm_anc.st",
 									paste(rownames(jive$data$traits), "_m", sep=""),
 									paste(rownames(jive$data$traits), "_v", sep=""),
 									"acc", "temperature")				
@@ -413,12 +516,33 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			}
 		}
 
-		if ((model.mean == "WNM") && (model.var %in% c("BM1", "BMM"))) {
+		if ((model.mean == "WNM") && (model.var == "BM1")) {
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mwn_sig.sq",
 									paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
-									"vbm_sig.sq", 
+									"vbm_sig.sq", "vbm_anc.st",
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+			if (root.station==FALSE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									"mwn_sig.sq",
+									"vbm_sig.sq", "vbm_anc.st",
+									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+		}
+
+		if ((model.mean == "WNM") && (model.var == "BMM")) {
+			if (root.station==TRUE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									"mwn_sig.sq",
+									paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste(rownames(jive$data$traits), "_m", sep=""),
 									paste(rownames(jive$data$traits), "_v", sep=""),
@@ -428,8 +552,8 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mwn_sig.sq",
 									paste("mwn_theta", seq(1:jive$prior_mean$data$nreg),sep=""),									 
-									"vbm_sig.sq", "vbm_anc.st",
-									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
+									"vbm_anc.st",
 									paste(rownames(jive$data$traits), "_m", sep=""),
 									paste(rownames(jive$data$traits), "_v", sep=""),
 									"acc", "temperature")				
@@ -459,10 +583,18 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			}
 		}
 
-		if ((model.mean %in% c("BM1", "BMM")) && (model.var == "WN")) {
+		if ((model.mean == "BM1") && (model.var == "WN")) {
+			jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+								"mbm_sig.sq", "mbm_anc.st",
+								"vwn_sig.sq", "vwn_anc.st", 
+								paste(rownames(jive$data$traits), "_m", sep=""),
+								paste(rownames(jive$data$traits), "_v", sep=""),
+								"acc", "temperature")				
+		}
+		if ((model.mean == "BMM") && (model.var == "WN")) {
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
-									"mbm_sig.sq",
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
 									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
 									"vwn_sig.sq", "vwn_anc.st", 
 									paste(rownames(jive$data$traits), "_m", sep=""),
@@ -471,7 +603,8 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			}
 			if (root.station==FALSE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
-									"mbm_sig.sq", "mbm_anc.st",
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
+									"mbm_anc.st",
 									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
 									"vwn_sig.sq", "vwn_anc.st", 
 									paste(rownames(jive$data$traits), "_m", sep=""),
@@ -480,10 +613,20 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			}
 		}
 
-		if ((model.mean %in% c("BM1", "BMM")) && (model.var == "WNM")) {
+		if ((model.mean == "BM1") && (model.var == "WNM")) {
+			jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+								"mbm_sig.sq", "mbm_anc.st",
+								"vwn_sig.sq",  
+								paste("vwn_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+								paste(rownames(jive$data$traits), "_m", sep=""),
+								paste(rownames(jive$data$traits), "_v", sep=""),
+								"acc", "temperature")				
+		}
+
+		if ((model.mean == "BMM") && (model.var == "WNM")) {
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
-									"mbm_sig.sq",
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
 									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
 									"vwn_sig.sq",  
 									paste("vwn_theta", seq(1:jive$prior_var$data$nreg),sep=""),
@@ -493,8 +636,8 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			}
 			if (root.station==FALSE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
-									"mbm_sig.sq", "mbm_anc.st",
-									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
+									"mbm_anc.st",
 									"vwn_sig.sq",  
 									paste("vwn_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste(rownames(jive$data$traits), "_m", sep=""),
@@ -503,34 +646,84 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			}
 		}
 
-		if ((model.mean %in% c("BM1", "BMM")) && (model.var %in% c("BM1", "BMM"))) {
+		if ((model.mean == "BM1") && (model.var == "BM1")) {
+			jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+								"mbm_sig.sq", "mbm_anc.st",
+								"vbm_sig.sq", "vbm_anc.st",
+								paste(rownames(jive$data$traits), "_m", sep=""),
+								paste(rownames(jive$data$traits), "_v", sep=""),
+								"acc", "temperature")				
+		}
+
+		if ((model.mean == "BMM") && (model.var == "BM1")) {
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
-									"mbm_sig.sq",
-									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
-									"vbm_sig.sq",
-									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
-									paste(rownames(jive$data$traits), "_m", sep=""),
-									paste(rownames(jive$data$traits), "_v", sep=""),
-									"acc", "temperature")				
-			}
-			if (root.station==FALSE) {
-				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
-									"mbm_sig.sq", "mbm_anc.st",
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
 									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
 									"vbm_sig.sq", "vbm_anc.st",
-									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+			if (root.station==FALSE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
+									"mbm_anc.st",
+									"vbm_sig.sq", "vbm_anc.st",
 									paste(rownames(jive$data$traits), "_m", sep=""),
 									paste(rownames(jive$data$traits), "_v", sep=""),
 									"acc", "temperature")				
 			}
 		}
 
-		if ((model.mean %in% c("BM1", "BMM")) && (model.var %in% c("OU1", "OUM"))) {
+		if ((model.mean == "BM1") && (model.var == "BMM")) {
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
-									"mbm_sig.sq",
+									"mbm_sig.sq", "mbm_anc.st",
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+			if (root.station==FALSE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									"mbm_sig.sq", "mbm_anc.st",
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
+									"vbm_anc.st",
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+		}
+
+		if ((model.mean == "BMM") && (model.var == "BMM")) {
+			if (root.station==TRUE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
 									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+			if (root.station==FALSE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
+									"mbm_anc.st",
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
+									"vbm_anc.st",
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+		}
+
+		if ((model.mean == "BM1") && (model.var %in% c("OU1", "OUM"))) {
+			if (root.station==TRUE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									"mbm_sig.sq", "mbm_anc.st",
 									"vou_alpha", "vou_sig.sq",
 									paste("vou_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste(rownames(jive$data$traits), "_m", sep=""),
@@ -540,7 +733,6 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			if (root.station==FALSE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mbm_sig.sq", "mbm_anc.st",
-									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
 									"vou_alpha", "vou_sig.sq", "vou_anc.st",
 									paste("vou_theta", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste(rownames(jive$data$traits), "_m", sep=""),
@@ -549,13 +741,35 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 			}
 		}
 
-		if ((model.mean %in% c("OU1", "OUM")) && (model.var %in% c("BM1", "BMM"))) {
+		if ((model.mean == "BMM") && (model.var %in% c("OU1", "OUM"))) {
+			if (root.station==TRUE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
+									paste("mbm_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
+									"vou_alpha", "vou_sig.sq",
+									paste("vou_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+			if (root.station==FALSE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									paste("mbm_sig.sq", seq(1:jive$prior_mean$data$nreg),sep=""),
+									"mbm_anc.st",
+									"vou_alpha", "vou_sig.sq", "vou_anc.st",
+									paste("vou_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+		}
+
+		if ((model.mean %in% c("OU1", "OUM")) && (model.var == "BM1")) {
 			if (root.station==TRUE) {
 				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
 									"mou_alpha", "mou_sig.sq",
 									paste("mou_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
-									"vbm_sig.sq",
-									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									"vbm_sig.sq", "vbm_anc.st",
 									paste(rownames(jive$data$traits), "_m", sep=""),
 									paste(rownames(jive$data$traits), "_v", sep=""),
 									"acc", "temperature")				
@@ -565,7 +779,29 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 									"mou_alpha", "mou_sig.sq", "mou_anc.st",
 									paste("mou_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
 									"vbm_sig.sq", "vbm_anc.st",
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+		}
+
+		if ((model.mean %in% c("OU1", "OUM")) && (model.var == "BMM")) {
+			if (root.station==TRUE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									"mou_alpha", "mou_sig.sq",
+									paste("mou_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
 									paste("vbm_theta", seq(1:jive$prior_var$data$nreg),sep=""),
+									paste(rownames(jive$data$traits), "_m", sep=""),
+									paste(rownames(jive$data$traits), "_v", sep=""),
+									"acc", "temperature")				
+			}
+			if (root.station==FALSE) {
+				jive$header <- c("real.iter", "postA", "log.lik", "Prior_mean", "Prior_var",  "sumHpriorA", 
+									"mou_alpha", "mou_sig.sq", "mou_anc.st",
+									paste("mou_theta", seq(1:jive$prior_mean$data$nreg),sep=""),
+									paste("vbm_sig.sq", seq(1:jive$prior_var$data$nreg),sep=""),
+									"vbm_anc.st",
 									paste(rownames(jive$data$traits), "_m", sep=""),
 									paste(rownames(jive$data$traits), "_v", sep=""),
 									"acc", "temperature")				

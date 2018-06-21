@@ -134,11 +134,15 @@ initWinSizeMVN <- function (x){
 }
  
 # input is trait matrix, rows are species, cols - observations
-initWinSizeMBM <- function(x, nreg, root.station){
+initWinSizeMBM <- function(x, nreg, model, root.station){
 	
 	xx <- sd(apply(x, 1, mean, na.rm = T)) # Standard deviation of the species means
-	if (root.station==TRUE)	ws <- c(2, rep(xx, nreg)) # evol rate of mean window size, mean windows sizes, 
-	if (root.station==FALSE) ws <- c(2, rep(xx, (nreg+1))) 
+	if (model == "BM1") {
+		ws <- c(2, xx) # evol rate of mean window size, theta window size
+	} else { # model BMM
+		if (root.station==FALSE) ws <- c(rep(2, nreg), xx) # evol rate of mean window size, theta window size
+		if (root.station==TRUE)	ws <- c(rep(2, nreg), rep(xx, nreg)) # evol rate of mean window size, mean windows sizes, 
+	}
 
 	return(ws)
 	
@@ -227,18 +231,19 @@ initParamMVN <- function (x){
 
 
 # initialize MCMC parameters for means
-initParamMBM <- function(x, nreg, root.station){
+initParamMBM <- function(x, nreg, model, root.station){
 		
 	# initialize MCMC parameters
-	# vector of two values: the variance and the mean of the species means
-	var.init <- var(apply(x, 1, mean, na.rm = T))
 	mean.init <- mean(apply(x, 1, mean, na.rm = T))
 	#init <- c(var(apply(x, 1, mean, na.rm = T)), mean(apply(x, 1, mean, na.rm = T))) 
-	if (root.station==TRUE) init <- c(runif(1, 0.5, 3),rep(mean.init,nreg)) # could be aither more realistic values such as means and sds of true data
-	if (root.station==FALSE) init <- c(runif(1, 0.5, 3),rep(mean.init,(nreg+1))) # could be aither more realistic values such as means and sds of true data
-	
-	return(init)
+	if (model == "BM1") {
+		init <- c(runif(1, 0.5, 3), mean.init) # [1] sigma.sq, [2] theta
+	} else { # model BMM
+		if (root.station==FALSE) init <- c(rep(runif(1, 0.5, 3),nreg), mean.init) # [1:nreg] sigma.sq (one per regime), [nreg:nreg+1] theta
+		if (root.station==TRUE) init <- c(rep(runif(1, 0.5, 3),nreg),rep(mean.init,nreg)) # [11:nreg] sigma.sq (one per regime), [nreg:nreg+nreg] thetas for each regime
+	}
 
+	return(init)
 }
 
 
@@ -271,14 +276,30 @@ initParamVWN <- function(x, nreg){
 
 }
 				   
-initParamVBM <- function(x){
+# initParamVBM <- function(x){
 		
-	init <- c(runif(2, 0.5, 3)) # could be aither more realistic values such as means and sds of true data (
-	#init <- c(2.941516,2.139533,1.299683,1.364224) just a check
+# 	init <- c(runif(2, 0.5, 3)) # could be aither more realistic values such as means and sds of true data (
+# 	#init <- c(2.941516,2.139533,1.299683,1.364224) just a check
 	
-	return(init)
+# 	return(init)
 
-}	
+# }	
+
+initParamVBM <- function(x, nreg, model, root.station){
+		
+	# initialize MCMC parameters
+	var.init <- mean(apply(x, 1, var, na.rm = T))
+	#init <- c(var(apply(x, 1, mean, na.rm = T)), mean(apply(x, 1, mean, na.rm = T))) 
+	if (model == "BM1") {
+		init <- c(runif(1, 0.5, 3), var.init) # [1] sigma.sq, [2] theta
+	} else { # model BMM
+		if (root.station==FALSE) init <- c(rep(runif(1, 0.5, 3),nreg), var.init) # [1:nreg] sigma.sq (one per regime), [nreg:nreg+1] theta
+		if (root.station==TRUE) init <- c(rep(runif(1, 0.5, 3),nreg),rep(var.init,nreg)) # [11:nreg] sigma.sq (one per regime), [nreg:nreg+nreg] thetas for each regime
+	}
+
+	return(init)
+}
+
 
 # initialize MCMC parameters (order: alpha, sig, anc.state, theta1, theta2...
 initParamVOU <- function(x, nreg, root.station){

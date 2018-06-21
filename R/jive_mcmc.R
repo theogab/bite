@@ -87,13 +87,14 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 		
 			# update msp, ssp 
 			if (r < update.freq[1]) {
+				#cat("update msp, ssp\n")
 				proposal.type[1] <- 1
 				 # 5 is just for now number of species updated
 				 ind <- sample(1:length(msp), 5, replace=F)
 				
-				 if (runif(1) < 0.5) {
-					  # updating random 5 values from the vector of means 
-					  msp[ind] <- jive$lik$prop$msp(i=mspA[ind], d=jive$lik$mspws[ind])$v
+				if (runif(1) < 0.5) {
+					# updating random 5 values from the vector of means 
+					msp[ind] <- jive$lik$prop$msp(i=mspA[ind], d=jive$lik$mspws[ind])$v
 					  
 					  
 				 } else {
@@ -109,6 +110,7 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 			}
 			# update parameters of the mean prior
 			else if (r < update.freq[2]) {
+				#cat("update mean prior\n")
 				proposal.type[2] <- 1
 			
 				ind <- sample(1:length(jive$prior_mean$ws), 1)
@@ -116,9 +118,9 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 				tmp <- jive$prior_mean$prop[[ind]](i=mbmA[ind], d=jive$prior_mean$ws[ind], u)
 				mbm[ind] <- tmp$v
 				hasting.ratio <- tmp$lnHastingsRatio
-
 				 
 			} else {# update BMOU parameters 
+				#cat("update variance prior\n")
 				proposal.type[3] <- 1
 				
 				#TODO: update thetas simultaneously to get better posterior distribution
@@ -156,24 +158,33 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 
 				if (jive$prior_mean$modelname %in% c("BM1","BMS")) {
 					ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$prior_mean$data$regimes, traits=msp)
-					Prior_mean 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=0.000000001, sigma.sq=mbm[1], theta=mbm[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					if(jive$prior_mean$modelname == "BM1") {
+						Prior_mean 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=0.000000001, sigma.sq=mbm[1], theta=mbm[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					} else if (jive$prior_mean$modelname == "BMS") {
+						Prior_mean 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=0.000000001, sigma.sq=mbm[1:jive$prior_mean$data$nreg], theta=mbm[-c(1:jive$prior_mean$data$nreg)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 							
+					}
 				} else if (jive$prior_mean$modelname %in% c("WN","WNM")) {
 					Prior_mean 	<- jive$prior_mean$model(mbm, msp, jive$data$tree, jive$prior_mean$data$regimes, scaleHeight=jive$data$scaleHeight)						 	
 				} else { # Model = OU1 or OUM
 					ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$prior_mean$data$regimes, traits=msp)
-					Prior_mean 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=mbm[1], sigma.sq=mbm[2], theta=mbm[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					Prior_mean 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=mbm[1], sigma.sq=mbm[2], theta=mbm[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
 				}
 			
 				### Prior probabilities for variance ###
 
 				if (jive$prior_var$modelname %in% c("BM1","BMS")) {
 					ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$prior_var$data$regimes, traits=log(ssp))
-					Prior_var 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=0.000000001, sigma.sq=bmou[1], theta=bmou[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					if(jive$prior_var$modelname == "BM1") {
+						Prior_var 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=0.000000001, sigma.sq=bmou[1], theta=bmou[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					} else if (jive$prior_var$modelname == "BMS") {
+						Prior_var 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=0.000000001, sigma.sq=bmou[1:jive$prior_var$data$nreg], theta=bmou[-c(1:jive$prior_var$data$nreg)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 							
+					}
+					#Prior_var 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=0.000000001, sigma.sq=bmou[1], theta=bmou[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
 				} else if (jive$prior_var$modelname %in% c("WN","WNM")) {
 					Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$prior_var$data$regimes, scaleHeight=jive$data$scaleHeight)						 	
-				} else {
+				} else { # Model = OU1 or OUM
 					ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$prior_var$data$regimes, traits=log(ssp))
-					Prior_var 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=bmou[1], sigma.sq=bmou[2], theta=bmou[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					Prior_var 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=bmou[1], sigma.sq=bmou[2], theta=bmou[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
 				} # Model = OU1 or OUM
 				#Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$data$map)
 			
@@ -184,12 +195,16 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 
 				if (jive$prior_mean$modelname %in% c("BM1","BMS")) {
 					ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$prior_mean$data$regimes, traits=msp)
-					Prior_mean 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=0.000000001, sigma.sq=mbm[1], theta=mbm[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					if(jive$prior_mean$modelname == "BM1") {
+						Prior_mean 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=0.000000001, sigma.sq=mbm[1], theta=mbm[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					} else if (jive$prior_mean$modelname == "BMS") {
+						Prior_mean 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=0.000000001, sigma.sq=mbm[1:jive$prior_mean$data$nreg], theta=mbm[-c(1:jive$prior_mean$data$nreg)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 							
+					}
 				} else if (jive$prior_mean$modelname %in% c("WN","WNM")) {
 					Prior_mean 	<- jive$prior_mean$model(mbm, msp, jive$data$tree, jive$prior_mean$data$regimes, scaleHeight=jive$data$scaleHeight)						 	
 				} else { # Model = OU1 or OUM
 					ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$prior_mean$data$regimes, traits=msp)
-					Prior_mean 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=mbm[1], sigma.sq=mbm[2], theta=mbm[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					Prior_mean 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_mean$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_mean$root.station, alpha=mbm[1], sigma.sq=mbm[2], theta=mbm[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
 				}
 
 			} else {
@@ -198,12 +213,17 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 
 				if (jive$prior_var$modelname %in% c("BM1","BMS")) {
 				 	ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$prior_var$data$regimes, traits=log(ssp))
-					Prior_var 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=0.000000001, sigma.sq=bmou[1], theta=bmou[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					if(jive$prior_var$modelname == "BM1") {
+						Prior_var 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=0.000000001, sigma.sq=bmou[1], theta=bmou[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					} else if (jive$prior_var$modelname == "BMS") {
+						Prior_var 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=0.000000001, sigma.sq=bmou[1:jive$prior_var$data$nreg], theta=bmou[-c(1:jive$prior_var$data$nreg)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 							
+					}
+					#Prior_var 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=0.000000001, sigma.sq=bmou[1], theta=bmou[-1], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
 				} else if (jive$prior_var$modelname %in% c("WN","WNM")) {
 					Prior_var 	<- jive$prior_var$model(bmou, log(ssp), jive$data$tree, jive$prior_var$data$regimes, scaleHeight=jive$data$scaleHeight)						 	
 				} else { # Model = OU1 or OUM
 					ouwie.data <- data.frame(species=jive$data$tree$tip.label, regime=jive$prior_var$data$regimes, traits=log(ssp))
-					Prior_var 	<- OUwie.fixed(jive$data$tree, ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=bmou[1], sigma.sq=bmou[2], theta=bmou[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
+					Prior_var 	<- OUwie.fixed(jive$data$tree, data=ouwie.data, model=jive$prior_var$modelname, simmap.tree=TRUE, root.age=NULL, scaleHeight=jive$data$scaleHeight, root.station=jive$prior_var$root.station, alpha=bmou[1], sigma.sq=bmou[2], theta=bmou[-c(1,2)], clade=NULL, mserr="none", quiet=TRUE)$loglik							 	
 				}
 			}
 
