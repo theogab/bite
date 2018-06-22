@@ -2,7 +2,7 @@
 
 **Joint Inter- and intraspecific Variance Evolution**
 
-This is the repository for the jive R package. The original source code was obtained as supplementary data from Kostikova et al. (2016), but this version includes many improvements and updates.
+This is the working repository for the jive R package. The original source code was obtained as supplementary data from Kostikova et al. (2016), but this version includes many improvements and updates.
 
 ## About
 
