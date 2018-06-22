@@ -235,9 +235,9 @@ jiveMCMC <- function(jive, log.file="jive_mcmc.log", sampling.freq=1000, print.f
 				 Prior_meanA <- Prior_mean
 				 Prior_varA <- Prior_var
 				 hpriorA <- hprior
-				 postA <- (sum(Lik) + Prior_mean + Prior_var * temperature + sum(hprior))
+				 postA <- (sum(Lik) + (Prior_mean * temperature) + (Prior_var * temperature) + sum(hprior))
 			}
-			post <- (sum(Lik) + Prior_mean + Prior_var * temperature + sum(hprior))
+			post <- (sum(Lik) + (Prior_mean * temperature) + (Prior_var * temperature) + sum(hprior))
 
 			# acceptance probability
 			tryCatch(
