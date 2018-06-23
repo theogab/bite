@@ -14,10 +14,17 @@ marginal.lik <- function(file) {
 	# Read the file
 	mcmc.table <- read.table(file, header = TRUE)
 
-	# mean likelihood for each temperature
+	# Do some checks
+	if (is.null(mcmc.table)) stop(cat("file",file,"does not exist"))
+	if (!("postA" %in% colnames(mcmc.table))) stop('No \'postA\' column in the log file')
+	if (!("temperature" %in% colnames(mcmc.table))) stop('No \'temperature\' column in the log file')
+
+	# Get mean marginal likelihood for each temperature
 	likelihoods <- mcmc.table %>%
 		group_by(temperature) %>%
 		summarize(Mean = mean(postA, na.rm=TRUE))
+
+	if (dim(likelihoods)[1]<=1) warning('Only one temerature for the thermodynamic integration')
 
 	# The marginal likelihood
 	lik.ti = 0
