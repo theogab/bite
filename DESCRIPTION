@@ -2,17 +2,10 @@ Package: jive
 Type: Package
 Title: Analysis of joint intra- and interspecific trait evolution
 Version: 0.1
-Date: 2014-06-05
-Author: Anna Kostikova <anna.kostikova@unil.ch>, Daniele Silvestro
-    <daniele.Silvestro@unil.ch>, Sacha Laurent <Sacha.Laurent@unil.ch>, Martha
-    Serrano <martha.serrano@unil.ch>, Glenn Litsios <glenn.litsios@unil.ch>,
-    Wim Hordijk <wim@WorldWideWanderings.net>, Nicolas Salamin
-    <nicolas.salamin@unil.ch>, Simon Joly <joly.simon@gmail.com>
+Date: 2018-07-11
+Author: Anna Kostikova <anna.kostikova@unil.ch>, Daniele Silvestro <daniele.Silvestro@unil.ch>, Sacha Laurent <Sacha.Laurent@unil.ch>, Martha Serrano <martha.serrano@unil.ch>, Glenn Litsios <glenn.litsios@unil.ch>, Wim Hordijk <wim@WorldWideWanderings.net>, Nicolas Salamin <nicolas.salamin@unil.ch>, Simon Joly <joly.simon@gmail.com>
 Maintainer: Simon Joly <joly.simon@gmail.com>
-Description: macroevolutionary analysis of joint intra- and interspecific
-    variance evolution using comparative phylogenetic models. In addition, it
-    can traitgrams through time based on various comparative models such as
-    Brownian motion, Ornstein-Uhlenbeck, etc.
+Description: macroevolutionary analysis of joint intra- and interspecific variance evolution using comparative phylogenetic models. In addition, it can traitgrams through time based on various comparative models such as Brownian motion, Ornstein-Uhlenbeck, etc.
 Depends: R (>= 3.0.3)
 Imports: OUwie, nloptr, ape, MASS, phytools, TeachingDemos, hdrcde,
         akima, coda, scales, TreeSim, gtools, geiger, picante,
