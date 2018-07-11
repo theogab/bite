@@ -163,7 +163,8 @@ initWinSizeMWN <- function(x, nreg){
 	
 #	xx <- sd(calcSD(x)) # CHECK IF ITS SD OR VAR
 #	xx1 <- 2
-	xx1 <- mean(apply(x, 1, sd, na.rm = T)) * 2 # Test; TODO: check if mixing appropriate
+	#xx1 <- mean(apply(x, 1, sd, na.rm = T)) * 2 # Test; TODO: check if mixing appropriate
+	xx1 <- mean(apply(x, 1, sd, na.rm = T)) * 5 # Test; TODO: check if mixing appropriate
 	ws <- c(0.5, rep(xx1,nreg)) # evol rate of sigmas window size, anc.state of sigmas windows size,
 
 	return(ws)
@@ -303,11 +304,12 @@ initParamVBM <- function(x, nreg, model, root.station){
 
 # initialize MCMC parameters (order: alpha, sig, anc.state, theta1, theta2...
 initParamVOU <- function(x, nreg, root.station){
-		
+	
+	xx1 <- mean(apply(x, 1, sd, na.rm = T)) * 10 # Test; TODO: check if mixing appropriate
 	# if (root.station==TRUE) init <- c(runif(2, 0.1, 1), -6, -6) # could be aither more realistic values such as means and sds of true data
 	# if (root.station==FALSE) init <- c(runif((nreg+3), 0.5, 3)) # could be aither more realistic values such as means and sds of true data
-	if (root.station==TRUE) init <- c(runif((nreg+2), 0.1, 1)) # could be aither more realistic values such as means and sds of true data
-	if (root.station==FALSE) init <- c(runif((nreg+3), 0.5, 3)) # could be aither more realistic values such as means and sds of true data
+	if (root.station==TRUE) init <- c(runif((nreg+2), 0.1, 1)) # could be more realistic values such as means and sds of true data
+	if (root.station==FALSE) init <- c(runif((nreg+3), 0.5, 3)) # could be more realistic values such as means and sds of true data
 	#init <- c(2.941516,2.139533,1.299683,1.364224) just a check
 	return(init)
 
