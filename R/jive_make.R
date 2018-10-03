@@ -84,11 +84,11 @@
 
 #TODO: allow non simmap phylo
 
-jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik="Multinorm", map=NULL, root.station=TRUE, scaleHeight=FALSE){
+jiveMake <- function(phy, traits, model.var="OU1", model.mean="BM", root.station = T, scaleHeight = F, control = list()){
 
 	jive <- list()
 	
-	if (name.check(simmap, traits) != "OK") {
+	if (name.check(phy, traits) != "OK") {
 	
 		stop("Species do not match in tree and traits")
 	
@@ -96,31 +96,21 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 
 
 		### Global variables ###
-
-		traits<-traits[simmap$tip.label,]
-
-		jive$data$traits 					<- traits
+		jive$data$traits 					<- traits[phy$tip.label,]
 		jive$data$counts 					<- apply(traits, 1, function (x) {sum( !is.na(x) )})
-		jive$data$tree   					<- simmap
-		jive$data$vcv    					<- vcv(simmap)
-		jive$data$scaleHeight    			<- scaleHeight
+		jive$data$tree   					<- phy
+		jive$data$vcv    					<- vcv(simmap)  # useless so far
+		jive$data$scaleHeight    	<- scaleHeight
 
-		
-		#print(jive$data$nreg)
-		
+
 		### Likelihood parameters ###
-		
-		if (model.lik == "Multinorm") {
-			jive$lik$model 					<- likMultinorm
-			jive$lik$mspws 					<- initWinSizeMVN(jive$data$traits)$msp
-			jive$lik$sspws 					<- initWinSizeMVN(jive$data$traits)$ssp # normal scale
-			jive$lik$mspinit				<- initParamMVN(jive$data$traits)$mspA
-			jive$lik$sspinit				<- initParamMVN(jive$data$traits)$sspA # log scale
-			jive$lik$prop$msp				<- make.proposal("slidingWin") 
-			#jive$lik$prop$ssp				<- make.proposal("slidingWin") ######### <- HERE
-			jive$lik$prop$ssp				<- make.proposal("logSlidingWinAbs") ######### <- HERE
-				
-		}
+		jive$lik$model 					<- likMultinorm
+		jive$lik$mspws 					<- initWinSizeMVN(jive$data$traits)$msp
+		jive$lik$sspws 					<- initWinSizeMVN(jive$data$traits)$ssp # normal scale
+		jive$lik$mspinit				<- initParamMVN(jive$data$traits)$mspA
+		jive$lik$sspinit				<- initParamMVN(jive$data$traits)$sspA # log scale
+		jive$lik$prop$msp				<- make.proposal("slidingWin") 
+		jive$lik$prop$ssp				<- make.proposal("logSlidingWinAbs") ######### <- HERE
 
 
 		#### Models for means ####
@@ -416,7 +406,7 @@ jiveMake <- function(simmap, traits, model.var="OU1", model.mean="BM", model.lik
 				jive$prior_var$prop[[ti]]	<- make.proposal("slidingWin") ######### <- HERE
 			}		
 		}
-
+		
 		### Prepare headers of log file
 
 		if (model.mean == "WN" && model.var == "WN") {

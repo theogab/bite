@@ -4,7 +4,7 @@
 # tree - phylogenetic tree
 # map - map of the jumps (of length equal to the number of edges)
 
-lik_lp <- function(pars, x, tree, map){
+likLP <- function(pars, x, tree, map){
   
   #@ parameters
   sigsq.bm <- pars[1]
