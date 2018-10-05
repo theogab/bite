@@ -1,15 +1,15 @@
 
 
-make.proposal <- function(prop, i=1, d=1, ...){
+make_proposal <- function(prop, i=1, d=1, ...){
 
 	if (prop == "slidingWin"){
-		prop.f <- function(i, d, u=0) {
-			# Slidign window proporal unconstrained at maximum 
+		prop_func <- function(i, d, u=0) {
+			# Sliding window proposal unconstrained at maximum 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
 			# Args:
 			# 	i:  current value
-			#	d:  window size
+			#	  d:  window size
 			#
 			# Returns:
 			#	Proposal value (integer).
@@ -21,13 +21,13 @@ make.proposal <- function(prop, i=1, d=1, ...){
 	}
 
 	if (prop == "slidingWinAbs"){
-		prop.f <- function(i, d, u=0) {
-			# Slidign window proporal unconstrained at maximum 
+		prop_func <- function(i, d, u=0) {
+			# Sliding window proposal unconstrained at maximum 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
 			# Args:
 			# 	i:  current value
-			#	d:  window size
+			#	  d:  window size
 			#
 			# Returns:
 			#	Proposal value (integer).
@@ -39,7 +39,7 @@ make.proposal <- function(prop, i=1, d=1, ...){
 	}	
 	
 	if (prop == "logSlidingWinAbs"){
-		prop.f <- function(i, d, u=0) {
+		prop_funnc <- function(i, d, u=0) {
 			# Slidign window proporal unconstrained at maximum 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
@@ -59,14 +59,14 @@ make.proposal <- function(prop, i=1, d=1, ...){
 	
 		 
 	if (prop == "multiplierProposal"){
-		prop.f <- function(i, d, u) {
-			# Multiplier proporal 
+		prop_func <- function(i, d, u) {
+			# Multiplier proposal 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
 			# Args:
 			# 	i:  current value
-			#	d:  window size
-			#	u:  a random value from a uniform distribution [0,1]
+			#	  d:  window size
+			#	  u:  a random value from a uniform distribution [0,1]
 			#
 			# Returns:
 			#	Proposal value (integer).
@@ -81,14 +81,14 @@ make.proposal <- function(prop, i=1, d=1, ...){
 	
 	
 	if (prop == "multiplierProposalLakner"){
-		prop.f <- function(i, d, u) {
-			# Multiplier proporal 
+		prop_func <- function(i, d, u) {
+			# Multiplier proposal 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
 			# Args:
 			# 	i:  current value
-			#	d:  window size
-			#	u:  a random value from a uniform distribution [0,1]
+			#	  d:  window size
+			#	  u:  a random value from a uniform distribution [0,1]
 			#
 			# Returns:
 			#	Proposal value (integer).
@@ -108,7 +108,7 @@ make.proposal <- function(prop, i=1, d=1, ...){
 	
 	if (prop == "logNormal"){
 		# i - current value, d - sigma (sd) of normal dist
-		prop.f <- function(i, d, u=0){
+		prop_func <- function(i, d, u=0){
 			 
 			ii <- rnorm(1, mean = i, sd = d)
 
@@ -119,7 +119,7 @@ make.proposal <- function(prop, i=1, d=1, ...){
 	
 	if (prop == "absNormal"){
 		# i - current value, d - sigma (sd) of normal dist
-		prop.f <- function(i, d, u=0){
+		prop_func <- function(i, d, u=0){
 			 
 			ii <- rnorm(1, mean = i, sd = d)
 
@@ -131,14 +131,14 @@ make.proposal <- function(prop, i=1, d=1, ...){
 
 	
 
-	return(prop.f)
+	return(prop_func)
 
 }
 
 # hastings ratio
 # i - is a mean of normal distribution in current state log sd 
 # ii - is a mean of normal distribution in proposed state l
-calc.hasting.ratio <-  function(i, ii, d){
+calc_hast_ratio <-  function(i, ii, d){
 	
 	prob.i  <- dlnorm(i, meanlog = ii, sdlog = d, log=TRUE)
 	prob.ii <- dlnorm(ii, meanlog = i, sdlog = d, log=TRUE)

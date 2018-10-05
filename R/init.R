@@ -3,7 +3,7 @@
 
 ### default tuning for initial window size. The output can be manually modified using control.mcmc()
 ###
-init.ws <- function(x, model, nreg){
+init_ws <- function(x, model, nreg){
   
   ws <- list()
   
@@ -39,7 +39,7 @@ init.ws <- function(x, model, nreg){
 
 ### default tuning for initial conditions. The output can be manually modified using control.mcmc()
 ###
-init.pv <- function(x, model, nreg){
+init_pv <- function(x, model, nreg){
   
   pv <- list()
   

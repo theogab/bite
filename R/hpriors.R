@@ -27,42 +27,43 @@ make.hpfun <-function(hpf="Uniform", hp.pars, ...){
 	#
 	# Args:
 	# 	hpf:  		name of a density function
-	#	hp.pars:	parameters of a density function
+	#	  hp.pars:	parameters of a density function
 	#
 	# Returns:
 	#	Hyper-prior function (function).
 
-		if (hpf == "Uniform"){
-			my.f <- function(x, ...){
-				hp <- sum(dunif(x, min=hp.pars[1], max=hp.pars[2], log=TRUE))
-				return(hp)
-			}
-			
+  #uniform
+	if (hpf == "Uniform"){
+		my.f <- function(x, ...){
+			hp <- sum(dunif(x, min=hp.pars[1], max=hp.pars[2], log=TRUE))
+			return(hp)
 		}
+	}
 		
-		if (hpf == "Gamma"){
-			my.f <- function(x, ...){
-				hp <- sum(dgamma(x, shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
-				return(hp)
-			}
+  #gamma
+	if (hpf == "Gamma"){
+		my.f <- function(x, ...){
+			hp <- sum(dgamma(x, shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
+			return(hp)
 		}
+	}
 		
-		if (hpf == "Normal"){
-			my.f <- function(x, ...){
-				hp <- sum(dnorm(x, mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
-				return(hp)
-			}
-		}	
-		
-		if (hpf == "Loggamma"){
-			my.f <- function(x, ...){
-				hp <- sum(dgamma(exp(x), shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
-				return(hp)
-			}
+  #normal
+	if (hpf == "Normal"){
+		my.f <- function(x, ...){
+			hp <- sum(dnorm(x, mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
+			return(hp)
 		}
+	}	
 		
-		
-
+  #log gamma
+	if (hpf == "Loggamma"){
+		my.f <- function(x, ...){
+			hp <- sum(dgamma(exp(x), shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
+			return(hp)
+		}
+	}
 		
 	return(my.f)
+  
 }
