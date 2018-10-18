@@ -22,7 +22,7 @@
 #' my.hp <- make.hpfun(hpf="Uniform", hp.pars=c(1,2))
 
 
-make.hpfun <-function(hpf="Uniform", hp.pars, ...){
+hpfun <-function(hpf="Uniform", hp.pars, ...){
 	# Function that makes function of hyper prior
 	#
 	# Args:
