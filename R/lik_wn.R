@@ -1,6 +1,8 @@
+#' @import ape MASS
+
 # input: pars - c(sig1, ..., sigN, the0), x - var or mean of trait by sp, tree and map
 # does: calculate log-likelihood; 
-lik_wn <- function(pars, x, tree, map, ...){
+lik_wn <- function(pars, x, tree, map){
 	
   #extract variables
   Y <- as.matrix(x)	
@@ -22,30 +24,6 @@ lik_wn <- function(pars, x, tree, map, ...){
   
 }
 
-### default tuning for initial window size. The output can be manually modified using control.mcmc()
-# input: x - sd (VWN) or mean (MWN) of each species trait value, nreg - number of regimes 
-ws_wn <- function(x, nreg){
-  
-  ws <- list()
-  ws$sig.wn <- rep(0.5, nreg)
-  ws$the.wn <- sd(x) # 2 in the previous version?
-  return(ws)
-  
-}
-
-
-### default tuning for initial parameter values. The output can be manually modified using control.mcmc()
-# input: x - sd (VWN) or mean (MWN) of each species trait value, nreg - number of regimes 
-init_wn <- function(x, nreg){
-  
-  pv <- list()
-  pv$sig.wn <- runif(nreg, 0.5, 3)
-  pv$the.wn <- mean(x)
-  return(pv)
-  
-}
-
-
 
 # input: tree, map, n, T.len, alp
 # does: calculates the vcv matrix according to the different regimes
@@ -60,6 +38,7 @@ v_wn <- function(tree, map, n, sig){
   e1 <- tree$edge[, 1]
   e2 <- tree$edge[, 2]
   el <- map[paste(e1, e2, sep = ","),]
+  if (dim(map)[2] == 1) el <- matrix(el) # a subset into a one column matrix becomes a vector (thanks R!)
   xx <- numeric(n + tree$Nnode)
   vcv <- matrix(0, n, n)
   
