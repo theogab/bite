@@ -1,93 +1,64 @@
-#' @title Make jive object
-#' @description This function makes a jive object from a matrix of intraspecific observations
-#' and species phylogeny. The obtained jive object can than be used as an input to \code{\link{jiveMCMC}} function
+#' @title Create a list that can be used as an input to mcmc_jive
+#' @description This function creates a jive object from a matrix of intraspecific observations
+#' and species phylogeny. The obtained jive object is a list that can than be used as an input to \code{\link{mcmc_jive}} function
 #' Intraspecific observations should be stored as matrix, where lines are vector of observations for each species,
 #' with NA for no data. Phylogenetic tree can be either a simmap object (\code{\link{make.simmap}}) or phylo object (\code{\link{as.phylo}})
 #' 
-#' @details This function creates a jive object needed for \code{\link{jiveMCMC}} function.  
-#' Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data.
-#' Rownames are species names. Phylogenetic tree must be provided as either simmap object (for models with multiple regimes)
-#' or as a phylo object (for BM or OU1 models). Rownames and tip labels of a phylogenetic tree should match exactly. 
-#' There are three models implemeted for estimation of species variances evolution - BM, OU1 and OUM. Evolution of 
-#' species means is only implemented with BM model. Species-specific distribution are models as multivariate normal distribution
+#' @details This function creates a jive object needed for \code{\link{mcmc_jive}} function.  
+#' Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data. Rownames are species names that should match exactly tip labels of the phylogenetic tree.
+#'
+#' Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map.
 #' 
+#' map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
 #' 
-#' @param simmap an object of class "jive" (see details)
-#' @param traits name of the output file that will store the log of MCMC chain
-#' @param model.var sampling frequency of the MCMC chain (how often chain will be saved into output file
-#' @param model.mean printing frequency of the MCMC chain (how often chain will be printed in the R console)					
-#' @param model.lik number of classes for thermodynamic integration (see details)
-#' @param root.station boolean indicating whether the theta_0 should be dropped from the model (see details)
-#' @param scaleHeight boolean indicating whether the tree should be scaled to unit length for the model fitting (see details)
+#' variance and mean evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas only for OU (OUM) and on sigmas only for WN (WNM) and BM (BMM)
+#' Species-specific distributions are modeled as multivariate normal distributions
+#' 
+#' control is a list containig tuning parameters acting at different levels of the MCMC algorithm ($lik for likelihood level, $prior.mean for mean prior level and $prior.var for variance prior level). Inside each level ($lik, $prior.mean, $prior.var), the user can modify the default value of initial parameter value ($pv), initial window size ($ws), proposal methods ($prop) for $lik, $prior.mean and $prior.var and hyperpriors ($hprior) for $prior.mean and $prior.var. 
+#' The \code{\link{control_jive}} function provides an easy way to modify control parameters (see examples) 
+#' 
+#' @param phy phylogenetic tree provided as either a simmap or a phylo object
+#' @param traits matrix of traits value for every species of phy (see details)
+#' @param map matrix mapping regimes on every edge of phy (see details) 
+#' @param model.var model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")
+#' @param model.mean model specification for trait mean evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")				
+#' @param root.station boolean indicating whether the theta_0 should be dropped from the model
+#' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
+#' @param control list to control tuning parameters of the MCMC algorithm (see details)
 #' @export
-#' @author Anna Kostikova and Simon Joly
-#' @return An object of class jive
+#' @author Anna Kostikova, Simon Joly and Théo Gaboriau
+#' @return A jive object to parse into mcmc_jive function
 #' @examples
 #' library(OUwie)
 #' library(phytools)
 #' library(MASS)
-#' ## number of species we want to simulate
-#' n <- 50
 #' 
-#' ## generate tree with a pure birth model and scale it to the height of 1
-#' tree  <- pbtree(b = 1, n = n, scale = 1, nsim = 1, ape = TRUE)
-#' treeb <- tree
+#' data(treeOU1)
+#' data(traitsOU1)
 #' 
-#' ## set parameters for OU1 model of species-specific variances
-#' sig.sq <- 0.9
-#' alpha  <- 0.1
-#' theta0 <- 1
-#' theta  <- 5
+#' #VOU and MBM with one regime and without mcmc parameter tuning
+#' my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM")
 #' 
-#' ## set parameters for BM model of specific-specific means
-#' sig.sq.bm <- 0.5
-#' mu0       <- 350
+#' #VOU and MBM with one regime and with mcmc parameter tuning
+#' # control argument can be built using control_jive
+#' my.control <- list(lik = control_jive("lik", traits = traitsOU1, initial.ws = cbind(apply(traitsOU1, 1, mean, na.rm = T),apply(traitsOU1, 1, sd, na.rm = T))),
+#'                    prior.mean = control_jive("prior.mean", model.evo = "BM", traits = traitsOU1, initial.pv = c(1,2)))
+#' my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM", control = my.control)                   
 #' 
-#' ## set mean number of observations per species
-#' mean.obs <- 20
+#' data(treeOU2)
+#' data(traitsOU2)
+#' data(regimesOU2)
 #' 
-#' ## get selective regimes (all 1s because of OU1 model)
-#' y <- data.frame(tree$tip.label, rep(1, n))
+#' #VOUM and MBM with two regimes using simmap tree
+#' my.jive <- make_jive(treeOU2, traitsOU2,  model.var="OUM", model.mean="BM")
 #' 
-#' ## add node labels
-#' tree$node.label <- rep("1", n-1)
-#' 
-#' ## simulate species-specific variances 
-#' sigma.val <- abs(OUwie.sim(tree, y, simmap.tree=FALSE, 
-#' scaleHeight=TRUE, alpha=rep(alpha,2),
-#' sigma.sq=rep(sig.sq,2), theta0=theta0, theta=theta)$X)
-#' 
-#' ## simulate species-specific means
-#' mean.val <- mvrnorm(mu=rep(mu0, length(tree$tip)), Sigma=(sig.sq.bm * vcv(tree)))
-#' 
-#' ## draw a random number of intraspecific observations for each species
-#' spec.obs <- rpois(n, mean.obs)
-#' 
-#' ## generate a data matrix where rows are species and columns are individual observations	
-#' traits <- matrix(rnorm(max(spec.obs) * n, mean=mean.val, sd=sqrt(sigma.val)), 
-#' nrow=n, ncol=max(spec.obs))
-#' traits <- cbind(as.matrix(max(spec.obs) - spec.obs), traits)
-#' 
-#' ## function to replace empty cells with NA
-#' foo <- function(x){
-#'		to <- x[1]
-#'		x[1:(to + 1)] <- NA
-#'		return(x[-1])
-#' }
-#' 
-#' ## apply to data matrix	
-#' traits <- as.matrix(t(apply(traits, 1, foo)))
-#' 
-#' ## add species names to rownames
-#' rownames(traits) <- tree$tip.label
-#' my.jive <- jiveMake(treeb, traits,  model.var="OU1", model.mean="BM", model.lik="Multinorm")
+#' #VOUM and MBM with two regimes using map
+#' my.jive <- make_jive(treeOU2, traitsOU2, map = mapOU2, model.var="OUM", model.mean="BM")
 
-#TODO: allow non simmap phylo
+make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", root.station = F, scale = F, control = list()){
 
-make_jive <- function(phy, traits, model.var="OU", model.mean="BM", root.station = T, scale = F, control = list()){
-
-	### validity tests ###
-	if (name.check(phy, traits) != "OK") {
+	### validity test ###
+	if (geiger::name.check(phy, traits) != "OK") {
 	  stop("Species do not match in tree and traits")
 	}
 
@@ -102,6 +73,14 @@ make_jive <- function(phy, traits, model.var="OU", model.mean="BM", root.station
     } else {
       map <- phy$mapped.edge
     } 
+  }
+  rownames(map) <- apply(treeOU1$edge, 1, paste, collapse = ",")
+  
+  if (dim(map)[1] != length(phy$edge.length)) {
+    stop("map must provide mapping for every edge of phy")
+  }
+  if (!all(abs(rowSums(map) - phy$edge.length) < 1e-5)) {
+    stop("Mapping does not correspond to edge lengths")
   }
   
   ### scale height ###
@@ -124,11 +103,10 @@ make_jive <- function(phy, traits, model.var="OU", model.mean="BM", root.station
 	
 	
 	### Likelihood parameters ###
-	jive$lik <- make_control_jive("lik", traits = traits)
+	jive$lik <- control_jive("lik", traits = traits)
 	if(!is.null(control$lik)){ # evaluate control$lik provided by the user and change jive$lik when specified 
-	  control$lik$model <- NULL # user cannot change the likelihood function
 	  jive$lik <- mapply(function(a,b){
-	    if(is.null(b)) a else b}, jive$lik, control$lik)
+	    if(is.null(b)) a else b}, jive$lik, control$lik, SIMPLIFY = F)
 	}
 
 
@@ -140,14 +118,13 @@ make_jive <- function(phy, traits, model.var="OU", model.mean="BM", root.station
 	  nreg.mean <- 1
 	}
 	
-	jive$prior.mean <- make_control_jive("prior.mean", model = model.mean, traits = traits, nreg = nreg.mean)
+	jive$prior.mean <- control_jive("prior.mean", model.evo = model.mean, traits = traits, nreg = nreg.mean)
 	if(!is.null(control$prior.mean)){ # evaluate control$prior.mean provided by the user and change jive$prior.mean when specified 
-	  control$prior.mean$model <- NULL # user cannot change the likelihood function
 	  jive$prior.mean <- mapply(function(a,b){
-	    if(is.null(b)) a else b}, jive$prior.mean, control$prior.mean)
+	    if(is.null(b)) a else b}, jive$prior.mean, control$prior.mean, SIMPLIFY = F)
 	}
 	
-	cat("Mean prior model: ",model.mean," [",nreg,"]","\n",sep="")
+	cat("Mean prior model: ",model.mean," [",nreg.mean,"]","\n",sep="")
 	
 	
 	
@@ -158,14 +135,13 @@ make_jive <- function(phy, traits, model.var="OU", model.mean="BM", root.station
 	  nreg.var <- 1
 	}
 	
-	jive$prior.var <- make_control_jive("prior.var", model = model.var, traits = traits, nreg = nreg.var)
+	jive$prior.var <- control_jive("prior.var", model.evo = model.var, traits = traits, nreg = nreg.var)
 	if(!is.null(control$prior.var)){ # evaluate control$prior.var provided by the user and change jive$prior.var when specified 
-	  control$prior.var$model <- NULL # user cannot change the likelihood function
 	  jive$prior.var <- mapply(function(a,b){
 	    if(is.null(b)) a else b}, jive$prior.var, control$prior.var)
 	}
 	
-	cat("Variance prior model: ",model.var," [",nreg,"]","\n",sep="")
+	cat("Variance prior model: ",model.var," [",nreg.var,"]","\n",sep="")
 	
 	
 	
@@ -173,15 +149,17 @@ make_jive <- function(phy, traits, model.var="OU", model.mean="BM", root.station
 	#### Prepare headers of log file ####
 
 	jive$header <- c("Iter", "Posterior", "log.lik", "Prior mean", "Prior var", 
-	                 paste("mean.", rep(names(jive$prior_mean$pv), lengths(jive$prior_mean$pv)),
-	                       unlist(lapply(lengths(jive$prior_mean$pv), function(x){  
+	                 paste("mean.", rep(names(jive$prior.mean$init), lengths(jive$prior.mean$init)),
+	                       unlist(lapply(lengths(jive$prior.mean$init), function(x){  
 	                          if (x == 1) ""
-	                          else paste(".regime", seq(1, x), sep ="")
+	                          else if (model.mean %in% c("OU", "OUM")) c("0", seq(1, x-1))
+	                            else seq(1, x)
 	                        } )), sep =""),
-	                 paste("var.", rep(names(jive$prior_var$pv), lengths(jive$prior_var$pv)),
-	                       unlist(lapply(lengths(jive$prior_var$pv), function(x){  
+	                 paste("var.", rep(names(jive$prior.var$init), lengths(jive$prior.var$init)),
+	                       unlist(lapply(lengths(jive$prior.var$init), function(x){  
 	                         if (x == 1) ""
-	                         else paste(".regime", seq(1, x), sep ="")
+	                         else if (model.var %in% c("OU", "OUM")) c("0", seq(1, x-1))
+	                           else seq(1, x)
 	                       } )), sep =""),
 						       paste(rownames(jive$data$traits), "_m", sep=""),
 						       paste(rownames(jive$data$traits), "_v", sep=""),
