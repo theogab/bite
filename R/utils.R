@@ -1,8 +1,8 @@
 
 
-defClasses <- function(ncat=10, beta.param=0.3){ 
+heat_par <- function(ncat=10, beta.param=0.3){ 
 	# Defines classes for thermodynamic integration.
-	# For details of the method see Xia et al 2011 Sys Bio.
+	# For details of the method see Xie et al 2011 Sys Bio.
 	#
 	# Args:
 	# 	ncategories: number of classes that will be used in thermodynamic integration.
@@ -10,7 +10,6 @@ defClasses <- function(ncat=10, beta.param=0.3){
 	# 
 	# Returns:
 	#	The vector of temperatures for thermodynamic integration.
-	
 	
     K <- ncat-1
     k <- 0:K
@@ -46,20 +45,6 @@ initUpdateFreq <- function(update.freq=NULL){
 
 }
 
-
-## tranform simmap into map, input - simmap object
-relSim <- function(x) {
-	
-	foo<-function(x) {
-		x/sum(x)
-	}
-	
-	x$mapped.edge <- t(apply(x$mapped.edge, 1, FUN=foo))
-	x$mapped.edge <- x$mapped.edge[, order(colnames(x$mapped.edge))]
-	
-	return(x)
-				
-}
 
 
 
