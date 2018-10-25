@@ -1,7 +1,7 @@
 #' @title Hyper-prior function
 #' @description This function creates a hyper-prior density function. 
 #' Currently supported density function are Uniform, Gamma and Normal. 
-#' The resulting function is used during MCMC \code{\link{jiveMCMC}}
+#' The resulting function is used during MCMC \code{\link{mcmc_jive}}
 #' to estimate parameters of priors.
 #' 
 #' @details There are three currently implemented density function: 
