@@ -1,6 +1,6 @@
 
 
-make_proposal <- function(prop, i=1, d=1, ...){
+proposal <- function(prop, i=1, d=1, ...){
 
   # checking
   if(!prop %in% c("slidingWin", "slidingWinAbs", "logSlidingWinAbs",
@@ -21,7 +21,6 @@ make_proposal <- function(prop, i=1, d=1, ...){
 			# Returns:
 			#	Proposal value (integer).
 			
-
 			ii <- i + (runif(length(i), 0, 1) - 0.5) * d #MrBayes trick
 			return(list(v=ii, lnHastingsRatio=0))
 		} 
@@ -39,8 +38,8 @@ make_proposal <- function(prop, i=1, d=1, ...){
 			# Returns:
 			#	Proposal value (integer).
 			
-			
 			ii <- i + (runif(length(i), 0, 1) - 0.5) * d #MrBayes trick
+
 			return(list(v=abs(ii), lnHastingsRatio=0))
 		}
 	}	
@@ -82,6 +81,7 @@ make_proposal <- function(prop, i=1, d=1, ...){
 			lambda <- 2 * log(d)
 			m <- exp(lambda * (u - 0.5))
 			ii <- i * m
+
 			return(list(v=ii, lnHastingsRatio=log(u)))
 		}
 	}
@@ -105,7 +105,7 @@ make_proposal <- function(prop, i=1, d=1, ...){
 			lambda=2*log(d)
 			m=exp(lambda*(u-0.5))
 			ii=i*m
-			
+
 			return(list(v=ii, lnHastingsRatio=log(m)))
 			
 		}
@@ -140,17 +140,4 @@ make_proposal <- function(prop, i=1, d=1, ...){
 
 }
 
-# hastings ratio
-# i - is a mean of normal distribution in current state log sd 
-# ii - is a mean of normal distribution in proposed state l
-calc_hast_ratio <-  function(i, ii, d){
-	
-	prob.i  <- dlnorm(i, meanlog = ii, sdlog = d, log=TRUE)
-	prob.ii <- dlnorm(ii, meanlog = i, sdlog = d, log=TRUE)
-	
-	# minus because of log
-	hs <- prob.ii - prob.i
-	
-	return(hs)
-}
 
