@@ -1,5 +1,40 @@
-make_control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model = c("OU", "BM", "WN", "OUM", "BMM", "WNM"),
-                          traits, nreg = 1, initial.ws = NULL, initial.pv = NULL, proposals = NULL, hyperprior = NULL){
+#' @title Create a list that can be used to tune jive mcmc algorithm 
+#' @description This function creates an object to parse in the control argument of the \code{\link{make_jive}} function. The output will be different regarding which level of the jive model the user wants to tune ($lik, $prior.mean, $prior.var). This function allows tuning of : initial window size for proposals, starting parameter value, proposal methods and Hyperprior specification 
+#' @details If arguments initial.ws, initial.pv, proposals or hyperprior are left blank, the default tuning that we found appropriate for most datasets is applied
+#' 
+#' If level == "lik"
+#' initial.ws and initial.pv must be entered as a matrix with 2 columns (respectively mean and variance) and a number of rows equal to the number of species. proposal must be a vector of size 2 (respectively mean and variance)
+#' 
+#' If level == "prior.mean" or "prior.var"
+#' initial.ws and initial.pv must be entered as a vector of variable size depending on the chosen evolutionary model. for OU and OUM, the window size and parameter values must be entered in the following order c(alpha, sigma, theta0, theta1, ..., thetaN). for BM, BMM, WN and WNM, the window size and parameter values must be entered in the following order c(sigma1, ..., sigmaN, theta0), proposal must be a vector of size three for OU and OUM c(alpha, sigma, thetas) and of size two for BM, BMM, WN and WNM c(sigmas, theta)
+#' 
+#' proposals
+#' Has to be one the following : "slidingWin" for Sliding window proposal unconstrained at maximum, "multiplierProposal", for multiplier proposal
+#' 
+#' Hyperprior
+#' list of hyperpriror functions (see \code{\link{hpfun}}). User must provide a list of size 2 for BM, BMM, WN and WNM (sigmas, theta0) and of size 3 for OU and OUM (alpha, sigma, thetas)
+#' 
+#' @param level character taken in c("lik", "prior.mean", "prior.var") to specify on which level of the jive model, the control will operate (see details)
+#' @param model.evo character taken in c("OU", "BM", "WN", "OUM", "BMM", "WNM") specifying the evolutionary model. ignored if level == "lik"
+#' @param traits matrix of traits value (see details)
+#' @param nreg number of regimes
+#' @param window.size initial window size for proposals during the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
+#' @param initial.values starting parameter values of the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
+#' @param proposals vector of characters taken in c("slidingWin", "slidingWinAbs", "logSlidingWinAbs","multiplierProposal", "multiplierProposalLakner","logNormal", "absNormal") to control proposal methods during mcmc algorithm (see details)
+#' @param hyperprior list of hyperprior functions that can be generated with \code{\link{hpfun}}function. Ignored if level == "lik" (see details)
+#' @export
+#' @author Théo Gaboriau
+#' @return A list to parse into control argument of \code{\link{make_jive}} function. The list is containing the following objects:
+#' $model : a function to calculate the likelihood ($lik) or the priors ($prior.mean, $prior_var)
+#' $ws : a list containing the window size of proposals for each estimated parameter
+#' $init : a list containing the starting value of the mcmc chain for each parameter
+#' $prop : a list containing the proposal functions for the update of each parameter
+#' $hprior (only if level %in% c(prior.mean, prior.var) : a list containing the hyperprior function for each parameter 
+#' @examples
+#' 
+
+control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo = c("BM", "OU", "WN", "OUM", "BMM", "WNM"),
+                          traits, nreg = 1, window.size = NULL, initial.values = NULL, proposals = NULL, hyperprior = NULL){
   
   
   var.sp <- apply(traits, 1, sd, na.rm = T)
@@ -12,49 +47,55 @@ make_control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model
     
     # window size
     ws <- list()
-    if (is.null(initial.ws)){
+    if (is.null(window.size)){
       ws$m.sp <- 2*mean.sp
       ws$v.sp <- 10*var.sp
     } else {
-      ws$m.sp <- initial.ws[,1]
-      ws$v.sp <- initial.ws[,2]
+      ws$m.sp <- window.size[,1]
+      ws$v.sp <- window.size[,2]
     }
     #checking
     if(!length(ws$m.sp) == dim(traits)[1] | !length(ws$v.sp) == dim(traits)[1] | any(is.na(c(ws$m.sp, ws$v.sp)))){
-      stop("initial.ws is not valid")
+      stop("window.size is not valid")
     }
     
     # initial parameter value
-    pv  <- list()
-    if (is.null(inital.pv)){
-      pv$m.sp <- mean.sp
-      pv$v.sp <- var.sp
+    init  <- list()
+    if (is.null(initial.values)){
+      init$m.sp <- mean.sp
+      init$v.sp <- var.sp
     } else {
-      pv$m.sp <- initial.pv[,1]
-      pv$v.sp <- initial.pv[,2]
+      init$m.sp <- initial.values[,1]
+      init$v.sp <- initial.values[,2]
     }
     #checking
-    if(!length(pv$m.sp) == dim(traits)[1] | !length(pv$v.sp) == dim(traits)[1] | any(is.na(c(pv$m.sp, pv$v.sp)))){
-      stop("initial.pv is not valid")
+    if(!length(init$m.sp) == dim(traits)[1] | !length(init$v.sp) == dim(traits)[1] | any(is.na(c(init$m.sp, init$v.sp)))){
+      stop("initial.values is not valid")
     }
     
     # proposals
     prop <- list()
-    if (is.null(prop)){
-      prop$m.sp <- make_proposal("slidingWin") 
-      prop$v.sp <- make_proposal("logSlidingWinAbs")
+    if (is.null(proposals)){
+      prop$m.sp <- proposal("slidingWin") 
+      prop$v.sp <- proposal("logSlidingWinAbs")
     } else {
-      prop$m.sp <- make_proposal(prop[1])
-      prop$v.sp	<- make_proposal(prop[2])
+      prop$m.sp <- proposal(proposals[1])
+      prop$v.sp	<- proposal(proposals[2])
     }
     
-    return(list(model = model, ws = ws, pv = pv, prop = prop))
+    return(list(model = model, ws = ws, init = init, prop = prop))
     
   }
   
   
   ### Prior level ###
   if (grepl("prior", level)){
+    
+    ## check model specification
+    if (!model.evo %in% c("OU", "BM", "WN", "OUM", "BMM", "WNM")){
+      stop(paste("model",model,"is not supported", sep = " "))
+    }
+    
     
     ## Mean prior level ##    
     if (level == "prior.mean"){
@@ -64,131 +105,184 @@ make_control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model
     }
     
     # White Noise #
-    if (grepl("WN", model)){
+    if (grepl("WN", model.evo)){
       # model
       model <- lik_wn
       # window size
-      if(is.null(initial.ws)){
+      if(is.null(window.size)){
         ws <- list()
-        ws$sig.wn <- rep(0.5, nreg)
-        ws$the.wn <- sd(x) # 2 in the previous version?
+        ws$wn.sig <- rep(0.5, nreg)
+        ws$wm.the <- sd(x) # 2 in the previous version?
       } else {
         ws <- list()
-        ws$sig.wn <- initial.ws[1:nreg]
-        ws$the.wn <- initial.ws[nreg+1]
+        ws$wn.sig <- window.size[1:nreg]
+        ws$wn.the <- window.size[nreg+1]
       }
-      #checking
-      if(any(is.na(c(ws$sig.wn, ws$the.wn))) | any(c(ws$sig.wn, ws$the.wn) <= 0)){
-        stop("initial.ws is not valid")
-      }
-      
       # initial parameter values
-      if(is.null(initial.pv)){
-        pv <- list()
-        pv$sig.wn <- runif(nreg, 0.5, 3)
-        pv$the.wn <- mean(x)
+      if(is.null(initial.values)){
+        init <- list()
+        init$wn.sig <- runif(nreg, 0.5, 3)
+        init$wn.the <- mean(x)
+      } else {
+        init <- list()
+        init$wn.sig <- initial.values[1:nreg]
+        init$wn.the <- initial.values[nreg]
       }
-      #checking
-      if(any(is.na(c(pv$sig.wn, pv$the.wn))) | any(c(pv$sig.wn, pv$the.wn) <= 0)){
-        stop("initial.pv is not valid")
-      }
-      
       # proposals
       if (is.null(proposals)){
-        prop <- list()
-        prop$sig.wn	<- make_proposal("multiplierProposalLakner")
-        prop$the.wn	<- make_proposal("slidingWin")
+        prop <- lapply(1:nreg, proposal, prop = "multiplierProposalLakner") # sigma(s)
+        prop[[nreg+1]] <- proposal("slidingWin") # theta
       } else {
-        prop$sig.wn <- make_proposal(prop[1])
-        prop$the.wn	<- make_proposal(prop[2])
+        prop <- lapply(1:nreg, proposal, prop = proposals[1]) # sigma(s)
+        prop[[nreg+1]]	<- proposal(proposals[2]) # theta
       }
-      
       # hyper priors
       if (is.null(hyperprior)){
-        hprior <- list()
-        hprior$sig.wn		<- hpfun("Gamma", c(1.1,5))
-        hprior$the.wn		<- hpfun("Uniform", c(-20,10)) 
+        hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
+        hprior[[nreg+1]] <- hpfun("Uniform", c(-20,10)) # theta
+      } else {
+        hprior <- lapply(1:nreg, function(x) hyperprior[[1]]) # sigma(s)
+        hprior[[nreg+1]] <- hyperprior[[2]] # theta
+      }
+      # checking
+      if(any(is.na(c(ws$wn.sig, ws$wn.the))) | any(c(ws$wn.sig) <= 0)){
+        stop("window.size is not valid")
+      }
+      if(any(is.na(c(init$wn.sig, init$wn.the))) | any(c(init$wn.sig) <= 0)){
+        stop("initial.values is not valid")
+      }
+      if(is.finite(hprior[[1]](-1))){
+        stop("Hyper prior should not allow sigma <= 0")
       }
     } 
-    # checking
-    if(is.finite(hprior$sig.wn(-1))|is.finite(hprior$sig.wn(-1))){
-      stop("Hyper prior should not allow sigma <= 0")
-    }
     
     # Brownian Motion #
-    if (grepl("BM", model)){
+    if (grepl("BM", model.evo)){
       # model
       model <- lik_bm
+      
       # window size
-      if(is.null(initial.ws)){
+      if(is.null(window.size)){
         ws <- list()
-        ws$sig.bm <- rep(2, nreg)
-        ws$the.bm <- sd(x)
+        ws$bm.sig <- rep(2, nreg)
+        ws$bm.the <- sd(x)
+      } else {
+        ws <- list()
+        ws$bm.sig <- window.size[1:nreg]
+        ws$bm.the <- window.size[nreg+1]
       }
       # initial parameter values
-      if(is.null(initial.pv)){
-        pv <- list()
-        pv$sig.bm <- runif(nreg, 0.5, 3)
-        pv$the.bm <- mean(x)
+      if(is.null(initial.values)){
+        init <- list()
+        init$bm.sig <- runif(nreg, 0.5, 3)
+        init$bm.the <- mean(x)
+      } else {
+        init <- list()
+        init$bm.sig <- initial.values[1:nreg]
+        init$bm.the <- initial.values[nreg]
       }
       # proposals
       if (is.null(proposals)){
-        prop <- list()
-        prop$sig.bm	<- make_proposal("multiplierProposalLakner")
-        prop$the.bm	<- make_proposal("slidingWin")
+        prop <- lapply(1:nreg, proposal, prop = "multiplierProposalLakner") # sigma(s)
+        prop[[nreg+1]] <- proposal("slidingWin") # theta
       } else {
-        prop$sig.bm <- make_proposal(prop[1])
-        prop$the.bm	<- make_proposal(prop[2])
+        prop <- lapply(1:nreg, proposal, prop = proposals[1]) # sigma(s)
+        prop[[nreg+1]]	<- proposal(proposals[2]) # theta
       }
       # hyper priors
       if (is.null(hyperprior)){
-        hprior <- list()
-        hprior$sig.bm	<- hpfun("Gamma", c(1.1,5))
-        hprior$the.bm	<- hpfun("Uniform", c(-20,10)) ## <- test loggamma??
+        hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
+        hprior[[nreg+1]] <- hpfun("Uniform", c(-20,10)) # theta
+      } else {
+        hprior <- lapply(1:nreg, function(x) hyperprior[[1]]) # sigma(s)
+        hprior[[nreg+1]] <- hyperprior[[2]] # theta
+      }
+      # checking
+      if(any(is.na(c(ws$bm.sig, ws$bm.the))) | any(c(ws$bm.sig) <= 0)){
+        stop("window.size is not valid")
+      }
+      if(any(is.na(c(init$bm.sig, init$bm.the))) | any(c(init$bm.sig) <= 0)){
+        stop("initial.values is not valid")
+      }
+      if(is.finite(hprior[[1]](-1))){
+        stop("Hyper prior should not allow sigma <= 0")
       }
     }
     
     # Ornstein-Uhlenbeck #
-    if (grepl("OU", model)){
+    if (grepl("OU", model.evo)){
       # model
       model <- lik_ou
       # window size
-      if(is.null(initial.ws)){
+      if(is.null(window.size)){
         ws <- list()
-        ws$alp.ou <- 0.5
-        ws$sig.ou <- 2
-        ws$the.ou <- rep(sd(x), nreg+1) # 2 in the previous version?
+        ws$ou.alp <- 0.5
+        ws$ou.sig <- 2
+        ws$ou.the <- rep(sd(x), nreg+1) # 2 in the previous version?
+      } else {
+        ws <- list()
+        ws$ou.alp <- window.size[1]
+        ws$ou.sig <- window.size[2]
+        ws$ou.the <- window.size[3:(nreg+3)]
       }
       # initial parameter values
-      if(is.null(initial.pv)){
-        pv <- list()
-        pv$alp.ou <- runif(1, 0.1, 1)
-        pv$sig.ou <- runif(1, 0.5, 3)
-        pv$the.ou <- rep(mean(x), nreg+1)
+      if(is.null(initial.values)){
+        init <- list()
+        init$ou.alp <- runif(1, 0.1, 1)
+        init$ou.sig <- runif(1, 0.5, 3)
+        init$ou.the <- rep(mean(x), nreg+1)
+      } else {
+        init <- list()
+        init$ou.alp <- initial.values[1]
+        init$ou.sig <- initial.values[2]
+        init$ou.the <- initial.values[3:(nreg+3)]
       }
       # proposals
       prop <- list()
       if (is.null(proposals)){
-        prop$alp.ou	<- make_proposal("multiplierProposalLakner")
-        prop$sig.ou	<- make_proposal("multiplierProposalLakner")
-        prop$the.ou	<- make_proposal("slidingWin")
+        prop[[1]]	<- proposal("multiplierProposalLakner")
+        prop[[2]]	<- proposal("multiplierProposalLakner")
+        for(i in 3:(nreg+3)){
+          prop[[i]]	<- proposal("slidingWin")
+        }
       } else {
-        prop$alp.ou <- make_proposal(prop[1])
-        prop$sig.ou	<- make_proposal(prop[2])
-        prop$the.ou	<- make_proposal(prop[3])
+        prop[[1]] <- proposal(proposals[1])
+        prop[[2]]	<- proposal(proposals[2])
+        for(i in 3:(nreg+3)){
+          prop[[i]]	<-  proposal(proposals[3])
+        }
       }
       # hyper priors
       if (is.null(hyperprior)){
         hprior <- list()
-        hprior$alp.ou <- hpfun("Gamma", c(1.1,5))
-        hprior$sig.ou	<- hpfun("Gamma", c(1.1,5))
-        hprior$the.ou	<- hpfun("Uniform", c(-20,10)) ## <- test loggamma??
+        hprior[[1]] <- hpfun("Gamma", c(1.1,5))
+        hprior[[2]]	<- hpfun("Gamma", c(1.1,5))
+        for(i in 3:(nreg+3)){
+          hprior[[i]]	<- hpfun("Uniform", c(-20,10)) ## <- test loggamma??
+        }
+      } else {
+        hprior[[1]] <- hyperprior[[1]]
+        hprior[[2]] <- hyperprior[[2]]
+        for(i in 3:(nreg+3)){
+          hprior[[i]]	<- hyperprior[[3]]
+        }
+      }
+      # checking
+      if(any(is.na(c(ws$ou.alp, ws$ou.sig, ws$ou.the))) | any(c(ws$ou.alp, ws$ou.sig) <= 0)){
+        stop("window.size is not valid")
+      }
+      if(any(is.na(c(init$ou.alp, init$ou.sig, init$ou.the))) | any(c(init$ou.alp, init$ou.sig) <= 0)){
+        stop("initial.values is not valid")
+      }
+      if(is.finite(hprior[[1]](-1))){
+        stop("Hyper prior should not allow sigma <= 0 or alpha <= 0")
       }
     }
     
-    return(list(model = model, ws = ws, pv = pv, prop = prop, hprior = hprior))
+    return(list(model = model, ws = ws, init = init, prop = prop, hprior = hprior))
     
   }
+  
 }
 
 
