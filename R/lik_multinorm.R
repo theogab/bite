@@ -1,9 +1,8 @@
-# input: xmean = vector of means, xsd = vector of sigmas, traits = matrix of species observations, N_OBSERV vector of observation counts
+# input: m.sp = vector of means, v.sp = vector of sigmas, traits = matrix of species observations, counts = number of observation by species
 # does: calculate individual log-likelihoods for each species based on normal distribution
-likMultinorm <- function(xmean, xsd, x, counts){#m - mean (horizontal), s - sigma^2 (horizontal), vec - observations for a species
+lik_multinorm <- function(m.sp, v.sp, traits, counts){#m - mean (horizontal), s - sigma^2 (horizontal), vec - observations for a species
 	
-	
-	log.lik.MN <- -counts/2 * log(2 * pi) - 1/2 * counts * log(xsd) - 1/2 * (apply((x - xmean)^2, 1, sum, na.rm=T)/xsd)
+	log.lik.MN <- -counts/2 * log(2 * pi) - 1/2 * counts * log(v.sp) - 1/2 * (apply((traits - m.sp)^2, 1, sum, na.rm=T)/v.sp)
 	
 	if (is.na(sum(log.lik.MN))) {
 			return(-Inf)
@@ -11,8 +10,4 @@ likMultinorm <- function(xmean, xsd, x, counts){#m - mean (horizontal), s - sigm
 		return(log.lik.MN)
 	}
 
-	
-	
-	
 } # Gaussian density
-
