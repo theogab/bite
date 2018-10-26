@@ -2,7 +2,7 @@
 
 # input: pars - c(alp,sig,the0,the1...theN), x - var or mean of trait by sp, tree and map
 # does: calculate log-likelihood; see Butler and King 2004, appendix eq. A8 and A9 
-lik_ou <- function(pars, x, tree, map){
+lik_ou <- function(pars, x, tree, map, root.station){
   
   # extract variables
   alp  <- pars[1]
@@ -13,7 +13,11 @@ lik_ou <- function(pars, x, tree, map){
   n <- dim(t.vcv)[1]
   
   # calculate matricies
-  w <- cbind(rep(exp(-alp * T.len), n), w_reg(tree, map, n, T.len, alp))
+  if(root.station){
+    w <- w_reg(tree, map, n, T.len, alp)
+  } else {
+    w <- cbind(rep(exp(-alp * T.len), n), w_reg(tree, map, n, T.len, alp))
+  }
   E <- w%*%the
   V <- sig/(2 * alp) * (exp(-2 * alp * (T.len-t.vcv)) * (1-exp(-2 * alp * t.vcv)))
   

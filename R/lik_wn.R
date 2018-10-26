@@ -2,7 +2,7 @@
 
 # input: pars - c(sig1, ..., sigN, the0), x - var or mean of trait by sp, tree and map
 # does: calculate log-likelihood; 
-lik_wn <- function(pars, x, tree, map){
+lik_wn <- function(pars, x, tree, map, ...){
 	
   #extract variables
   Y <- as.matrix(x)	

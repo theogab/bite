@@ -66,12 +66,12 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   
   # prior mean level
   pars.m0 <- do.call(c, jive$prior.mean$init)
-  prior.mean0 <- jive$prior.mean$model(pars.m0, m.sp0, jive$data$tree, jive$data$map)
+  prior.mean0 <- jive$prior.mean$model(pars.m0, m.sp0, jive$data$tree, jive$data$map, jive$data$root.station)
   hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
   
   # prior var level
   pars.v0 <- do.call(c, jive$prior.var$init)
-  prior.var0 <- jive$prior.var$model(pars.v0, log(v.sp0), jive$data$tree, jive$data$map)
+  prior.var0 <- jive$prior.var$model(pars.v0, log(v.sp0), jive$data$tree, jive$data$map, jive$data$root.station)
   hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
   
   # mcmc parameters
@@ -130,7 +130,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
 			hprior.mean1 <- hprior.mean0 # ancient hprior_mean value is kept
 			tmp <- jive$prior.mean$prop[[par.n]](i = pars.m0[par.n], d = do.call(c,jive$prior.mean$ws)[par.n], u) #update with proposal function
 			pars.m0[par.n] <- tmp$v 
-			prior.mean0 <- jive$prior.mean$model(pars.m0, m.sp0, jive$data$tree, jive$data$map) #calculate new values
+			prior.mean0 <- jive$prior.mean$model(pars.m0, m.sp0, jive$data$tree, jive$data$map, jive$data$root.station) #calculate new values
 			hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
 			hasting.ratio <- tmp$lnHastingsRatio
 		} 
@@ -144,7 +144,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
 		  hprior.var1 <- hprior.var0 # ancient hprior_var value is kept
 		  tmp <- jive$prior.var$prop[[par.n]](i = pars.v0[par.n], d = do.call(c, jive$prior.var$ws)[par.n], u) #update with proposal function
 		  pars.v0[par.n] <- tmp$v 
-		  prior.var0 <- jive$prior.var$model(pars.v0, log(v.sp0), jive$data$tree, jive$data$map) #calculate new values
+		  prior.var0 <- jive$prior.var$model(pars.v0, log(v.sp0), jive$data$tree, jive$data$map, jive$data$root.station) #calculate new values
 		  hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
 		  hasting.ratio <- tmp$lnHastingsRatio
 		}

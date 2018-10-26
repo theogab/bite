@@ -22,10 +22,11 @@
 #' @param map matrix mapping regimes on every edge of phy (see details) 
 #' @param model.var model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")
 #' @param model.mean model specification for trait mean evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")				
-#' @param root.station boolean indicating whether the theta_0 should be dropped from the model
+#' @param root.station boolean indicating whether the theta_0 should be dropped from the OU or OUM models 
 #' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
 #' @param control list to control tuning parameters of the MCMC algorithm (see details)
 #' @export
+#' @imports ape
 #' @author Anna Kostikova, Simon Joly and Théo Gaboriau
 #' @return A jive object to parse into mcmc_jive function
 #' @examples
@@ -74,7 +75,7 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
       map <- phy$mapped.edge
     } 
   }
-  rownames(map) <- apply(treeOU1$edge, 1, paste, collapse = ",")
+  rownames(map) <- apply(phy$edge, 1, paste, collapse = ",")
   
   if (dim(map)[1] != length(phy$edge.length)) {
     stop("map must provide mapping for every edge of phy")
@@ -95,7 +96,7 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   ### Global variables ###
 	jive$data$traits 					<- traits[phy$tip.label,]
 	jive$data$counts 					<- apply(traits, 1, function (x) {sum( !is.na(x) )})
-	jive$data$tree   					<- phy
+	jive$data$tree   					<- as.phylo(phy)
 	jive$data$map             <- map
 	jive$data$root.station   	<- root.station
 	jive$data$scale    	      <- scale
@@ -118,10 +119,13 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
 	  nreg.mean <- 1
 	}
 	
-	jive$prior.mean <- control_jive("prior.mean", model.evo = model.mean, traits = traits, nreg = nreg.mean)
+	jive$prior.mean <- control_jive("prior.mean", model.evo = model.mean, traits = traits, nreg = nreg.mean, root.station = root.station)
 	if(!is.null(control$prior.mean)){ # evaluate control$prior.mean provided by the user and change jive$prior.mean when specified 
 	  jive$prior.mean <- mapply(function(a,b){
 	    if(is.null(b)) a else b}, jive$prior.mean, control$prior.mean, SIMPLIFY = F)
+	}
+	if ((model.mean %in% c("OU", "OUM") & ncol(jive$data$map) != ifelse(root.station, length(do.call(c, jive$prior.mean$init)) - 2, length(do.call(c, jive$prior.mean$init)) - 3)) | (model.mean %in% c("BM", "BMM","WN","WNM") & ncol(jive$data$map) != (length(do.call(c, jive$prior.mean$init)) - 1))){
+	  stop("in $prior.mean, number of parameters doesn't correspond to the number of regimes in map")
 	}
 	
 	cat("Mean prior model: ",model.mean," [",nreg.mean,"]","\n",sep="")
@@ -135,15 +139,18 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
 	  nreg.var <- 1
 	}
 	
-	jive$prior.var <- control_jive("prior.var", model.evo = model.var, traits = traits, nreg = nreg.var)
+	jive$prior.var <- control_jive("prior.var", model.evo = model.var, traits = traits, nreg = nreg.var, root.station = root.station)
 	if(!is.null(control$prior.var)){ # evaluate control$prior.var provided by the user and change jive$prior.var when specified 
 	  jive$prior.var <- mapply(function(a,b){
 	    if(is.null(b)) a else b}, jive$prior.var, control$prior.var)
 	}
 	
+	#### Check parameters length relatively to map ####
+	if ((model.var %in% c("OU", "OUM") & ncol(jive$data$map) != ifelse(root.station, length(do.call(c, jive$prior.var$init)) - 2, length(do.call(c, jive$prior.var$init)) - 3)) | (model.var %in% c("BM", "BMM","WN","WNM") & ncol(jive$data$map) != (length(do.call(c, jive$prior.var$init)) - 1))){
+	  stop("in $prior.var, number of parameters doesn't correspond to the number of regimes in map")
+	}
+	
 	cat("Variance prior model: ",model.var," [",nreg.var,"]","\n",sep="")
-	
-	
 	
 	
 	#### Prepare headers of log file ####
@@ -152,13 +159,13 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
 	                 paste("mean.", rep(names(jive$prior.mean$init), lengths(jive$prior.mean$init)),
 	                       unlist(lapply(lengths(jive$prior.mean$init), function(x){  
 	                          if (x == 1) ""
-	                          else if (model.mean %in% c("OU", "OUM")) c("0", seq(1, x-1))
+	                          else if (model.mean %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
 	                            else seq(1, x)
 	                        } )), sep =""),
 	                 paste("var.", rep(names(jive$prior.var$init), lengths(jive$prior.var$init)),
 	                       unlist(lapply(lengths(jive$prior.var$init), function(x){  
 	                         if (x == 1) ""
-	                         else if (model.var %in% c("OU", "OUM")) c("0", seq(1, x-1))
+	                         else if (model.var %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
 	                           else seq(1, x)
 	                       } )), sep =""),
 						       paste(rownames(jive$data$traits), "_m", sep=""),
