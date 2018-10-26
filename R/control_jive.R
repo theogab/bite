@@ -22,6 +22,7 @@
 #' @param initial.values starting parameter values of the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
 #' @param proposals vector of characters taken in c("slidingWin", "slidingWinAbs", "logSlidingWinAbs","multiplierProposal", "multiplierProposalLakner","logNormal", "absNormal") to control proposal methods during mcmc algorithm (see details)
 #' @param hyperprior list of hyperprior functions that can be generated with \code{\link{hpfun}}function. Ignored if level == "lik" (see details)
+#' @param root.station boolean indicating whether the theta_0 should be dropped from the OU or OUM models 
 #' @export
 #' @author Théo Gaboriau
 #' @return A list to parse into control argument of \code{\link{make_jive}} function. The list is containing the following objects:
@@ -34,7 +35,7 @@
 #' 
 
 control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo = c("BM", "OU", "WN", "OUM", "BMM", "WNM"),
-                          traits, nreg = 1, window.size = NULL, initial.values = NULL, proposals = NULL, hyperprior = NULL){
+                          traits, nreg = 1, window.size = NULL, initial.values = NULL, proposals = NULL, hyperprior = NULL, root.station = F){
   
   
   var.sp <- apply(traits, 1, sd, na.rm = T)
@@ -218,37 +219,37 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         ws <- list()
         ws$ou.alp <- 0.5
         ws$ou.sig <- 2
-        ws$ou.the <- rep(sd(x), nreg+1) # 2 in the previous version?
+        ws$ou.the <- rep(sd(x), nreg + ifelse(root.station, 0, 1)) # 2 in the previous version?
       } else {
         ws <- list()
         ws$ou.alp <- window.size[1]
         ws$ou.sig <- window.size[2]
-        ws$ou.the <- window.size[3:(nreg+3)]
+        ws$ou.the <- window.size[3:(nreg + ifelse(root.station, 2, 3))]
       }
       # initial parameter values
       if(is.null(initial.values)){
         init <- list()
         init$ou.alp <- runif(1, 0.1, 1)
         init$ou.sig <- runif(1, 0.5, 3)
-        init$ou.the <- rep(mean(x), nreg+1)
+        init$ou.the <- rep(mean(x), nreg + ifelse(root.station, 0, 1))
       } else {
         init <- list()
         init$ou.alp <- initial.values[1]
         init$ou.sig <- initial.values[2]
-        init$ou.the <- initial.values[3:(nreg+3)]
+        init$ou.the <- initial.values[3:(nreg+ ifelse(root.station, 2, 3))]
       }
       # proposals
       prop <- list()
       if (is.null(proposals)){
         prop[[1]]	<- proposal("multiplierProposalLakner")
         prop[[2]]	<- proposal("multiplierProposalLakner")
-        for(i in 3:(nreg+3)){
+        for(i in 3:(nreg+ ifelse(root.station, 2, 3))){
           prop[[i]]	<- proposal("slidingWin")
         }
       } else {
         prop[[1]] <- proposal(proposals[1])
         prop[[2]]	<- proposal(proposals[2])
-        for(i in 3:(nreg+3)){
+        for(i in 3:(nreg+ ifelse(root.station, 2, 3))){
           prop[[i]]	<-  proposal(proposals[3])
         }
       }
@@ -257,13 +258,13 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         hprior <- list()
         hprior[[1]] <- hpfun("Gamma", c(1.1,5))
         hprior[[2]]	<- hpfun("Gamma", c(1.1,5))
-        for(i in 3:(nreg+3)){
+        for(i in 3:(nreg+ ifelse(root.station, 2, 3))){
           hprior[[i]]	<- hpfun("Uniform", c(-20,10)) ## <- test loggamma??
         }
       } else {
         hprior[[1]] <- hyperprior[[1]]
         hprior[[2]] <- hyperprior[[2]]
-        for(i in 3:(nreg+3)){
+        for(i in 3:(nreg+ ifelse(root.station, 2, 3))){
           hprior[[i]]	<- hyperprior[[3]]
         }
       }
