@@ -6,7 +6,7 @@ This is the working repository for the jive R package. The original source code 
 
 ## About
 
-The **jive** R package implements the Joint Inter- and intraspecific Variance Evolution (KOstikova et al. 2016). It uses a MCMC approach to estimates species means and variances of a trait, as well as the parameters of evolutionary models that describe the evolution of these shapes and variances.
+The **jive** R package implements the Joint Inter- and intraspecific Variance Evolution (Kostikova et al. 2016). It uses a MCMC approach to estimates species means and variances of a trait, as well as the parameters of evolutionary models that describe the evolution of these shapes and variances.
 
 ## Installation
 
@@ -24,15 +24,13 @@ And then, intall the pofadinr package from the github repository.
 
 $> library(devtools)
 
-$> install_github("simjoly/jive-package")
+$> install_github("theogab/jive-package")
 
 ### Source and binaries 
 
 TODO: Check the [latest release](https://github.com/simjoly/pofadinr/releases).
 
 ## Notes
-
-This package depends on the function OUwie of the OUwie R package for some model fitting.
 
 This package is provided as is with no garantee regarding the results or that it will performed as expected.
 
