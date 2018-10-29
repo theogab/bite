@@ -20,8 +20,6 @@ You first need to install the devtools package.
 
 $> install.packages("devtools")
 
-And then, intall the pofadinr package from the github repository.
-
 $> library(devtools)
 
 $> install_github("theogab/jive-package")
