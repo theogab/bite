@@ -108,7 +108,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     # White Noise #
     if (grepl("WN", model.evo)){
       # model
-      model <- lik_wn
+      model <- update_wn
       # window size
       if(is.null(window.size)){
         ws <- list()
@@ -160,7 +160,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     # Brownian Motion #
     if (grepl("BM", model.evo)){
       # model
-      model <- lik_bm
+      model <- update_bm
       
       # window size
       if(is.null(window.size)){
@@ -213,7 +213,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     # Ornstein-Uhlenbeck #
     if (grepl("OU", model.evo)){
       # model
-      model <- lik_ou
+      model <- update_ou
       # window size
       if(is.null(window.size)){
         ws <- list()

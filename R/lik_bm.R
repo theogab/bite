@@ -1,34 +1,46 @@
-#' @import ape MASS
+#' @import ape
 
-
-# input: pars - c(sig1, ..., sigN, the0), x - var or mean of trait by sp, tree and map
+# input: n - number of species, n.p - which parameter has been updated, pars - c(sig1, ..., sigN, the0), tree and map
 # does: calculate log-likelihood; 
-lik_bm <-function(pars, x, tree, map, ...){
+update_bm <-function(n, n.p, pars, tree, map, ...){
   
-  #extract variables
-	Y <- as.matrix(x)	
-	sig <- pars[-length(pars)] # sigma(s)
-	n  <- length(tree$tip.label)
-	m  <- matrix(1, n, 1)
-	m[,] <- pars[2] # ancestral mean
+  mat <- list(e = list(F),
+              det = list(F),
+              inv = list(F))
+  sig <- pars[-length(pars)] # sigma(s)
+
+	## calculate matricies
 	
-	#calculate matricies
-	V <- v_reg(tree, map, n, sig)[tree$tip.label,tree$tip.label]
-	
-	log.lik.BM <- try((-n/2 * log(2 * pi) - (as.numeric(determinant(V)$modulus))/2 - 1/2 * (t(Y - m)%*%ginv(V)%*%(Y - m))), silent=T)
-	
-	if (is.na(log.lik.BM) | (class(log.lik.BM) == "try-error" )) {
-			return(-Inf)
-	} else {
-		return(log.lik.BM)
+	# theta has been updated: change e
+	if (any(length(pars) %in% n.p)) {
+	  e  <- matrix(1, n, 1)
+	  e[,] <- pars[2] # ancestral mean
+	  mat$e[[1]] <- T
+	  mat$e[[2]] <- e
 	}
+	
+	# sigma(s) have been updated: change v
+	if (any(1:(length(pars)-1) %in% n.p))
+	{
+	  V <- v_bm(tree, map, n, sig)[tree$tip.label,tree$tip.label]
+	  # determinant
+	  det <- as.numeric(determinant(V)$modulus)
+	  mat$det[[1]] <- T
+	  mat$det[[2]] <- det
+	  # inverse
+	  inv <- solve(V)
+	  mat$inv[[1]] <- T
+	  mat$inv[[2]] <- inv
+	}
+	
+	return(mat)
 
 }
 
 
 # input: tree, map, n, T.len, alp
 # does: calculates the vcv matrix according to the different regimes
-v_reg <- function(tree, map, n, sig){
+v_bm <- function(tree, map, n, sig){
   
   if (is.null(tree$edge.length)){
     stop("the tree has no branch lengths")

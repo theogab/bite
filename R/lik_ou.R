@@ -1,35 +1,52 @@
-#' @import ape MASS
+#' @import ape
 
-# input: pars - c(alp,sig,the0,the1...theN), x - var or mean of trait by sp, tree and map
+# input: n - number of species, n.p - which parameter has been updated, pars - c(alp,sig,the0,the1...theN), tree, map, vcv and logical for root.station 
 # does: calculate log-likelihood; see Butler and King 2004, appendix eq. A8 and A9 
-lik_ou <- function(pars, x, tree, map, root.station){
+update_ou <- function(n, n.p, pars, tree, map, t.vcv, root.station){
   
-  # extract variables
+  mat <- list(e = list(F),
+              det = list(F),
+              inv = list(F))
+  
+  ## extract variables
   alp  <- pars[1]
   sig <- pars[2]
   the  <- pars[3:length(pars)]
-  t.vcv  <- vcv(tree)
   T.len  <- t.vcv[1, 1]
-  n <- dim(t.vcv)[1]
-  
-  # calculate matricies
-  if(root.station){
-    w <- w_reg(tree, map, n, T.len, alp)
-  } else {
-    w <- cbind(rep(exp(-alp * T.len), n), w_reg(tree, map, n, T.len, alp))
-  }
-  E <- w%*%the
-  V <- sig/(2 * alp) * (exp(-2 * alp * (T.len-t.vcv)) * (1-exp(-2 * alp * t.vcv)))
-  
-  # log likelihood
-  log.lik.OU <- try((-n * log(2 * pi)/2 - (as.numeric(determinant(V)$modulus))/2 - (t(x - E)%*%ginv(V)%*%(x - E))/2),silent=T)
-  
-  if (is.na(log.lik.OU) | (class( log.lik.OU) == "try-error" )) {
-    return(-Inf)
-  } else {
-    return(log.lik.OU)
+
+  ## calculate matricies
+  # alpha has been updated: change w
+  if (1 %in% n.p) {
+    if(root.station){
+      w <- w_reg(tree, map, n, T.len, alp)
+    } else {
+      w <- cbind(rep(exp(-alp * T.len), n), w_reg(tree, map, n, T.len, alp))
+    }  
   }
   
+  # alpha or theta(s) have been updated: change e
+  if (any(c(1, 3:length(pars)) %in% n.p)) {
+    e <- w%*%the
+    mat$e[[1]] <- T
+    mat$e[[2]] <- e
+  }
+  
+  # alpha or sigma have been updated: change v
+  if (any(c(1,2) %in% n.p))
+  {
+    V <- sig/(2 * alp) * (exp(-2 * alp * (T.len-t.vcv)) * (1-exp(-2 * alp * t.vcv)))
+    # determinant
+    det <- as.numeric(determinant(V)$modulus)
+    mat$det[[1]] <- T
+    mat$det[[2]] <- det
+    # inverse
+    inv <- solve(V)
+    mat$inv[[1]] <- T
+    mat$inv[[2]] <- inv
+  }
+  
+  return(mat)
+
 }
 
 # input: tree, map, n, T.len, alp
