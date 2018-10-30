@@ -73,6 +73,7 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
       }
     } else {
       map <- phy$mapped.edge
+      class(phy) <- "phylo"
     } 
   }
   rownames(map) <- apply(phy$edge, 1, paste, collapse = ",")
@@ -96,11 +97,12 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   ### Global variables ###
 	jive$data$traits 					<- traits[phy$tip.label,]
 	jive$data$counts 					<- apply(traits, 1, function (x) {sum( !is.na(x) )})
-	jive$data$tree   					<- as.phylo(phy)
+	jive$data$n               <- length(phy$tip.label)
+	jive$data$tree   					<- phy
 	jive$data$map             <- map
+	jive$data$vcv             <- vcv(phy)
 	jive$data$root.station   	<- root.station
 	jive$data$scale    	      <- scale
-	
 	
 	
 	### Likelihood parameters ###
@@ -109,7 +111,6 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
 	  jive$lik <- mapply(function(a,b){
 	    if(is.null(b)) a else b}, jive$lik, control$lik, SIMPLIFY = F)
 	}
-
 
 
 	#### Models for means ####
@@ -124,9 +125,17 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
 	  jive$prior.mean <- mapply(function(a,b){
 	    if(is.null(b)) a else b}, jive$prior.mean, control$prior.mean, SIMPLIFY = F)
 	}
+	
+	# Check parameters length relatively to map #
 	if ((model.mean %in% c("OU", "OUM") & ncol(jive$data$map) != ifelse(root.station, length(do.call(c, jive$prior.mean$init)) - 2, length(do.call(c, jive$prior.mean$init)) - 3)) | (model.mean %in% c("BM", "BMM","WN","WNM") & ncol(jive$data$map) != (length(do.call(c, jive$prior.mean$init)) - 1))){
 	  stop("in $prior.mean, number of parameters doesn't correspond to the number of regimes in map")
 	}
+	
+	# Calculate expectation and var/covar matrices #
+	jive$prior.mean$data <- lapply(jive$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.mean$init)),
+	                                  pars = do.call(c,jive$prior.mean$init), tree = jive$data$tree,
+	                                  map = jive$data$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
+	                   function(x) if (x[[1]]) x[[2]])
 	
 	cat("Mean prior model: ",model.mean," [",nreg.mean,"]","\n",sep="")
 	
@@ -145,10 +154,16 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
 	    if(is.null(b)) a else b}, jive$prior.var, control$prior.var)
 	}
 	
-	#### Check parameters length relatively to map ####
+	# Check parameters length relatively to map #
 	if ((model.var %in% c("OU", "OUM") & ncol(jive$data$map) != ifelse(root.station, length(do.call(c, jive$prior.var$init)) - 2, length(do.call(c, jive$prior.var$init)) - 3)) | (model.var %in% c("BM", "BMM","WN","WNM") & ncol(jive$data$map) != (length(do.call(c, jive$prior.var$init)) - 1))){
 	  stop("in $prior.var, number of parameters doesn't correspond to the number of regimes in map")
 	}
+	
+	# Calculate expectation and var/covar matrices #
+	jive$prior.var$data <- lapply(jive$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.var$init)),
+	                                                     pars = do.call(c,jive$prior.var$init), tree = jive$data$tree,
+	                                                     map = jive$data$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
+	                               function(x) if (x[[1]]) x[[2]])
 	
 	cat("Variance prior model: ",model.var," [",nreg.var,"]","\n",sep="")
 	

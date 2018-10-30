@@ -17,7 +17,7 @@
 #' @param burnin a burning phase of MCMC chain (has to be specified for thermodynamic integration)
 #' @param update.freq update frequencies for likelihood and prior level parameters
 #' @export
-#' @author Anna Kostikova, Daniele Silvestro, and Simon Joly
+#' @author Théo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
 #' @return none
 #' @examples
 #'
@@ -39,6 +39,10 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
 				ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0, update.freq = c(0.35,0.2,0.45))
 {
 	
+  # General syntax
+  # 0 : used for claculations
+  # 1 : not used for calculations
+  
   ## checking
   if (length(update.freq) != 3 && !is.null(update.freq)) {
     stop("update.freq must contain 3 elements" )
@@ -66,12 +70,12 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   
   # prior mean level
   pars.m0 <- do.call(c, jive$prior.mean$init)
-  prior.mean0 <- jive$prior.mean$model(pars.m0, m.sp0, jive$data$tree, jive$data$map, jive$data$root.station)
+  prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
   hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
   
   # prior var level
   pars.v0 <- do.call(c, jive$prior.var$init)
-  prior.var0 <- jive$prior.var$model(pars.v0, log(v.sp0), jive$data$tree, jive$data$map, jive$data$root.station)
+  prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
   hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
   
   # mcmc parameters
@@ -129,8 +133,15 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
 			prior.mean1 <- prior.mean0 # ancient prior_mean value is kept
 			hprior.mean1 <- hprior.mean0 # ancient hprior_mean value is kept
 			tmp <- jive$prior.mean$prop[[par.n]](i = pars.m0[par.n], d = do.call(c,jive$prior.mean$ws)[par.n], u) #update with proposal function
-			pars.m0[par.n] <- tmp$v 
-			prior.mean0 <- jive$prior.mean$model(pars.m0, m.sp0, jive$data$tree, jive$data$map, jive$data$root.station) #calculate new values
+			pars.m0[par.n] <- tmp$v
+			# calculate new var/covar and expectation
+			mat.mean1 <- jive$prior.mean$data
+			mat.mean0 <- jive$prior.mean$model(n = jive$data$n, n.p = 1:length(pars.m0),
+			                                  pars = pars.m0, tree = jive$data$tree,
+			                                  map = jive$data$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
+			jive$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
+			# calculate prior and hprior
+			prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
 			hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
 			hasting.ratio <- tmp$lnHastingsRatio
 		} 
@@ -144,7 +155,14 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
 		  hprior.var1 <- hprior.var0 # ancient hprior_var value is kept
 		  tmp <- jive$prior.var$prop[[par.n]](i = pars.v0[par.n], d = do.call(c, jive$prior.var$ws)[par.n], u) #update with proposal function
 		  pars.v0[par.n] <- tmp$v 
-		  prior.var0 <- jive$prior.var$model(pars.v0, log(v.sp0), jive$data$tree, jive$data$map, jive$data$root.station) #calculate new values
+		  # calculate new var/covar and expectation
+		  mat.var1 <- jive$prior.var$data
+		  mat.var0 <- jive$prior.var$model(n = jive$data$n, n.p = 1:length(pars.v0),
+		                                     pars = pars.v0, tree = jive$data$tree,
+		                                     map = jive$data$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
+		  jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
+		  # calculate prior and hprior
+		  prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
 		  hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
 		  hasting.ratio <- tmp$lnHastingsRatio
 		}
@@ -177,12 +195,14 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
 		    pars.m0 <- pars.m1
 		    prior.mean0 <- prior.mean1
 		    hprior.mean0 <- hprior.mean1
+		    jive$prior.mean$data <- mat.mean1
 		  }
 
 		  if (r[3]){
 		    pars.v0 <- pars.v1
 		    prior.var0 <- prior.var1
 		    hprior.var0 <- hprior.var1
+		    jive$prior.var$data <- mat.var1
 		  }
 		}
 
