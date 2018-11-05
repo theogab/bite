@@ -57,26 +57,21 @@
 #' my.jive <- make_jive(treeOU2, traitsOU2, map = mapOU2, model.var="OUM", model.mean="BM")
 
 make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", root.station = F, scale = F, control = list()){
-
-	### validity test ###
-	if (geiger::name.check(phy, traits) != "OK") {
-	  stop("Species do not match in tree and traits")
-	}
-
+  
+  ### validity test ###
+  if (geiger::name.check(phy, traits) != "OK") {
+    stop("Species do not match in tree and traits")
+  }
+  
   ### dealing with the map
   if (is.null(map)) {
     if (is.null(phy$mapped.edge)){ # It is assumed there is only one regime
-      if (any(c(model.var, model.mean) %in% c("OU","BM","WN")))
-        map <- matrix(phy$edge.length)
-      else{
-        stop("No map provided for multi-regime process")
-      }
+      map <- matrix(phy$edge.length)
     } else {
       map <- phy$mapped.edge
       class(phy) <- "phylo"
     } 
   }
-  rownames(map) <- apply(phy$edge, 1, paste, collapse = ",")
   
   if (dim(map)[1] != length(phy$edge.length)) {
     stop("map must provide mapping for every edge of phy")
@@ -93,103 +88,83 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   }
   
   jive <- list()
-	
+  
   ### Global variables ###
-	jive$data$traits 					<- traits[phy$tip.label,]
-	jive$data$counts 					<- apply(traits, 1, function (x) {sum( !is.na(x) )})
-	jive$data$n               <- length(phy$tip.label)
-	jive$data$tree   					<- phy
-	jive$data$map             <- map
-	jive$data$vcv             <- vcv(phy)
-	jive$data$root.station   	<- root.station
-	jive$data$scale    	      <- scale
-	
-	
-	### Likelihood parameters ###
-	jive$lik <- control_jive("lik", traits = traits)
-	if(!is.null(control$lik)){ # evaluate control$lik provided by the user and change jive$lik when specified 
-	  jive$lik <- mapply(function(a,b){
-	    if(is.null(b)) a else b}, jive$lik, control$lik, SIMPLIFY = F)
-	}
-
-
-	#### Models for means ####
-	if(model.mean %in% c("OUM", "WNM", "BMM")){
-	  nreg.mean <- dim(map)[2]
-	} else {
-	  nreg.mean <- 1
-	}
-	
-	jive$prior.mean <- control_jive("prior.mean", model.evo = model.mean, traits = traits, nreg = nreg.mean, root.station = root.station)
-	if(!is.null(control$prior.mean)){ # evaluate control$prior.mean provided by the user and change jive$prior.mean when specified 
-	  jive$prior.mean <- mapply(function(a,b){
-	    if(is.null(b)) a else b}, jive$prior.mean, control$prior.mean, SIMPLIFY = F)
-	}
-	
-	# Check parameters length relatively to map #
-	if ((model.mean %in% c("OU", "OUM") & ncol(jive$data$map) != ifelse(root.station, length(do.call(c, jive$prior.mean$init)) - 2, length(do.call(c, jive$prior.mean$init)) - 3)) | (model.mean %in% c("BM", "BMM","WN","WNM") & ncol(jive$data$map) != (length(do.call(c, jive$prior.mean$init)) - 1))){
-	  stop("in $prior.mean, number of parameters doesn't correspond to the number of regimes in map")
-	}
-	
-	# Calculate expectation and var/covar matrices #
-	jive$prior.mean$data <- lapply(jive$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.mean$init)),
-	                                  pars = do.call(c,jive$prior.mean$init), tree = jive$data$tree,
-	                                  map = jive$data$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
-	                   function(x) if (x[[1]]) x[[2]])
-	
-	cat("Mean prior model: ",model.mean," [",nreg.mean,"]","\n",sep="")
-	
-	
-	
-	#### Models for variance ####
-	if(model.var %in% c("OUM", "WNM", "BMM")){
-	  nreg.var <- dim(map)[2]
-	} else {
-	  nreg.var <- 1
-	}
-	
-	jive$prior.var <- control_jive("prior.var", model.evo = model.var, traits = traits, nreg = nreg.var, root.station = root.station)
-	if(!is.null(control$prior.var)){ # evaluate control$prior.var provided by the user and change jive$prior.var when specified 
-	  jive$prior.var <- mapply(function(a,b){
-	    if(is.null(b)) a else b}, jive$prior.var, control$prior.var)
-	}
-	
-	# Check parameters length relatively to map #
-	if ((model.var %in% c("OU", "OUM") & ncol(jive$data$map) != ifelse(root.station, length(do.call(c, jive$prior.var$init)) - 2, length(do.call(c, jive$prior.var$init)) - 3)) | (model.var %in% c("BM", "BMM","WN","WNM") & ncol(jive$data$map) != (length(do.call(c, jive$prior.var$init)) - 1))){
-	  stop("in $prior.var, number of parameters doesn't correspond to the number of regimes in map")
-	}
-	
-	# Calculate expectation and var/covar matrices #
-	jive$prior.var$data <- lapply(jive$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.var$init)),
-	                                                     pars = do.call(c,jive$prior.var$init), tree = jive$data$tree,
-	                                                     map = jive$data$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
-	                               function(x) if (x[[1]]) x[[2]])
-	
-	cat("Variance prior model: ",model.var," [",nreg.var,"]","\n",sep="")
-	
-	
-	#### Prepare headers of log file ####
-
-	jive$header <- c("Iter", "Posterior", "log.lik", "Prior mean", "Prior var", 
-	                 paste("mean.", rep(names(jive$prior.mean$init), lengths(jive$prior.mean$init)),
-	                       unlist(lapply(lengths(jive$prior.mean$init), function(x){  
-	                          if (x == 1) ""
-	                          else if (model.mean %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
-	                            else seq(1, x)
-	                        } )), sep =""),
-	                 paste("var.", rep(names(jive$prior.var$init), lengths(jive$prior.var$init)),
-	                       unlist(lapply(lengths(jive$prior.var$init), function(x){  
-	                         if (x == 1) ""
-	                         else if (model.var %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
-	                           else seq(1, x)
-	                       } )), sep =""),
-						       paste(rownames(jive$data$traits), "_m", sep=""),
-						       paste(rownames(jive$data$traits), "_v", sep=""),
-						       "acc", "temperature")			
-
-	
-	return(jive)
-
+  jive$data$traits 					<- traits[phy$tip.label,]
+  jive$data$counts 					<- apply(traits, 1, function (x) {sum( !is.na(x) )})
+  jive$data$n               <- length(phy$tip.label)
+  jive$data$tree   					<- phy
+  jive$data$vcv             <- vcv(phy)
+  jive$data$root.station   	<- root.station
+  jive$data$scale    	      <- scale
+  
+  
+  ### Likelihood parameters ###
+  jive$lik <- control_jive("lik", traits = traits)
+  if(!is.null(control$lik)){ # evaluate control$lik provided by the user and change jive$lik when specified 
+    jive$lik <- mapply(function(a,b){
+      if(is.null(b)) a else b}, jive$lik, control$lik, SIMPLIFY = F)
+  }
+  
+  
+  #### Models for means ####
+  jive$prior.mean <- control_jive("prior.mean", model.evo = model.mean, traits = traits, map = map, root.station = root.station)
+  if(!is.null(control$prior.mean)){ # evaluate control$prior.mean provided by the user and change jive$prior.mean when specified 
+    jive$prior.mean <- mapply(function(a,b){
+      if(is.null(b)) a else b}, jive$prior.mean, control$prior.mean, SIMPLIFY = F)
+  }
+  # rownames for map
+  rownames(jive$prior.mean$map) <- apply(phy$edge, 1, paste, collapse = ",")
+  
+  # Calculate expectation and var/covar matrices #
+  jive$prior.mean$data <- lapply(jive$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.mean$init)),
+                                                       pars = do.call(c,jive$prior.mean$init), tree = jive$data$tree,
+                                                       map = jive$prior.mean$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
+                                 function(x) if (x[[1]]) x[[2]])
+  
+  cat("Mean prior model: ",model.mean," [",ncol(jive$prior.mean$map),"]","\n",sep="")
+  
+  
+  
+  #### Models for variance ####
+  jive$prior.var <- control_jive("prior.var", model.evo = model.var, traits = traits,  map = map, root.station = root.station)
+  if(!is.null(control$prior.var)){ # evaluate control$prior.var provided by the user and change jive$prior.var when specified 
+    jive$prior.var <- mapply(function(a,b){
+      if(is.null(b)) a else b}, jive$prior.var, control$prior.var)
+  }
+  # rownames for map
+  rownames(jive$prior.var$map) <- apply(phy$edge, 1, paste, collapse = ",")
+  # Calculate expectation and var/covar matrices #
+  jive$prior.var$data <- lapply(jive$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.var$init)),
+                                                     pars = do.call(c,jive$prior.var$init), tree = jive$data$tree,
+                                                     map = jive$prior.var$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
+                                function(x) if (x[[1]]) x[[2]])
+  
+  cat("Variance prior model: ",model.var," [",ncol(jive$prior.var$map),"]","\n",sep="")
+  
+  
+  #### Prepare headers of log file ####
+  
+  jive$header <- c("Iter", "Posterior", "log.lik", "Prior mean", "Prior var", 
+                   paste("mean.", rep(names(jive$prior.mean$init), lengths(jive$prior.mean$init)),
+                         unlist(lapply(lengths(jive$prior.mean$init), function(x){  
+                           if (x == 1) ""
+                           else if (model.mean %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
+                           else seq(1, x)
+                         } )), sep =""),
+                   paste("var.", rep(names(jive$prior.var$init), lengths(jive$prior.var$init)),
+                         unlist(lapply(lengths(jive$prior.var$init), function(x){  
+                           if (x == 1) ""
+                           else if (model.var %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
+                           else seq(1, x)
+                         } )), sep =""),
+                   paste(rownames(jive$data$traits), "_m", sep=""),
+                   paste(rownames(jive$data$traits), "_v", sep=""),
+                   "acc", "temperature")			
+  
+  
+  return(jive)
+  
 }
 
 
