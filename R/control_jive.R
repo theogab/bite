@@ -17,7 +17,7 @@
 #' @param level character taken in c("lik", "prior.mean", "prior.var") to specify on which level of the jive model, the control will operate (see details)
 #' @param model.evo character taken in c("OU", "BM", "WN", "OUM", "BMM", "WNM") specifying the evolutionary model. ignored if level == "lik"
 #' @param traits matrix of traits value (see details)
-#' @param nreg number of regimes
+#' @param map matrix mapping regimes on every edge of phy
 #' @param window.size initial window size for proposals during the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
 #' @param initial.values starting parameter values of the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
 #' @param proposals vector of characters taken in c("slidingWin", "slidingWinAbs", "logSlidingWinAbs","multiplierProposal", "multiplierProposalLakner","logNormal", "absNormal") to control proposal methods during mcmc algorithm (see details)
@@ -30,13 +30,14 @@
 #' $ws : a list containing the window size of proposals for each estimated parameter
 #' $init : a list containing the starting value of the mcmc chain for each parameter
 #' $prop : a list containing the proposal functions for the update of each parameter
+#' $map (only if level %in% c(prior.mean, prior.var) : a matrix containing the mapping of regimes onto branch for a specific model
 #' $hprior (only if level %in% c(prior.mean, prior.var) : a list containing the hyperprior function for each parameter 
+#' 
 #' @examples
 #' 
 
 control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo = c("BM", "OU", "WN", "OUM", "BMM", "WNM"),
-                          traits, nreg = 1, window.size = NULL, initial.values = NULL, proposals = NULL, hyperprior = NULL, root.station = F){
-  
+                         traits, map, window.size = NULL, initial.values = NULL, proposals = NULL, hyperprior = NULL, root.station = F){
   
   var.sp <- apply(traits, 1, sd, na.rm = T)
   mean.sp <- apply(traits, 1, mean, na.rm = T)
@@ -109,6 +110,13 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     if (grepl("WN", model.evo)){
       # model
       model <- update_wn
+      # map and nreg
+      if(model.evo == "WNM"){
+        nreg <- ncol(map)
+      } else {
+        nreg <- 1
+        map <- as.matrix(rowSums(map))
+      }
       # window size
       if(is.null(window.size)){
         ws <- list()
@@ -146,6 +154,9 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         hprior[[nreg+1]] <- hyperprior[[2]] # theta
       }
       # checking
+      if(model.evo %in% "WNM" & ncol(map) != (length(do.call(c, init)) - 1)){
+        stop("in White Noise with Multiple regimes, number of parameters doesn't correspond to the number of regimes in map")
+      }
       if(any(is.na(c(ws$wn.sig, ws$wn.the))) | any(c(ws$wn.sig) <= 0)){
         stop("window.size is not valid")
       }
@@ -161,7 +172,13 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     if (grepl("BM", model.evo)){
       # model
       model <- update_bm
-      
+      # map and nreg
+      if(model.evo == "BMM"){
+        nreg <- ncol(map)
+      } else {
+        nreg <- 1
+        map <- as.matrix(rowSums(map))
+      }
       # window size
       if(is.null(window.size)){
         ws <- list()
@@ -199,6 +216,9 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         hprior[[nreg+1]] <- hyperprior[[2]] # theta
       }
       # checking
+      if(model.evo %in% "BMM" & ncol(map) != (length(do.call(c, init)) - 1)){
+        stop("in Brownian Motion with Multiple regimes, number of parameters doesn't correspond to the number of regimes in map")
+      }
       if(any(is.na(c(ws$bm.sig, ws$bm.the))) | any(c(ws$bm.sig) <= 0)){
         stop("window.size is not valid")
       }
@@ -214,6 +234,13 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     if (grepl("OU", model.evo)){
       # model
       model <- update_ou
+      # map and nreg
+      if(model.evo == "OUM"){
+        nreg <- ncol(map)
+      } else {
+        nreg <- 1
+        map <- as.matrix(rowSums(map))
+      }
       # window size
       if(is.null(window.size)){
         ws <- list()
@@ -269,6 +296,9 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         }
       }
       # checking
+      if(model.evo %in% "OUM" & ncol(map) != ifelse(root.station, length(do.call(c, init)) - 2, length(do.call(c, init)) - 3)){
+        stop("in Ornstein Uhlenbeck with Multiple regimes, number of parameters doesn't correspond to the number of regimes in map")
+      }
       if(any(is.na(c(ws$ou.alp, ws$ou.sig, ws$ou.the))) | any(c(ws$ou.alp, ws$ou.sig) <= 0)){
         stop("window.size is not valid")
       }
@@ -280,7 +310,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
       }
     }
     
-    return(list(model = model, ws = ws, init = init, prop = prop, hprior = hprior))
+    return(list(model = model, ws = ws, init = init, prop = prop, map = map, hprior = hprior))
     
   }
   
