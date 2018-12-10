@@ -27,6 +27,7 @@
 #' data(regimesOU1)
 #' 
 #' ## Run a simple MCMC chain
+#' set.seed(300)
 #' my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM")
 #' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
 #'
