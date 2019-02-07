@@ -9,23 +9,18 @@ update_ou <- function(n, n.p, pars, tree, map, t.vcv, root.station){
               inv = list(F))
   
   ## extract variables
-  alp  <- pars[1]
+  alp  <- pars[2]/2*pars[1]
   sig <- pars[2]
   the  <- pars[3:length(pars)]
   T.len  <- t.vcv[1, 1]
 
-  ## calculate matricies
-  # alpha has been updated: change w
-  if (1 %in% n.p) {
+  # alpha or theta(s) have been updated: change e
+  if (any(c(1, 3:length(pars)) %in% n.p)) {
     if(root.station){
       w <- w_reg(tree, map, n, T.len, alp)
     } else {
       w <- cbind(rep(exp(-alp * T.len), n), w_reg(tree, map, n, T.len, alp))
     }  
-  }
-  
-  # alpha or theta(s) have been updated: change e
-  if (any(c(1, 3:length(pars)) %in% n.p)) {
     e <- w%*%the
     mat$e[[1]] <- T
     mat$e[[2]] <- e

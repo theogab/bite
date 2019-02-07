@@ -18,36 +18,3 @@ heat_par <- function(ncat=10, beta.param=0.3){
     temp[length(temp)] <- 0.00001 # last category is not exactly 0 to avoid -inf likelihoods
 	return(temp)
 }
-
-       
-initUpdateFreq <- function(update.freq=NULL){
-	# Initializes update frequencies for likelihood and two prior levels.
-	#
-	# Args:
-	# 	update.freq: the vector (length = 3) of update frequencies (likelihood, priorMBM, priorVOU/VBM).
-	#
-	# Returns:
-	#	The vector of update frequencies which sums to 1. 
-	
-	if (length(update.freq) != 3 && !is.null(update.freq)) {
-		stop("Update.freq must contain 3 elements" )
-	}
-	
-	
-	# calculate update frequencies
-	if (!is.null(update.freq)) {
-		update.freq	<- cumsum(update.freq/sum(update.freq))
-	} else {
-		update.freq	<- cumsum(c(0.35,0.2,0.45))
-	}
-	
-	return(update.freq)
-
-}
-
-
-
-
-
-
-

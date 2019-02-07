@@ -17,28 +17,28 @@
 #' @param burnin a burning phase of MCMC chain (has to be specified for thermodynamic integration)
 #' @param update.freq update frequencies for likelihood and prior level parameters
 #' @export
-#' @author Théo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
+#' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
 #' @return none
 #' @examples
 #'
-#'  ## Load test data
-#' data(traitsOU1)
-#' data(treeOU1)
-#' data(regimesOU1)
+#' ## Load test data
+#' data(Anolis_traits)
+#' data(Anolis_tree)
+#' data(Anolis_map)
 #' 
 #' ## Run a simple MCMC chain
-#' my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM")
+#' set.seed(300)
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
 #' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
 #'
 #' ## Run an MCMC chain with thermodynamic integration
 #' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
 
 
-# MCMC MAIN ALGORITHM
 mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000, print.freq = 1000, 
-				ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0, update.freq = c(0.35,0.2,0.45))
+                      ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0, update.freq = c(0.35,0.2,0.45))
 {
-	
+  
   # General syntax
   # 0 : used for claculations
   # 1 : not used for calculations
@@ -47,7 +47,6 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   if (length(update.freq) != 3 && !is.null(update.freq)) {
     stop("update.freq must contain 3 elements" )
   }
-  
   
   ## define the chain length for each category
   it <- ngen/ncat
@@ -70,17 +69,17 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   
   # prior mean level
   pars.m0 <- do.call(c, jive$prior.mean$init)
-  prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+  prior.mean0 <- jive:::calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
   hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
   
   # prior var level
   pars.v0 <- do.call(c, jive$prior.var$init)
-  prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
+  prior.var0 <- jive:::calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
   hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
   
   # mcmc parameters
   cat("generation\tposterior\n")
-  cat(sprintf("%s\t", jive$header), "\n", append = FALSE, file = log.file)
+  cat(jive$header, "\n", sep = "\t", append = FALSE, file = log.file)
   it.beta <- 1
   bet <- beta.class[it.beta]
   if(ncat > 1) cat("beta = ", bet, "\n")
@@ -93,150 +92,150 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   
   
   ## Start iterations
-	for (i in 1:(it*ncat)) {
-		
-	  # test whether we update lik (r[1]), prior_mean (r[2]) or prior_var (r[3])
-	  r <- runif(1) <= update.freq
-	  r[2] <- r[2] & !r[1]
-	  r[3] <- r[3] & !r[2] & !r[1]
-
-		proposals[r] <- proposals[r] + 1
-		
-		if (r[1]) # update m.sp, v.sp, calculate new lik
-		{ 
-			ind <- sample(1:length(m.sp0), 5, replace = F) # 5 is just for now number of species updated
-			u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
-			m.sp1 <- m.sp0
-			v.sp1 <- v.sp0
-			lik1 <- lik0
-			
-			if (runif(1) < 0.5) # change the vector of mean
-			{
-			  tmp <- jive$lik$prop$m.sp(i = m.sp0[ind], d = jive$lik$ws$m.sp[ind], u)
-				m.sp0[ind] <- tmp$v
-			} else # change the vector of var
-			{
-			  tmp <- jive$lik$prop$v.sp(i = v.sp0[ind], d = jive$lik$ws$v.sp[ind], u)
-			  v.sp0[ind] <- tmp$v
-			}
-			
-			lik0 <- jive$lik$model(m.sp0, v.sp0, jive$data$traits, jive$data$counts)
-		  hasting.ratio <- sum(tmp$lnHastingsRatio)
-			
-		}
-
-	  if (r[2]) # update parameters of the mean prior, calculate new prior_mean and new hprior_mean
-	  {
-	    par.n <- sample(1:length(jive$prior.mean$prop), 1) # one parameter at a time for now (update simultaneously sigmas/thetas for multiple regimes?)
-			u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
-			pars.m1 <- pars.m0 # ancient parameter values are kept
-			prior.mean1 <- prior.mean0 # ancient prior_mean value is kept
-			hprior.mean1 <- hprior.mean0 # ancient hprior_mean value is kept
-			tmp <- jive$prior.mean$prop[[par.n]](i = pars.m0[par.n], d = do.call(c,jive$prior.mean$ws)[par.n], u) #update with proposal function
-			pars.m0[par.n] <- tmp$v
-			# calculate new var/covar and expectation
-			mat.mean1 <- jive$prior.mean$data
-			mat.mean0 <- jive$prior.mean$model(n = jive$data$n, n.p = 1:length(pars.m0),
-			                                  pars = pars.m0, tree = jive$data$tree,
-			                                  map = jive$data$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
-			jive$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
-			# calculate prior and hprior
-			prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
-			hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
-			hasting.ratio <- tmp$lnHastingsRatio
-		} 
-
-		if (r[3]) # update parameters of the var prior, calculate new prior_var and new hprior_var
-		{
-		  par.n <- sample(1:length(jive$prior.var$prop), 1) # one parameter at a time for now (update simultaneously sigmas/thetas for multiple regimes?)
-		  u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
-		  pars.v1 <- pars.v0 # ancient parameter values are kept
-		  prior.var1 <- prior.var0 # ancient prior_var value is kept
-		  hprior.var1 <- hprior.var0 # ancient hprior_var value is kept
-		  tmp <- jive$prior.var$prop[[par.n]](i = pars.v0[par.n], d = do.call(c, jive$prior.var$ws)[par.n], u) #update with proposal function
-		  pars.v0[par.n] <- tmp$v 
-		  # calculate new var/covar and expectation
-		  mat.var1 <- jive$prior.var$data
-		  mat.var0 <- jive$prior.var$model(n = jive$data$n, n.p = 1:length(pars.v0),
-		                                     pars = pars.v0, tree = jive$data$tree,
-		                                     map = jive$data$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
-		  jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
-		  # calculate prior and hprior
-		  prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
-		  hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
-		  hasting.ratio <- tmp$lnHastingsRatio
-		}
-		
+  for (i in 1:(it*ncat)) {
+    
+    # test whether we update lik (r[1]), prior_mean (r[2]) or prior_var (r[3])
+    r <- runif(1) <= update.freq
+    r[2] <- r[2] & !r[1]
+    r[3] <- r[3] & !r[2] & !r[1]
+    
+    proposals[r] <- proposals[r] + 1
+    
+    if (r[1]) # update m.sp, v.sp, calculate new lik
+    { 
+      ind <- sample(1:length(m.sp0), 1, replace = F) # 5 is just for now number of species updated
+      u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
+      m.sp1 <- m.sp0
+      v.sp1 <- v.sp0
+      lik1 <- lik0
+      prior.mean1 <- prior.mean0
+      prior.var1 <- prior.var0
+      
+      tmp <- jive$lik$prop$m.sp(i = m.sp0[ind], d = jive$lik$ws$m.sp[ind], u)
+      m.sp0[ind] <- tmp$v
+      prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+        
+      tmp <- jive$lik$prop$v.sp(i = v.sp0[ind], d = jive$lik$ws$v.sp[ind], u)
+      v.sp0[ind] <- tmp$v
+      prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
+      
+      lik0 <- jive$lik$model(m.sp0, v.sp0, jive$data$traits, jive$data$counts)
+      hasting.ratio <- sum(tmp$lnHastingsRatio)
+      
+    }
+    
+    if (r[2]) # update parameters of the mean prior, calculate new prior_mean and new hprior_mean
+    {
+      par.n <- sample(1:length(jive$prior.mean$prop), 1) # one parameter at a time for now (update simultaneously sigmas/thetas for multiple regimes?)
+      u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
+      pars.m1 <- pars.m0 # ancient parameter values are kept
+      prior.mean1 <- prior.mean0 # ancient prior_mean value is kept
+      hprior.mean1 <- hprior.mean0 # ancient hprior_mean value is kept
+      tmp <- jive$prior.mean$prop[[par.n]](i = pars.m0[par.n], d = do.call(c,jive$prior.mean$ws)[par.n], u) #update with proposal function
+      pars.m0[par.n] <- tmp$v
+      # calculate new var/covar and expectation
+      mat.mean1 <- jive$prior.mean$data
+      mat.mean0 <- jive$prior.mean$model(n = jive$data$n, n.p = par.n,
+                                         pars = pars.m0, tree = jive$data$tree,
+                                         map = jive$prior.mean$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
+      jive$prior.mean$data <- lapply(1:length(jive$prior.mean$data), function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
+      # calculate prior and hprior
+      prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+      hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
+      hasting.ratio <- tmp$lnHastingsRatio
+    } 
+    
+    if (r[3]) # update parameters of the var prior, calculate new prior_var and new hprior_var
+    {
+      par.n <- sample(1:length(jive$prior.var$prop), 1) # one parameter at a time for now (update simultaneously sigmas/thetas for multiple regimes?)
+      u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
+      pars.v1 <- pars.v0 # ancient parameter values are kept
+      prior.var1 <- prior.var0 # ancient prior_var value is kept
+      hprior.var1 <- hprior.var0 # ancient hprior_var value is kept
+      tmp <- jive$prior.var$prop[[par.n]](i = pars.v0[par.n], d = do.call(c, jive$prior.var$ws)[par.n], u) #update with proposal function
+      pars.v0[par.n] <- tmp$v 
+      # calculate new var/covar and expectation
+      mat.var1 <- jive$prior.var$data
+      mat.var0 <- jive$prior.var$model(n = jive$data$n, n.p = par.n,
+                                       pars = pars.v0, tree = jive$data$tree,
+                                       map = jive$prior.var$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
+      jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
+      # calculate prior and hprior
+      prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
+      hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
+      hasting.ratio <- tmp$lnHastingsRatio
+    }
+    
     # Posterior calculation
-		post1 <- post0
-		post0 <- (sum(lik0) + (prior.mean0 * bet) + (prior.var0 * bet) + sum(c(hprior.mean0, hprior.var0)))
-		
-		# acceptance probability (log scale)
-		if(any(is.infinite(c(lik0, prior.mean0, prior.var0)))){
-		  pr <- -Inf
-		} else {
-		  pr <- post0 - post1 + hasting.ratio
-		}
-		
-		if (pr >= log(runif(1))) # count acceptance
-		{
-			proposals.accepted[r] <- proposals.accepted[r] + 1
-		} else # cancel changes
-		{
-		  post0 <- post1
-		  
-		  if (r[1]){
-		    m.sp0 <- m.sp1
-		    v.sp0 <- v.sp1
-		    lik0 <- lik1
-		  }
-
-		  if (r[2]){
-		    pars.m0 <- pars.m1
-		    prior.mean0 <- prior.mean1
-		    hprior.mean0 <- hprior.mean1
-		    jive$prior.mean$data <- mat.mean1
-		  }
-
-		  if (r[3]){
-		    pars.v0 <- pars.v1
-		    prior.var0 <- prior.var1
-		    hprior.var0 <- hprior.var1
-		    jive$prior.var$data <- mat.var1
-		  }
-		}
-
-		# log to file with frequency sampling.freq
-		if (i %% sampling.freq == 0 & i >= burnin) {
-			 cat(sprintf("%s\t", c(i, post0, sum(lik0),
-			 prior.mean0, prior.var0, pars.m0, pars.v0,
-			 m.sp0, v.sp0, (sum(proposals.accepted)/i), bet)),
-			 "\n", append=TRUE, file=log.file) 
-		}
-		
-		# Print to screen
-		if (i %% print.freq == 0) {
-			cat(i,'\t',post0,'\n') 
-		}
-		
-		# change beta value if the length of the category is reach 
-		if(i%%it == 0 & i < ngen){
-		  it.beta = it.beta+1
-		  bet <- beta.class[it.beta]
-		  cat("beta = ", bet, "\n")
-		}
-		
-	} # end of for 
+    post1 <- post0
+    post0 <- (sum(lik0) + (prior.mean0 * bet) + (prior.var0 * bet) + sum(c(hprior.mean0, hprior.var0)))
+    
+    # acceptance probability (log scale)
+    if(any(is.infinite(c(lik0, prior.mean0, prior.var0, hprior.mean0, hprior.var0)))){
+      pr <- -Inf
+    } else {
+      pr <- post0 - post1 + hasting.ratio
+    }
+    
+    if (pr >= log(runif(1))) # count acceptance
+    {
+      proposals.accepted[r] <- proposals.accepted[r] + 1
+    } else # cancel changes
+    {
+      post0 <- post1
+      
+      if (r[1]){
+        m.sp0 <- m.sp1
+        v.sp0 <- v.sp1
+        lik0 <- lik1
+        prior.mean0 <- prior.mean1
+        prior.var0 <- prior.var1
+      }
+      
+      if (r[2]){
+        pars.m0 <- pars.m1
+        prior.mean0 <- prior.mean1
+        hprior.mean0 <- hprior.mean1
+        jive$prior.mean$data <- mat.mean1
+      }
+      
+      if (r[3]){
+        pars.v0 <- pars.v1
+        prior.var0 <- prior.var1
+        hprior.var0 <- hprior.var1
+        jive$prior.var$data <- mat.var1
+      }
+    }
+    
+    # log to file with frequency sampling.freq
+    if (i %% sampling.freq == 0 & i >= burnin) {
+      cat(i, post0, sum(lik0), prior.mean0, prior.var0, pars.m0, pars.v0, m.sp0, v.sp0, sum(proposals.accepted)/i, bet, "\n",
+       append=TRUE, file=log.file, sep = "\t") 
+    }
+    
+    # Print to screen
+    if (i %% print.freq == 0) {
+      cat(i,'\t',post0,'\n') 
+    }
+    
+    # change beta value if the length of the category is reach 
+    if(i%%it == 0 & i < ngen){
+      it.beta = it.beta+1
+      bet <- beta.class[it.beta]
+      cat("beta = ", bet, "\n")
+    }
+    
+  } # end of for 
   
-	# Calculate acceptance rate
+  # Calculate acceptance rate
   names(proposals) <- c("means & variances","prior.means","prior.variances")
   cat("\nEffective proposal frequency\n")
   print(proposals/ngen)
-	acceptance.results <- proposals.accepted / proposals
-	names(acceptance.results) <- c("means & variances","prior.means","prior.variances")
-	cat("\nAcceptance ratios\n")
-	print(acceptance.results)
-	
+  acceptance.results <- proposals.accepted / proposals
+  names(acceptance.results) <- c("means & variances","prior.means","prior.variances")
+  cat("\nAcceptance ratios\n")
+  print(acceptance.results)
+  
 }
 
 

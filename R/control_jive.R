@@ -17,29 +17,32 @@
 #' @param level character taken in c("lik", "prior.mean", "prior.var") to specify on which level of the jive model, the control will operate (see details)
 #' @param model.evo character taken in c("OU", "BM", "WN", "OUM", "BMM", "WNM") specifying the evolutionary model. ignored if level == "lik"
 #' @param traits matrix of traits value (see details)
-#' @param nreg number of regimes
+#' @param map matrix mapping regimes on every edge of phy
 #' @param window.size initial window size for proposals during the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
 #' @param initial.values starting parameter values of the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
 #' @param proposals vector of characters taken in c("slidingWin", "slidingWinAbs", "logSlidingWinAbs","multiplierProposal", "multiplierProposalLakner","logNormal", "absNormal") to control proposal methods during mcmc algorithm (see details)
 #' @param hyperprior list of hyperprior functions that can be generated with \code{\link{hpfun}}function. Ignored if level == "lik" (see details)
 #' @param root.station boolean indicating whether the theta_0 should be dropped from the OU or OUM models 
 #' @export
-#' @author Théo Gaboriau
+#' @author Theo Gaboriau
 #' @return A list to parse into control argument of \code{\link{make_jive}} function. The list is containing the following objects:
 #' $model : a function to calculate the likelihood ($lik) or the priors ($prior.mean, $prior_var)
 #' $ws : a list containing the window size of proposals for each estimated parameter
 #' $init : a list containing the starting value of the mcmc chain for each parameter
 #' $prop : a list containing the proposal functions for the update of each parameter
+#' $map (only if level %in% c(prior.mean, prior.var) : a matrix containing the mapping of regimes onto branch for a specific model
 #' $hprior (only if level %in% c(prior.mean, prior.var) : a list containing the hyperprior function for each parameter 
+#' 
 #' @examples
 #' 
 
 control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo = c("BM", "OU", "WN", "OUM", "BMM", "WNM"),
-                          traits, nreg = 1, window.size = NULL, initial.values = NULL, proposals = NULL, hyperprior = NULL, root.station = F){
+                         traits, map, window.size = NULL, initial.values = NULL, proposals = NULL, hyperprior = NULL, root.station = F){
   
-  
-  var.sp <- apply(traits, 1, sd, na.rm = T)
+  var.sp <- apply(traits, 1, var, na.rm = T)
+  var.sp[is.na(var.sp)] <- var(var.sp, na.rm = T)
   mean.sp <- apply(traits, 1, mean, na.rm = T)
+  counts <- apply(traits, 1, function(x) sum(!is.na(x)))
   
   ### Likelihood level ###
   if (level == "lik"){
@@ -49,8 +52,33 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     # window size
     ws <- list()
     if (is.null(window.size)){
-      ws$m.sp <- 2*mean.sp
-      ws$v.sp <- 10*var.sp
+      
+      ## find suitable window sizes for mean and variances
+      ws.mean <- numeric(nrow(traits))
+      names(ws.mean) <- rownames(traits)
+      ws.var <- numeric(nrow(traits))
+      names(ws.var) <- rownames(traits)
+      
+      for(sp in rownames(traits)){
+        
+        mat <- matrix(NA, 100^2, 3)
+        i <- 1
+        for(m in seq(min(traits, na.rm = T),max(traits, na.rm = T), length.out = 100)){ # explore possible means
+          for(v in seq(mean(mean.sp)/100,mean(mean.sp)*100, length.out = 100)){ # explore possible variances (broad choice)
+            mat[i,] <- c(m, v, sum(dnorm(traits[sp,], m, sqrt(v), log = T), na.rm = T))
+            i = i + 1  
+          }
+        }
+        
+        best <- max(mat[,3])
+        acc.i <- mat[which(mat[,3] >= best - 3),]
+        ws.mean[sp] <- mean(abs(acc.i[which.max(acc.i[,3]),1] - acc.i[,1]))
+        ws.var[sp] <- max(acc.i[,2])/min(acc.i[,2])
+        
+      }
+      
+      ws$m.sp <- ws.mean
+      ws$v.sp <- ws.var
     } else {
       ws$m.sp <- window.size[,1]
       ws$v.sp <- window.size[,2]
@@ -69,6 +97,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
       init$m.sp <- initial.values[,1]
       init$v.sp <- initial.values[,2]
     }
+    
     #checking
     if(!length(init$m.sp) == dim(traits)[1] | !length(init$v.sp) == dim(traits)[1] | any(is.na(c(init$m.sp, init$v.sp)))){
       stop("initial.values is not valid")
@@ -102,13 +131,20 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     if (level == "prior.mean"){
       x <- mean.sp
     } else { ## Var prior level ##
-      x <- var.sp
+      x <- log(var.sp)
     }
-    
+
     # White Noise #
     if (grepl("WN", model.evo)){
       # model
       model <- update_wn
+      # map and nreg
+      if(model.evo == "WNM"){
+        nreg <- ncol(map)
+      } else {
+        nreg <- 1
+        map <- as.matrix(rowSums(map))
+      }
       # window size
       if(is.null(window.size)){
         ws <- list()
@@ -140,12 +176,15 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
       # hyper priors
       if (is.null(hyperprior)){
         hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
-        hprior[[nreg+1]] <- hpfun("Uniform", c(-20,10)) # theta
+        hprior[[nreg+1]] <- hpfun("Uniform", c(ifelse(min(x) < 0, 2*min(x),min(x)/2),ifelse(max(x) < 0, max(x)/2,2*max(x)))) # theta
       } else {
         hprior <- lapply(1:nreg, function(x) hyperprior[[1]]) # sigma(s)
         hprior[[nreg+1]] <- hyperprior[[2]] # theta
       }
       # checking
+      if(model.evo %in% "WNM" & ncol(map) != (length(do.call(c, init)) - 1)){
+        stop("in White Noise with Multiple regimes, number of parameters doesn't correspond to the number of regimes in map")
+      }
       if(any(is.na(c(ws$wn.sig, ws$wn.the))) | any(c(ws$wn.sig) <= 0)){
         stop("window.size is not valid")
       }
@@ -161,7 +200,13 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     if (grepl("BM", model.evo)){
       # model
       model <- update_bm
-      
+      # map and nreg
+      if(model.evo == "BMM"){
+        nreg <- ncol(map)
+      } else {
+        nreg <- 1
+        map <- as.matrix(rowSums(map))
+      }
       # window size
       if(is.null(window.size)){
         ws <- list()
@@ -193,12 +238,15 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
       # hyper priors
       if (is.null(hyperprior)){
         hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
-        hprior[[nreg+1]] <- hpfun("Uniform", c(-20,10)) # theta
+        hprior[[nreg+1]] <- hpfun("Uniform", c(ifelse(min(x) < 0, 2*min(x),min(x)/2),ifelse(max(x) < 0, max(x)/2,2*max(x)))) # theta
       } else {
         hprior <- lapply(1:nreg, function(x) hyperprior[[1]]) # sigma(s)
         hprior[[nreg+1]] <- hyperprior[[2]] # theta
       }
       # checking
+      if(model.evo %in% "BMM" & ncol(map) != (length(do.call(c, init)) - 1)){
+        stop("in Brownian Motion with Multiple regimes, number of parameters doesn't correspond to the number of regimes in map")
+      }
       if(any(is.na(c(ws$bm.sig, ws$bm.the))) | any(c(ws$bm.sig) <= 0)){
         stop("window.size is not valid")
       }
@@ -214,27 +262,34 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     if (grepl("OU", model.evo)){
       # model
       model <- update_ou
+      # map and nreg
+      if(model.evo == "OUM"){
+        nreg <- ncol(map)
+      } else {
+        nreg <- 1
+        map <- as.matrix(rowSums(map))
+      }
       # window size
       if(is.null(window.size)){
         ws <- list()
-        ws$ou.alp <- 0.5
+        ws$ou.sv <- 0.5
         ws$ou.sig <- 2
         ws$ou.the <- rep(sd(x), nreg + ifelse(root.station, 0, 1)) # 2 in the previous version?
       } else {
         ws <- list()
-        ws$ou.alp <- window.size[1]
+        ws$ou.sv <- window.size[1]
         ws$ou.sig <- window.size[2]
         ws$ou.the <- window.size[3:(nreg + ifelse(root.station, 2, 3))]
       }
       # initial parameter values
       if(is.null(initial.values)){
         init <- list()
-        init$ou.alp <- runif(1, 0.1, 1)
+        init$ou.sv <- runif(1, 0.1, 1)
         init$ou.sig <- runif(1, 0.5, 3)
         init$ou.the <- rep(mean(x), nreg + ifelse(root.station, 0, 1))
       } else {
         init <- list()
-        init$ou.alp <- initial.values[1]
+        init$ou.sv <- initial.values[1]
         init$ou.sig <- initial.values[2]
         init$ou.the <- initial.values[3:(nreg+ ifelse(root.station, 2, 3))]
       }
@@ -259,7 +314,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         hprior[[1]] <- hpfun("Gamma", c(1.1,5))
         hprior[[2]]	<- hpfun("Gamma", c(1.1,5))
         for(i in 3:(nreg+ ifelse(root.station, 2, 3))){
-          hprior[[i]]	<- hpfun("Uniform", c(-20,10)) ## <- test loggamma??
+          hprior[[i]]	<- hpfun("Uniform",  c(ifelse(min(x) < 0, 2*min(x),min(x)/2),ifelse(max(x) < 0, max(x)/2,2*max(x)))) ## <- test loggamma??
         }
       } else {
         hprior[[1]] <- hyperprior[[1]]
@@ -269,10 +324,13 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         }
       }
       # checking
-      if(any(is.na(c(ws$ou.alp, ws$ou.sig, ws$ou.the))) | any(c(ws$ou.alp, ws$ou.sig) <= 0)){
+      if(model.evo %in% "OUM" & ncol(map) != ifelse(root.station, length(do.call(c, init)) - 2, length(do.call(c, init)) - 3)){
+        stop("in Ornstein Uhlenbeck with Multiple regimes, number of parameters doesn't correspond to the number of regimes in map")
+      }
+      if(any(is.na(c(ws$ou.sv, ws$ou.sig, ws$ou.the))) | any(c(ws$ou.sv, ws$ou.sig) <= 0)){
         stop("window.size is not valid")
       }
-      if(any(is.na(c(init$ou.alp, init$ou.sig, init$ou.the))) | any(c(init$ou.alp, init$ou.sig) <= 0)){
+      if(any(is.na(c(init$ou.sv, init$ou.sig, init$ou.the))) | any(c(init$ou.sv, init$ou.sig) <= 0)){
         stop("initial.values is not valid")
       }
       if(is.finite(hprior[[1]](-1))){
@@ -280,7 +338,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
       }
     }
     
-    return(list(model = model, ws = ws, init = init, prop = prop, hprior = hprior))
+    return(list(model = model, ws = ws, init = init, prop = prop, map = map, hprior = hprior))
     
   }
   

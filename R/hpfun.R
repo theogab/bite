@@ -8,21 +8,17 @@
 #' Uniform, Gamma and Normal. Each of these densities requires two input parameters and hp.pars 
 #' must be a vector of two values and cannot be left empty.
 #' 
-#' 
-#' 
-#' 
 #' @param hpf name of a density function. Supported density functions are: Uniform, Gamma and Normal
 #' @param hp.pars a vector of density function parameters
 #' @param ... additional parameters that can be passed to a density function
-#' @return Hyper-prior density function (function)
 #' @export
 #' @author Anna Kostikova and Daniele Silvestro
 #' @return A hyper-prior density function (function)
 #' @examples
-#' my.hp <- make.hpfun(hpf="Uniform", hp.pars=c(1,2))
+#' my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
 
 
-hpfun <-function(hpf="Uniform", hp.pars, ...){
+hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	# Function that makes function of hyper prior
 	#
 	# Args:
@@ -63,6 +59,14 @@ hpfun <-function(hpf="Uniform", hp.pars, ...){
 			return(hp)
 		}
 	}
+  
+  #log normal
+  if (hpf == "Lognormal"){
+    my.f <- function(x, ...){
+      hp <- sum(dnorm(exp(x), mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
+      return(hp)
+    }
+  }	
 		
 	return(my.f)
   
