@@ -17,18 +17,18 @@
 #' @param burnin a burning phase of MCMC chain (has to be specified for thermodynamic integration)
 #' @param update.freq update frequencies for likelihood and prior level parameters
 #' @export
-#' @author Théo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
+#' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
 #' @return none
 #' @examples
 #'
-#'  ## Load test data
-#' data(traitsOU1)
-#' data(treeOU1)
-#' data(regimesOU1)
+#' ## Load test data
+#' data(Anolis_traits)
+#' data(Anolis_tree)
+#' data(Anolis_map)
 #' 
 #' ## Run a simple MCMC chain
 #' set.seed(300)
-#' my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM")
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
 #' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
 #'
 #' ## Run an MCMC chain with thermodynamic integration
@@ -80,7 +80,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   
   # mcmc parameters
   cat("generation\tposterior\n")
-  cat(sprintf("%s\t", jive$header), "\n", append = FALSE, file = log.file)
+  cat(jive$header, "\n", sep = "\t", append = FALSE, file = log.file)
   it.beta <- 1
   bet <- beta.class[it.beta]
   if(ncat > 1) cat("beta = ", bet, "\n")
@@ -104,20 +104,25 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
     
     if (r[1]) # update m.sp, v.sp, calculate new lik
     { 
-      ind <- sample(1:length(m.sp0), 5, replace = F) # 5 is just for now number of species updated
+      ind <- sample(1:length(m.sp0), 1, replace = F) # 5 is just for now number of species updated
       u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
       m.sp1 <- m.sp0
       v.sp1 <- v.sp0
       lik1 <- lik0
+      prior.mean1 <- prior.mean0
+      prior.var1 <- prior.var0
       
       if (runif(1) < 0.5) # change the vector of mean
       {
         tmp <- jive$lik$prop$m.sp(i = m.sp0[ind], d = jive$lik$ws$m.sp[ind], u)
         m.sp0[ind] <- tmp$v
+        prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+        
       } else # change the vector of var
       {
         tmp <- jive$lik$prop$v.sp(i = v.sp0[ind], d = jive$lik$ws$v.sp[ind], u)
         v.sp0[ind] <- tmp$v
+        prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
       }
       
       lik0 <- jive$lik$model(m.sp0, v.sp0, jive$data$traits, jive$data$counts)
@@ -172,12 +177,12 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
     post0 <- (sum(lik0) + (prior.mean0 * bet) + (prior.var0 * bet) + sum(c(hprior.mean0, hprior.var0)))
     
     # acceptance probability (log scale)
-    if(any(is.infinite(c(lik0, prior.mean0, prior.var0)))){
+    if(any(is.infinite(c(lik0, prior.mean0, prior.var0, hprior.mean0, hprior.var0)))){
       pr <- -Inf
     } else {
       pr <- post0 - post1 + hasting.ratio
     }
-    
+
     if (pr >= log(runif(1))) # count acceptance
     {
       proposals.accepted[r] <- proposals.accepted[r] + 1
@@ -189,6 +194,8 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
         m.sp0 <- m.sp1
         v.sp0 <- v.sp1
         lik0 <- lik1
+        prior.mean0 <- prior.mean1
+        prior.var0 <- prior.var1
       }
       
       if (r[2]){
@@ -208,10 +215,8 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
     
     # log to file with frequency sampling.freq
     if (i %% sampling.freq == 0 & i >= burnin) {
-      cat(sprintf("%s\t", c(i, post0, sum(lik0),
-                            prior.mean0, prior.var0, pars.m0, pars.v0,
-                            m.sp0, v.sp0, (sum(proposals.accepted)/i), bet)),
-          "\n", append=TRUE, file=log.file) 
+      cat(i, post0, sum(lik0), prior.mean0, prior.var0, pars.m0, pars.v0, m.sp0, v.sp0, sum(proposals.accepted)/i, bet, "\n",
+       append=TRUE, file=log.file, sep = "\t") 
     }
     
     # Print to screen

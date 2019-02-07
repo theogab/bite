@@ -14,3 +14,4 @@ License: GPL-2
 Repository: CRAN
 NeedsCompilation: no
 Packaged: 2018-02-15 17:01:47 UTC; simjoly
+RoxygenNote: 6.1.1
