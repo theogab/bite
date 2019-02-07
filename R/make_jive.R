@@ -26,8 +26,8 @@
 #' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
 #' @param control list to control tuning parameters of the MCMC algorithm (see details)
 #' @export
-#' @imports ape
-#' @author Anna Kostikova, Simon Joly and Théo Gaboriau
+#' @import ape
+#' @author Theo Gaboriau, Anna Kostikova and Simon Joly
 #' @return A jive object to parse into mcmc_jive function
 #' @examples
 #' library(OUwie)
@@ -69,7 +69,6 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
       map <- matrix(phy$edge.length)
     } else {
       map <- phy$mapped.edge
-      class(phy) <- "phylo"
     } 
   }
   
@@ -91,16 +90,17 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   
   ### Global variables ###
   jive$data$traits 					<- traits[phy$tip.label,]
-  jive$data$counts 					<- apply(traits, 1, function (x) {sum( !is.na(x) )})
+  jive$data$counts 					<- apply(jive$data$traits, 1, function (x) {sum( !is.na(x) )})
   jive$data$n               <- length(phy$tip.label)
   jive$data$tree   					<- phy
   jive$data$vcv             <- vcv(phy)
   jive$data$root.station   	<- root.station
   jive$data$scale    	      <- scale
+  jive$data$map             <- map
   
   
   ### Likelihood parameters ###
-  jive$lik <- control_jive("lik", traits = traits)
+  jive$lik <- control_jive("lik", traits = jive$data$traits)
   if(!is.null(control$lik)){ # evaluate control$lik provided by the user and change jive$lik when specified 
     jive$lik <- mapply(function(a,b){
       if(is.null(b)) a else b}, jive$lik, control$lik, SIMPLIFY = F)
@@ -108,7 +108,7 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   
   
   #### Models for means ####
-  jive$prior.mean <- control_jive("prior.mean", model.evo = model.mean, traits = traits, map = map, root.station = root.station)
+  jive$prior.mean <- control_jive("prior.mean", model.evo = model.mean, traits = jive$data$traits, map = map, root.station = root.station)
   if(!is.null(control$prior.mean)){ # evaluate control$prior.mean provided by the user and change jive$prior.mean when specified 
     jive$prior.mean <- mapply(function(a,b){
       if(is.null(b)) a else b}, jive$prior.mean, control$prior.mean, SIMPLIFY = F)
@@ -127,7 +127,7 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   
   
   #### Models for variance ####
-  jive$prior.var <- control_jive("prior.var", model.evo = model.var, traits = traits,  map = map, root.station = root.station)
+  jive$prior.var <- control_jive("prior.var", model.evo = model.var, traits = jive$data$traits,  map = map, root.station = root.station)
   if(!is.null(control$prior.var)){ # evaluate control$prior.var provided by the user and change jive$prior.var when specified 
     jive$prior.var <- mapply(function(a,b){
       if(is.null(b)) a else b}, jive$prior.var, control$prior.var)
