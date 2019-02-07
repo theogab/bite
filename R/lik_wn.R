@@ -64,7 +64,7 @@ v_wn <- function(tree, map, n, sig){
   # compute the diagonal
   diag.elts <- 1 + 0:(n - 1) * (n + 1)
   vcv[diag.elts] <- xx[1:n]
-  dimnames(vcv)[1:2] <- list(phy$tip.label)
+  dimnames(vcv)[1:2] <- list(tree$tip.label)
   
   return(vcv)
   
