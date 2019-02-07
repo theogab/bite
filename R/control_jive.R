@@ -60,7 +60,6 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
       names(ws.var) <- rownames(traits)
       
       for(sp in rownames(traits)){
-        
         mat <- matrix(NA, 100^2, 3)
         i <- 1
         for(m in seq(min(traits, na.rm = T),max(traits, na.rm = T), length.out = 100)){ # explore possible means
@@ -71,7 +70,12 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         }
         
         best <- max(mat[,3])
-        acc.i <- mat[which(mat[,3] >= best - 3),]
+        thr <- 3
+        while(length(which(mat[,3] >= best - thr))==1){
+          thr = thr + 1
+        }
+        acc.i <- mat[which(mat[,3] >= best - thr),]
+        
         ws.mean[sp] <- mean(abs(acc.i[which.max(acc.i[,3]),1] - acc.i[,1]))
         ws.var[sp] <- max(acc.i[,2])/min(acc.i[,2])
         
