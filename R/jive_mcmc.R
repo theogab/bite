@@ -35,7 +35,6 @@
 #' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
 
 
-# MCMC MAIN ALGORITHM
 mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000, print.freq = 1000, 
                       ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0, update.freq = c(0.35,0.2,0.45))
 {
@@ -70,12 +69,12 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   
   # prior mean level
   pars.m0 <- do.call(c, jive$prior.mean$init)
-  prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+  prior.mean0 <- jive:::calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
   hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
   
   # prior var level
   pars.v0 <- do.call(c, jive$prior.var$init)
-  prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
+  prior.var0 <- jive:::calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
   hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
   
   # mcmc parameters
@@ -112,18 +111,13 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       prior.mean1 <- prior.mean0
       prior.var1 <- prior.var0
       
-      if (runif(1) < 0.5) # change the vector of mean
-      {
-        tmp <- jive$lik$prop$m.sp(i = m.sp0[ind], d = jive$lik$ws$m.sp[ind], u)
-        m.sp0[ind] <- tmp$v
-        prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+      tmp <- jive$lik$prop$m.sp(i = m.sp0[ind], d = jive$lik$ws$m.sp[ind], u)
+      m.sp0[ind] <- tmp$v
+      prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
         
-      } else # change the vector of var
-      {
-        tmp <- jive$lik$prop$v.sp(i = v.sp0[ind], d = jive$lik$ws$v.sp[ind], u)
-        v.sp0[ind] <- tmp$v
-        prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
-      }
+      tmp <- jive$lik$prop$v.sp(i = v.sp0[ind], d = jive$lik$ws$v.sp[ind], u)
+      v.sp0[ind] <- tmp$v
+      prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
       
       lik0 <- jive$lik$model(m.sp0, v.sp0, jive$data$traits, jive$data$counts)
       hasting.ratio <- sum(tmp$lnHastingsRatio)
@@ -141,10 +135,10 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       pars.m0[par.n] <- tmp$v
       # calculate new var/covar and expectation
       mat.mean1 <- jive$prior.mean$data
-      mat.mean0 <- jive$prior.mean$model(n = jive$data$n, n.p = 1:length(pars.m0),
+      mat.mean0 <- jive$prior.mean$model(n = jive$data$n, n.p = par.n,
                                          pars = pars.m0, tree = jive$data$tree,
                                          map = jive$prior.mean$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
-      jive$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
+      jive$prior.mean$data <- lapply(1:length(jive$prior.mean$data), function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
       # calculate prior and hprior
       prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
       hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
@@ -162,7 +156,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       pars.v0[par.n] <- tmp$v 
       # calculate new var/covar and expectation
       mat.var1 <- jive$prior.var$data
-      mat.var0 <- jive$prior.var$model(n = jive$data$n, n.p = 1:length(pars.v0),
+      mat.var0 <- jive$prior.var$model(n = jive$data$n, n.p = par.n,
                                        pars = pars.v0, tree = jive$data$tree,
                                        map = jive$prior.var$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
       jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
@@ -182,7 +176,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
     } else {
       pr <- post0 - post1 + hasting.ratio
     }
-
+    
     if (pr >= log(runif(1))) # count acceptance
     {
       proposals.accepted[r] <- proposals.accepted[r] + 1
