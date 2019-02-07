@@ -64,7 +64,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
         mat <- matrix(NA, 100^2, 3)
         i <- 1
         for(m in seq(min(traits, na.rm = T),max(traits, na.rm = T), length.out = 100)){ # explore possible means
-          for(v in seq(mean(mean.sp)/100,mean(mean.sp)*100, length.out = 100)){ # explore possible variances (broad choice)
+          for(v in seq(cumsum(-range(traits, na.rm = T))[1]/100,cumsum(-range(traits, na.rm = T))[1]*100, length.out = 100)){ # explore possible variances (broad choice)
             mat[i,] <- c(m, v, sum(dnorm(traits[sp,], m, sqrt(v), log = T), na.rm = T))
             i = i + 1  
           }
