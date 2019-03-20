@@ -1,17 +1,15 @@
 Package: jive
 Type: Package
-Title: Analysis of joint intra- and interspecific trait evolution
-Version: 0.1
-Date: 2018-07-11
-Author: Anna Kostikova <anna.kostikova@unil.ch>, Daniele Silvestro <daniele.Silvestro@unil.ch>, Sacha Laurent <Sacha.Laurent@unil.ch>, Martha Serrano <martha.serrano@unil.ch>, Glenn Litsios <glenn.litsios@unil.ch>, Wim Hordijk <wim@WorldWideWanderings.net>, Nicolas Salamin <nicolas.salamin@unil.ch>, Simon Joly <joly.simon@gmail.com>
-Maintainer: Simon Joly <joly.simon@gmail.com>
-Description: macroevolutionary analysis of joint intra- and interspecific variance evolution using comparative phylogenetic models. In addition, it can traitgrams through time based on various comparative models such as Brownian motion, Ornstein-Uhlenbeck, etc.
+Title: Analysis of joint intra and inter-specific trait evolution
+Version: 0.3
+Date: 2019-03-19
+Author: Theo Gaboriau <theo.gaboriau@unil.ch>, Anna Kostikova <anna.kostikova@unil.ch>, Daniele Silvestro <daniele.Silvestro@unil.ch>, Sacha Laurent <Sacha.Laurent@unil.ch>, Martha Serrano <martha.serrano@unil.ch>, Glenn Litsios <glenn.litsios@unil.ch>, Wim Hordijk <wim@WorldWideWanderings.net>, Nicolas Salamin <nicolas.salamin@unil.ch>, Simon Joly <joly.simon@gmail.com>
+Maintainer: Theo Gaboriau <theo.gaboriau@unil.ch>
+Description: macroevolutionary analysis of joint intra and inter-specific variance evolution using comparative phylogenetic models. 
 Depends: R (>= 3.0.3)
-Imports: OUwie, nloptr, ape, MASS, phytools, TeachingDemos, hdrcde,
-        akima, coda, scales, TreeSim, gtools, geiger, picante,
-        MCMCpack, phyclust
+Imports: ape, MASS, phytools, coda, sm, vioplot
 License: GPL-2
 Repository: CRAN
 NeedsCompilation: no
-Packaged: 2018-02-15 17:01:47 UTC; simjoly
+Packaged: 2019-03-19 17:01:47 UTC; simjoly
 RoxygenNote: 6.1.1

@@ -18,11 +18,11 @@
 #' logfile <- "my.jive_MCMC.log"
 #' res <- read.csv(logfile, header = T, sep = "\t")
 #'  
-#' mlik <- marginal.lik(res)
+#' mlik <- marginal_lik(res)
 #' mlik
 
 
-marginal.lik <- function(mcmc.log) {
+marginal_lik <- function(mcmc.log) {
 
 	if (!("Posterior" %in% colnames(mcmc.log))) stop('No \'Posterior\' column in the log file')
 	if (!("temperature" %in% colnames(mcmc.log))) stop('No \'temperature\' column in the log file')

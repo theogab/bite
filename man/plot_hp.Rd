@@ -4,12 +4,10 @@
 \alias{plot_hp}
 \title{plot Hyper-prior function}
 \usage{
-plot_hp(hpf = "Uniform", hp.pars = c(1, 2), ...)
+plot_hp(hpf, range, col = NULL, border = NULL, ...)
 }
 \arguments{
 \item{hpf}{name of a density function. Supported density functions are: Uniform, Gamma and Normal}
-
-\item{hp.pars}{a vector of density function parameters}
 
 \item{...}{additional parameters that can be passed to a density function and  \code{\link{par}}}
 }

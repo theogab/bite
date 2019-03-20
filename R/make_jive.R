@@ -26,11 +26,10 @@
 #' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
 #' @param control list to control tuning parameters of the MCMC algorithm (see details)
 #' @export
-#' @import ape
+#' @import ape 
 #' @author Theo Gaboriau, Anna Kostikova and Simon Joly
 #' @return A jive object to parse into mcmc_jive function
 #' @examples
-#' library(OUwie)
 #' library(phytools)
 #' library(MASS)
 #' 
@@ -59,7 +58,7 @@
 make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", root.station = F, scale = F, control = list()){
   
   ### validity test ###
-  if (geiger::name.check(phy, traits) != "OK") {
+  if (!all(phy$tip.label %in% rownames(traits))) {
     stop("Species do not match in tree and traits")
   }
   

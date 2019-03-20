@@ -9,7 +9,6 @@
 #' must be a vector of two values and cannot be left empty.
 #' 
 #' @param hpf name of a density function. Supported density functions are: Uniform, Gamma and Normal
-#' @param hp.pars a vector of density function parameters
 #' @param ... additional parameters that can be passed to a density function and  \code{\link{par}}
 #' @export
 #' @author Theo Gaboriau
@@ -18,56 +17,22 @@
 #' my.hp <- plot_hp(hpf="Uniform", hp.pars=c(1,2))
 
 
-plot_hp <- function(hpf = "Uniform", hp.pars = c(1,2), ...){
-
-  ss <- 1e6
+plot_hp <- function(hpf, range, col = NULL, border = NULL, ...){
   
-  #uniform
-  if (hpf == "Uniform"){
-    my.f <- function(x, ...){
-      hp <- runif(x, min=hp.pars[1], max=hp.pars[2])
-      return(hp)
-    }
-    n.pars = paste0(hpf, " density: min = ", hp.pars[1], ", max = ", hp.pars[2])
+  ss <- seq(range[1], range[2], length.out = 1e4)
+  d <- exp(sapply(ss, hpf))
+  plot(d~ss, type = "n", xlab = "x", ylab = "density", ...)
+  if(is.null(border) & is.null(col)){
+    col <- "#2e86ab"
+  } 
+  if(is.null(border)){
+    polygon(ss, d, col = col, border = NA)
+  } else if(is.null(col)){
+    lines(ss, d, col = border)
+  } else {
+    polygon(ss, d, col = col, border = NA)
+    lines(ss, d, col = border)
   }
-  
-  #gamma
-  if (hpf == "Gamma"){
-    my.f <- function(x, ...){
-      hp <- rgamma(x, shape=hp.pars[1], scale=hp.pars[2])
-      return(hp)
-    }
-    n.pars =paste0(hpf, " density: scale = ", hp.pars[1], ", shape = ", hp.pars[2])
-  }
-  
-  #normal
-  if (hpf == "Normal"){
-    my.f <- function(x, ...){
-      hp <- rnorm(x, mean=hp.pars[1], sd=hp.pars[2])
-      return(hp)
-    }
-    n.pars = paste0(hpf, " density: mean = ", hp.pars[1], ", sd = ", hp.pars[2])
-  }	
-  
-  #log gamma
-  if (hpf == "Loggamma"){
-    my.f <- function(x, ...){
-      hp <- log(rgamma(x, shape=hp.pars[1], scale=hp.pars[2]))
-      return(hp)
-    }
-    n.pars =paste0(hpf, " density: scale = ", hp.pars[1], ", shape = ", hp.pars[2])
-  }
-  
-  #log normal
-  if (hpf == "Lognormal"){
-    my.f <- function(x, ...){
-      hp <- log(rnorm(x, mean=hp.pars[1], sd=hp.pars[2]))
-      return(hp)
-    }
-    n.pars = paste0(hpf, " density: mean = ", hp.pars[1], ", sd = ", hp.pars[2])
-  }	
-  
-  plot(density(my.f(ss)), main = n.pars, xlab = "x")
       
 }
 
