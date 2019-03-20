@@ -48,7 +48,6 @@ control is a list containig tuning parameters acting at different levels of the 
 The \code{\link{control_jive}} function provides an easy way to modify control parameters (see examples)
 }
 \examples{
-library(OUwie)
 library(phytools)
 library(MASS)
 

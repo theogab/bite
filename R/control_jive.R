@@ -42,6 +42,7 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
   var.sp <- apply(traits, 1, var, na.rm = T)
   var.sp[is.na(var.sp)] <- var(var.sp, na.rm = T)
   mean.sp <- apply(traits, 1, mean, na.rm = T)
+  ran.sp <- apply(traits, 1, range, na.rm = T)
   counts <- apply(traits, 1, function(x) sum(!is.na(x)))
   
   ### Likelihood level ###
@@ -52,37 +53,8 @@ control_jive <- function(level = c("lik", "prior.mean", "prior.var"), model.evo 
     # window size
     ws <- list()
     if (is.null(window.size)){
-      
-      ## find suitable window sizes for mean and variances
-      ws.mean <- numeric(nrow(traits))
-      names(ws.mean) <- rownames(traits)
-      ws.var <- numeric(nrow(traits))
-      names(ws.var) <- rownames(traits)
-      
-      for(sp in rownames(traits)){
-        mat <- matrix(NA, 100^2, 3)
-        i <- 1
-        for(m in seq(min(traits, na.rm = T),max(traits, na.rm = T), length.out = 100)){ # explore possible means
-          for(v in seq(cumsum(-range(traits, na.rm = T))[1]/100,cumsum(-range(traits, na.rm = T))[1]*100, length.out = 100)){ # explore possible variances (broad choice)
-            mat[i,] <- c(m, v, sum(dnorm(traits[sp,], m, sqrt(v), log = T), na.rm = T))
-            i = i + 1  
-          }
-        }
-        
-        best <- max(mat[,3])
-        thr <- 3
-        while(length(which(mat[,3] >= best - thr))==1){
-          thr = thr + 1
-        }
-        acc.i <- mat[which(mat[,3] >= best - thr),]
-        
-        ws.mean[sp] <- mean(abs(acc.i[which.max(acc.i[,3]),1] - acc.i[,1]))
-        ws.var[sp] <- max(acc.i[,2])/min(acc.i[,2])
-        
-      }
-      
-      ws$m.sp <- ws.mean
-      ws$v.sp <- ws.var
+        ws$m.sp <- var.sp
+        ws$v.sp <- ran.sp[1,]/ran.sp[2,]
     } else {
       ws$m.sp <- window.size[,1]
       ws$v.sp <- window.size[,2]

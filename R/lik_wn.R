@@ -51,11 +51,11 @@ v_wn <- function(tree, map, n, sig){
   e1 <- tree$edge[, 1]
   e2 <- tree$edge[, 2]
   el <- map[paste(e1, e2, sep = ","),]
-  if (dim(map)[2] == 1) el <- matrix(el) # a subset into a one column matrix becomes a vector (thanks R!)
+  if (dim(map)[2] == 1) el <- matrix(el) # a subset into a one column matrix becomes a vector
   xx <- numeric(n + tree$Nnode)
   vcv <- matrix(0, n, n)
   
-  # for each edge, calculate the variance accumulated rom the root
+  # for each edge, calculate the variance accumulated from the root
   for(i in length(e1):1) { #loop ascending from the root to the first tip
     var.cur.node <- xx[e1[i]]
     xx[e2[i]] <- var.cur.node + sum(el[i,] * sig) # branch length under each regime * sig[regime]

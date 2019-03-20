@@ -10,10 +10,6 @@ The **jive** R package implements the Joint Inter- and intraspecific Variance Ev
 
 ## Installation
 
-### Manual installation
-
-TODO: Download either the source files or the binaries for the [latest release](https://github.com/simjoly/pofadinr/releases) and install them in R.
-
 ### Direct installation in R
 
 You first need to install the devtools package.
@@ -25,8 +21,6 @@ $> library(devtools)
 $> install_github("theogab/jive-package")
 
 ### Source and binaries 
-
-TODO: Check the [latest release](https://github.com/simjoly/pofadinr/releases).
 
 ## Notes
 
