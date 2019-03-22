@@ -4,6 +4,7 @@
 #' @param traits trait data used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}
 #' @param mcmc.log the output file of a \code{\link{jive_mcmc}} run
 #' @param tip An integer giving the row corresponding to the species to be plotted
+#' @param burnin The size of the burnin in number of iterations or the proportion of iteration you want to remove
 #' @param label A character giving the species name
 #' @param conf A number of [0,1] giving the confidence level desired.
 #' @param stat A character giving the function to be used to estimate species mean and variance from the posterior distributions. Must be one of be "mean" and "median"
@@ -21,10 +22,12 @@
 #' 
 
 
-plot_pvo <- function(traits, mcmc.log, tip = 1, label = "tip 1", conf = 0.95, stat = "median", trait.lab = "trait",
+plot_pvo <- function(traits, mcmc.log, tip = 1, burnin = 0, label = "tip 1", conf = 0.95, stat = "median", trait.lab = "trait",
                           col = NULL, border = NULL, legend = F, lolipop = T,...){
   
   chain <- as.mcmc(mcmc.log[,sprintf(c("%s_m", "%s_v"), rownames(traits)[tip])])
+  
+  if(burnin < 1) burnin <- burnin * nrow(mcmc.log)
   
   hpd <- HPDinterval(chain)
   if(stat == "median") mid <- apply(chain,2,median)

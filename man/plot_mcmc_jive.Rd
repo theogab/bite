@@ -4,16 +4,16 @@
 \alias{plot_mcmc_jive}
 \title{Plot \code{\link{jive_mcmc}} results}
 \usage{
-plot_mcmc_jive(mcmc.log, type = c("trace", "density"), burnin = NULL,
-  variable = "log.lik", label = "log(Likelihood)", col = "#000000",
-  ...)
+plot_mcmc_jive(mcmc.log, type = c("trace", "density"), burnin = 0,
+  variable = "log.lik", label = variable, col = "#000000",
+  cex.est = 1, ...)
 }
 \arguments{
 \item{mcmc.log}{Any mcmc sample with the saved iterations in rows and the variables in columns}
 
 \item{type}{character taken in c("trace", "density"). If both are specified, they are plotted side by side in the same graphical device}
 
-\item{burnin}{The size of the burnin in number of iterations}
+\item{burnin}{The size of the burnin in number of iterations or the proportion of iteration you want to remove}
 
 \item{label}{Full variable name to be plotted}
 
@@ -43,8 +43,8 @@ logfile <- "my.jive_MCMC.log"
 res <- read.csv(logfile, header = T, sep = "\\t")
 
 ## plot the results
-for(variable in colnames(res)[-c(1, 2, 4, 5, 44, 45)]){
- plot_mcmc_jive(res, burnin = 0, variable = variable, lab = variable)
+for(variable in colnames(res)[3]){
+ plot_mcmc_jive(res, burnin = 0, variable = variable, cex.est = .7)
 }
 }
 \author{

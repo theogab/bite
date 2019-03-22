@@ -4,8 +4,8 @@
 \alias{make_jive}
 \title{Create a list that can be used as an input to mcmc_jive}
 \usage{
-make_jive(phy, traits, map = NULL, model.var = "OU",
-  model.mean = "BM", root.station = F, scale = F, control = list())
+make_jive(phy, traits, map = NULL, model.mean = "BM",
+  model.var = "OU", root.station = F, scale = F, control = list())
 }
 \arguments{
 \item{phy}{phylogenetic tree provided as either a simmap or a phylo object}
@@ -14,9 +14,9 @@ make_jive(phy, traits, map = NULL, model.var = "OU",
 
 \item{map}{matrix mapping regimes on every edge of phy (see details)}
 
-\item{model.var}{model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")}
-
 \item{model.mean}{model specification for trait mean evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")}
+
+\item{model.var}{model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")}
 
 \item{root.station}{boolean indicating whether the theta_0 should be dropped from the OU or OUM models}
 
@@ -25,7 +25,7 @@ make_jive(phy, traits, map = NULL, model.var = "OU",
 \item{control}{list to control tuning parameters of the MCMC algorithm (see details)}
 }
 \value{
-A jive object to parse into mcmc_jive function
+A list of functions and tuning parameters to parse into \code{\link{mcmc_jive}} function.
 }
 \description{
 This function creates a jive object from a matrix of intraspecific observations
@@ -48,30 +48,17 @@ control is a list containig tuning parameters acting at different levels of the 
 The \code{\link{control_jive}} function provides an easy way to modify control parameters (see examples)
 }
 \examples{
-library(phytools)
-library(MASS)
 
-data(treeOU1)
-data(traitsOU1)
+## Load test data
+data(Anolis_traits)
+data(Anolis_tree)
+data(Anolis_map)
 
-#VOU and MBM with one regime and without mcmc parameter tuning
-my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM")
+## JIVE object to run jive with single regimes
+my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
 
-#VOU and MBM with one regime and with mcmc parameter tuning
-# control argument can be built using control_jive
-my.control <- list(lik = control_jive("lik", traits = traitsOU1, initial.ws = cbind(apply(traitsOU1, 1, mean, na.rm = T),apply(traitsOU1, 1, sd, na.rm = T))),
-                   prior.mean = control_jive("prior.mean", model.evo = "BM", traits = traitsOU1, initial.pv = c(1,2)))
-my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM", control = my.control)                   
-
-data(treeOU2)
-data(traitsOU2)
-data(regimesOU2)
-
-#VOUM and MBM with two regimes using simmap tree
-my.jive <- make_jive(treeOU2, traitsOU2,  model.var="OUM", model.mean="BM")
-
-#VOUM and MBM with two regimes using map
-my.jive <- make_jive(treeOU2, traitsOU2, map = mapOU2, model.var="OUM", model.mean="BM")
+## JIVE object to run jive with multiple regimes
+my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.mean="BM", model.var="OUM")
 }
 \author{
 Theo Gaboriau, Anna Kostikova and Simon Joly

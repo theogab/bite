@@ -5,64 +5,51 @@
 \title{Plots summary of Bayes Factors calculations}
 \usage{
 plot_bf(m.liks, thr = 2, dir = c("vertical", "horizontal"),
-  col = c("#000000", "#2e86ab", "#d32f23"), col.thr = c("#a6e1fa"),
-  ax.lab = "Bayes Factor", main = "", mod.lab = "default",
-  rank = T, group = c("mean", "var"), cex = c(1, 1, 2),
-  lwd.l = c(1, 1, 2), srt.lab = 0, adj.lab = 0,
-  col.axis = c("#000000", "#2e86ab", "#d32f23"), cex.axis = c(0.8, 0.8,
-  1), space = c(1.2, 0.8))
+  col = c("#d32f23", "#2e86ab", "#000000"), col.thr = c("#a6e1fa"),
+  ax.lab = expression(Delta ~ "BF"), main = "", mod.lab = NULL,
+  rank = T, dec = T, group.pattern = NULL, cex = c(1.2, 1, 1),
+  srt.lab = 0, adj.lab = 0, space = c(1.2, 0.8))
 }
 \arguments{
 \item{m.liks}{matrix of marginal likelihoods (see details)}
 
-\item{thr}{value of BF threshold for model selction (default is 2)}
+\item{thr}{value of BF threshold for model selection (default is 2), Several thresholds can be given in the form of a vector}
 
-\item{col}{color of the lines and dots. Could be of size one two or three. The first element applies to models that are above thr, the last element applies to the best model, the middle element applies to models that are below thr}
+\item{col}{color of the lines and dots. Could be of size one or more. The first element applies to the best model, the second to the ones below thr[1] and so on...}
 
-\item{col.thr}{color for the threshold area}
+\item{col.thr}{color for the threshold area (must be at the sime length as thr)}
 
-\item{rank}{should models be ranked by BF scores? (default is TRUE)}
+\item{ax.lab}{label of the axis.}
 
-\item{group}{only evaluated if rank == F, character indicating whether the models should be grouped regarding the evolutionnary model on "mean" or "var"}
+\item{mod.lab}{name of the models. If mod.lab = NULL the names of m.liks are used}
 
-\item{cex}{size of the dots. Could be of size one two or three. The first element applies to models that are above thr, the last element applies to the best model, the middle element applies to models that are below thr}
+\item{rank}{logical: should models be ranked by BF scores? (default is TRUE)}
 
-\item{lwd.l}{thickness of the lines. Could be of size one two or three. The first element applies to models that are above thr, the last element applies to the best model, the middle element applies to models that are below thr}
+\item{dec}{logical: should models be displayed in decreasing order? (default is TRUE)}
 
-\item{col.axis}{color of axis annotation. Could be of size one two or three. The first element applies to models that are above thr, the last element applies to the best model, the middle element applies to models that are below thr}
+\item{group.pattern}{Regular expression given a pattern to be matched in names(m.liks). The values matching that pattern will be grouped in the plot}
 
-\item{space}{only evaluated if rank == F, numeric(2) indicating the space between groups and the space between members of the same groups}
+\item{cex}{size of the dots and width of the lines. Could be of size one or more. The first element applies to the best model, the second to the ones below thr[1] and so on...}
 
-\item{ylab}{name of the models. If ylab = "default" the dimnames of m.liks are used}
+\item{space}{only evaluated if group.pattern != NULL, numeric(2) indicating the space between groups and the space between members of the same groups}
 }
 \description{
 Lolipop plot representing values of BF (Bayes Factor) scores for different models
 }
 \examples{
-## Load test data
-data(Anolis_traits)
-data(Anolis_tree)
-data(Anolis_map)
+## Fake marginal likelihood data
+m.liks <- c(20 ,33, 56, 51, 55, 12)
+names(m.liks) <- c("MBM-VBM", "MBM-VWN", "MBM-VOU", "MOU-VBM", "MOU-VWN", "MOU-VOU")
 
-## Run a MCMC chain with thermodynamic Integration
-mean_models <- c("BM", "OU")
-var_models <- c("BM", "OU", "BMM", "OUM")
-mliks <- matrix(0, nrow = 2, ncol = 4, dimnames = list(mean_models, var_models))
-
-for(mn in mean_models){
- for(vr in var_models){
-  my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var=vr, model.mean=mn)
-  logfile <- sprintf("my.jive_MCMC_M-\%s_V-\%s.log", mn, vr)
-  mcmc_jive(my.jive, log.file=logfile, ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500)
-  res <- read.table(logfile, header = T, sep = "\\t")
-  mliks[mn,vr] <- marginal.lik(res)
- }
-}
-
-plot_bf(mliks)
-plot_bf(mliks, thr = 4)
-plot_bf(mliks, thr = 4, rank = F, group = "mean")
-plot_bf(mliks, dir = "horizontal", srt.lab = -60, adj.lab = c(.3,-1))
+#Does not go well with default margin sizes
+par(mar = c(5,1,4,6))
+plot_bf(m.liks)
+plot_bf(m.liks, thr = c(2,6), col.thr = c("#a2c5ac", "#ade1e5"), col = c("#d32f23", "#468189","#2e86ab","#000000"), cex = c(1.2,1,0.8,0.8))
+plot_bf(m.liks, group.pattern = "MBM", rank = F)
+plot_bf(m.liks, group.pattern = "MOU", rank = T)
+plot_bf(m.liks, group.pattern = c("VWN", "VOU", "VBM"), rank = T)
+par(mar = c(6,5,1,2))
+plot_bf(m.liks, dir = "horizontal", srt.lab = -60, adj.lab = c(0,0.8))
 }
 \author{
 Theo Gaboriau

@@ -20,42 +20,31 @@
 #' @param phy phylogenetic tree provided as either a simmap or a phylo object
 #' @param traits matrix of traits value for every species of phy (see details)
 #' @param map matrix mapping regimes on every edge of phy (see details) 
-#' @param model.var model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")
 #' @param model.mean model specification for trait mean evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")				
+#' @param model.var model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")
 #' @param root.station boolean indicating whether the theta_0 should be dropped from the OU or OUM models 
 #' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
 #' @param control list to control tuning parameters of the MCMC algorithm (see details)
 #' @export
 #' @import ape 
 #' @author Theo Gaboriau, Anna Kostikova and Simon Joly
-#' @return A jive object to parse into mcmc_jive function
+#' @return A list of functions and tuning parameters to parse into \code{\link{mcmc_jive}} function.
 #' @examples
-#' library(phytools)
-#' library(MASS)
 #' 
-#' data(treeOU1)
-#' data(traitsOU1)
+#' ## Load test data
+#' data(Anolis_traits)
+#' data(Anolis_tree)
+#' data(Anolis_map)
 #' 
-#' #VOU and MBM with one regime and without mcmc parameter tuning
-#' my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM")
-#' 
-#' #VOU and MBM with one regime and with mcmc parameter tuning
-#' # control argument can be built using control_jive
-#' my.control <- list(lik = control_jive("lik", traits = traitsOU1, initial.ws = cbind(apply(traitsOU1, 1, mean, na.rm = T),apply(traitsOU1, 1, sd, na.rm = T))),
-#'                    prior.mean = control_jive("prior.mean", model.evo = "BM", traits = traitsOU1, initial.pv = c(1,2)))
-#' my.jive <- make_jive(treeOU1, traitsOU1,  model.var="OU", model.mean="BM", control = my.control)                   
-#' 
-#' data(treeOU2)
-#' data(traitsOU2)
-#' data(regimesOU2)
-#' 
-#' #VOUM and MBM with two regimes using simmap tree
-#' my.jive <- make_jive(treeOU2, traitsOU2,  model.var="OUM", model.mean="BM")
-#' 
-#' #VOUM and MBM with two regimes using map
-#' my.jive <- make_jive(treeOU2, traitsOU2, map = mapOU2, model.var="OUM", model.mean="BM")
+#' ## JIVE object to run jive with single regimes
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
+#'
+#' ## JIVE object to run jive with multiple regimes
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.mean="BM", model.var="OUM")
 
-make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", root.station = F, scale = F, control = list()){
+
+
+make_jive <- function(phy, traits, map = NULL, model.mean="BM", model.var="OU", root.station = F, scale = F, control = list()){
   
   ### validity test ###
   if (!all(phy$tip.label %in% rownames(traits))) {
@@ -98,20 +87,13 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   jive$data$map             <- map
   
   
+  dt <- default_tuning(model.mean = model.mean, model.var = model.var, traits = jive$data$traits, map = jive$data$map, root.station = jive$data$root.station)
   ### Likelihood parameters ###
-  jive$lik <- control_jive("lik", traits = jive$data$traits)
-  if(!is.null(control$lik)){ # evaluate control$lik provided by the user and change jive$lik when specified 
-    jive$lik <- mapply(function(a,b){
-      if(is.null(b)) a else b}, jive$lik, control$lik, SIMPLIFY = F)
-  }
-  
+  jive$lik <- dt$lik
   
   #### Models for means ####
-  jive$prior.mean <- control_jive("prior.mean", model.evo = model.mean, traits = jive$data$traits, map = map, root.station = root.station)
-  if(!is.null(control$prior.mean)){ # evaluate control$prior.mean provided by the user and change jive$prior.mean when specified 
-    jive$prior.mean <- mapply(function(a,b){
-      if(is.null(b)) a else b}, jive$prior.mean, control$prior.mean, SIMPLIFY = F)
-  }
+  jive$prior.mean <- dt$prior.mean
+  
   # rownames for map
   rownames(jive$prior.mean$map) <- apply(phy$edge, 1, paste, collapse = ",")
   
@@ -123,16 +105,12 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   
   cat("Mean prior model: ",model.mean," [",ncol(jive$prior.mean$map),"]","\n",sep="")
   
-  
-  
   #### Models for variance ####
-  jive$prior.var <- control_jive("prior.var", model.evo = model.var, traits = jive$data$traits,  map = map, root.station = root.station)
-  if(!is.null(control$prior.var)){ # evaluate control$prior.var provided by the user and change jive$prior.var when specified 
-    jive$prior.var <- mapply(function(a,b){
-      if(is.null(b)) a else b}, jive$prior.var, control$prior.var)
-  }
+  jive$prior.var <- dt$prior.var
+
   # rownames for map
   rownames(jive$prior.var$map) <- apply(phy$edge, 1, paste, collapse = ",")
+  
   # Calculate expectation and var/covar matrices #
   jive$prior.var$data <- lapply(jive$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.var$init)),
                                                      pars = do.call(c,jive$prior.var$init), tree = jive$data$tree,
@@ -141,10 +119,12 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
   
   cat("Variance prior model: ",model.var," [",ncol(jive$prior.var$map),"]","\n",sep="")
   
+  ## Checks
+  check_tuning(jive)
   
   #### Prepare headers of log file ####
   
-  jive$header <- c("Iter", "Posterior", "log.lik", "Prior mean", "Prior var", 
+  jive$header <- c("iter", "posterior", "log.lik", "prior mean", "prior var", 
                    paste("mean.", rep(names(jive$prior.mean$init), lengths(jive$prior.mean$init)),
                          unlist(lapply(lengths(jive$prior.mean$init), function(x){  
                            if (x == 1) ""
@@ -161,7 +141,7 @@ make_jive <- function(phy, traits, map = NULL, model.var="OU", model.mean="BM", 
                    paste(rownames(jive$data$traits), "_v", sep=""),
                    "acc", "temperature")			
   
-  
+  class(jive) <- c("JIVE", "list")
   return(jive)
   
 }

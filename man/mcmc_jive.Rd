@@ -6,7 +6,7 @@
 \usage{
 mcmc_jive(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   print.freq = 1000, ncat = 1, beta.param = 0.3, ngen = 5e+06,
-  burnin = 0, update.freq = c(0.35, 0.2, 0.45))
+  burnin = 0)
 }
 \arguments{
 \item{jive}{an object of class "jive" (see details)}
@@ -24,8 +24,6 @@ mcmc_jive(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
 \item{ngen}{number of generation in MCMC chain}
 
 \item{burnin}{a burning phase of MCMC chain (has to be specified for thermodynamic integration)}
-
-\item{update.freq}{update frequencies for likelihood and prior level parameters}
 }
 \value{
 none
@@ -53,7 +51,7 @@ my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM
 mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
 
 ## Run an MCMC chain with thermodynamic integration
-mcmc_jive(my.jive, log.file="my.jive_MCMC.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
+mcmc_jive(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
 }
 \author{
 Theo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
