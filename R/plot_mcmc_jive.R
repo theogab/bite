@@ -27,19 +27,20 @@
 #' res <- read.csv(logfile, header = T, sep = "\t")
 #' 
 #' ## plot the results
-#' for(variable in colnames(res)[3]){
-#'  plot_mcmc_jive(res, burnin = 0, variable = variable, cex.est = .7)
-#' }
+#' plot_mcmc_jive(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
+#' 
 
 plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = 0, variable = "log.lik",
-                           label = variable, col = "#000000", cex.est = 1, ...){
+                           label = ifelse(is.numeric(variable),colnames(mcmc.log)[variable], variable), col = "#000000", cex.est = 1, ...){
   
   par(mar =c(5,4,2,1))
   if(length(type) == 2){
     par(mfrow = c(1,2))
   }
   
-  if(!is.null(burnin)){
+  if(is.numeric(variable)) variable <- colnames(mcmc.log)[variable]
+  
+  if(burnin>0){
     if(burnin < 1) burnin <- burnin*nrow(mcmc.log)
     burn <- mcmc.log[,"iter"] <= burnin
   } else {
@@ -51,7 +52,7 @@ plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = 0, v
   hpd <- HPDinterval(x[,variable])
   
   if("trace" %in% type){
-    plot(mcmc.log[,"iter"], mcmc.log[,variable], type = "l", ylab = label, xlab = "Iterations", las = 1, ...)
+    plot(mcmc.log[,"iter"], mcmc.log[,variable], type = "l", ylab = label, xlab = "Iterations", las = 1, ylim = range(mcmc.log[!burn,variable]), ...)
     lines(mcmc.log[burn,"iter"], mcmc.log[burn,variable], col = adjustcolor("#FFFFFF", .7))
     mtext(sprintf("Estimated sample size: ESS = %s", ess), 3, at = 0, adj = 0, cex = cex.est)
   }
@@ -61,7 +62,7 @@ plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = 0, v
     whpd <- dens$x >= hpd[,1] & dens$x <= hpd[,2]
     plot(dens$x, dens$y, type = "l", las = 1, xlab = label, ylab = "Density", ...)
     polygon(c(hpd[,1], dens$x[whpd], hpd[,2]), c(0, dens$y[whpd], 0), col = adjustcolor(col, .7), border = NA)
-    mtext(sprintf("HPD = [%s,%s] ; mean = %s", round(hpd[1], 2), round(hpd[2], 2), round(mean(x[,variable]), 2)), 3, adj = 0, cex = cex.est)
+    mtext(sprintf("HPD [%s,%s] ; mean = %s", round(hpd[1], 2), round(hpd[2], 2), round(mean(x[,variable]), 2)), 3, adj = 0, cex = cex.est)
   }
 
 }
