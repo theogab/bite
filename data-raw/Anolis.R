@@ -14,6 +14,7 @@ for(i in 1:nrow(Anolis_tree$edge)){
   island <- unique(data[data[,1] %in% Anolis_tree$tip.label[descendants(Anolis_tree, Anolis_tree$edge[i,2])],2])
   Anolis_map[i,island == c("cybotes", "sagrei")] <- 1
 }
+Anolis_map <- Anolis_map * Anolis_tree$edge.length
 
 Anolis_traits <- sapply(unique(data[,1]), function(x){
   data$svl.mm[data[,1] == x]
