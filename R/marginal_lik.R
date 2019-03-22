@@ -25,8 +25,8 @@
 
 marginal_lik <- function(mcmc.log, burnin = 0) {
 
-	if (!("prior.mean" %in% colnames(mcmc.log))) stop('No \'Prior_mean\' column in the log file')
-  if (!("prior.var" %in% colnames(mcmc.log))) stop('No \'Prior_var\' column in the log file')
+	if (!("Prior.mean" %in% colnames(mcmc.log))) stop('No \'Prior_mean\' column in the log file')
+  if (!("Prior.var" %in% colnames(mcmc.log))) stop('No \'Prior_var\' column in the log file')
 	if (!("temperature" %in% colnames(mcmc.log))) stop('No \'temperature\' column in the log file')
 
 	# Get mean marginal likelihood for each temperature
