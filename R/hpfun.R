@@ -27,12 +27,14 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	#
 	# Returns:
 	#	Hyper-prior function (function).
-
+  
+  force(hp.pars)
+  
   #uniform
 	if (hpf == "Uniform"){
 		my.f <- function(x, ...){
 			hp <- sum(dunif(x, min=hp.pars[1], max=hp.pars[2], log=TRUE))
-			return(hp)
+			return(c(hp, hp.pars))
 		}
 	}
 		
@@ -40,7 +42,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	if (hpf == "Gamma"){
 		my.f <- function(x, ...){
 			hp <- sum(dgamma(x, shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
-			return(hp)
+			return(c(hp, hp.pars))
 		}
 	}
 		
@@ -48,7 +50,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	if (hpf == "Normal"){
 		my.f <- function(x, ...){
 			hp <- sum(dnorm(x, mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
-			return(hp)
+			return(c(hp, hp.pars))
 		}
 	}	
 		
@@ -56,7 +58,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	if (hpf == "Loggamma"){
 		my.f <- function(x, ...){
 			hp <- sum(dgamma(exp(x), shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
-			return(hp)
+			return(c(hp, hp.pars))
 		}
 	}
   
@@ -64,7 +66,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
   if (hpf == "Lognormal"){
     my.f <- function(x, ...){
       hp <- sum(dnorm(exp(x), mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
-      return(hp)
+      return(c(hp, hp.pars))
     }
   }	
 		

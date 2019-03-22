@@ -4,9 +4,9 @@
 \alias{plot_pvo}
 \title{Plots estimates of species traits distribution}
 \usage{
-plot_pvo(traits, mcmc.log, tip = 1, label = "tip 1", conf = 0.95,
-  stat = "median", trait.lab = "trait", col = NULL, border = NULL,
-  legend = F, lolipop = T, ...)
+plot_pvo(traits, mcmc.log, tip = 1, burnin = 0, label = "tip 1",
+  conf = 0.95, stat = "median", trait.lab = "trait", col = NULL,
+  border = NULL, legend = F, lolipop = T, ...)
 }
 \arguments{
 \item{traits}{trait data used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}}
@@ -14,6 +14,8 @@ plot_pvo(traits, mcmc.log, tip = 1, label = "tip 1", conf = 0.95,
 \item{mcmc.log}{the output file of a \code{\link{jive_mcmc}} run}
 
 \item{tip}{An integer giving the row corresponding to the species to be plotted}
+
+\item{burnin}{The size of the burnin in number of iterations or the proportion of iteration you want to remove}
 
 \item{label}{A character giving the species name}
 

@@ -15,7 +15,6 @@
 #' @param beta.param beta value to define classes for thermodynamic integration (see details)
 #' @param ngen number of generation in MCMC chain
 #' @param burnin a burning phase of MCMC chain (has to be specified for thermodynamic integration)
-#' @param update.freq update frequencies for likelihood and prior level parameters
 #' @export
 #' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
 #' @return none
@@ -32,25 +31,22 @@
 #' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
 #'
 #' ## Run an MCMC chain with thermodynamic integration
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
+#' mcmc_jive(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
 
 
 mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000, print.freq = 1000, 
-                      ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0, update.freq = c(0.35,0.2,0.45))
+                      ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0)
 {
   
   # General syntax
   # 0 : used for claculations
   # 1 : not used for calculations
   
-  ## checking
-  if (length(update.freq) != 3 && !is.null(update.freq)) {
-    stop("update.freq must contain 3 elements" )
-  }
-  
   ## define the chain length for each category
   it <- ngen/ncat
   
+  ## burnin
+  if(burnin < 1) burnin <- burnin*it
   
   ## get the heating parameter for a chain - scaling classes
   if (ncat > 1) {
@@ -70,19 +66,21 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   # prior mean level
   pars.m0 <- do.call(c, jive$prior.mean$init)
   prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
-  hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
+  hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[1,]
   
   # prior var level
   pars.v0 <- do.call(c, jive$prior.var$init)
   prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
-  hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
+  hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[1,]
   
   # mcmc parameters
   cat("generation\tposterior\n")
-  cat(jive$header, "\n", sep = "\t", append = FALSE, file = log.file)
+  cat(paste(jive$header, collapse = "\t"), "\n", append = FALSE, file = log.file)
   it.beta <- 1
   bet <- beta.class[it.beta]
   if(ncat > 1) cat("beta = ", bet, "\n")
+  # making sure the update frequencies sum to 1
+  update.freq <- c(jive$lik$update.freq, jive$prior.mean$update.freq, jive$prior.var$update.freq)
   update.freq <- cumsum(update.freq/sum(update.freq))
   proposals <- c(0,0,0) # 1st number: update means and variance; 2nd: update mean priors, 3rd: update variance prior
   proposals.accepted <- c(0,0,0)
@@ -209,8 +207,8 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
     
     # log to file with frequency sampling.freq
     if (i %% sampling.freq == 0 & i >= burnin) {
-      cat(i, post0, sum(lik0), prior.mean0, prior.var0, pars.m0, pars.v0, m.sp0, v.sp0, sum(proposals.accepted)/i, bet, "\n",
-       append=TRUE, file=log.file, sep = "\t") 
+      cat(paste(c(i, post0, sum(lik0), prior.mean0, prior.var0, pars.m0, pars.v0, m.sp0, v.sp0, sum(proposals.accepted)/i, bet), collapse = "\t"), "\n",
+       append=TRUE, file=log.file) 
     }
     
     # Print to screen

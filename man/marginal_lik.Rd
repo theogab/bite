@@ -4,7 +4,7 @@
 \alias{marginal_lik}
 \title{Calculate marginal likelihood by thermodynamic integration (LTI)}
 \usage{
-marginal_lik(mcmc.log)
+marginal_lik(mcmc.log, burnin = 0)
 }
 \arguments{
 \item{mcmc.log}{the output file of a \code{\link{jive_mcmc}} run}

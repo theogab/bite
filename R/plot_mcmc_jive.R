@@ -3,7 +3,7 @@
 #' @details  
 #' @param mcmc.log Any mcmc sample with the saved iterations in rows and the variables in columns
 #' @param type character taken in c("trace", "density"). If both are specified, they are plotted side by side in the same graphical device
-#' @param burnin The size of the burnin in number of iterations
+#' @param burnin The size of the burnin in number of iterations or the proportion of iteration you want to remove
 #' @param var The name or number of the variable to plot
 #' @param label Full variable name to be plotted
 #' @param ... Other graphical parameters to parse to \code{\link{par()}}
@@ -27,11 +27,12 @@
 #' res <- read.csv(logfile, header = T, sep = "\t")
 #' 
 #' ## plot the results
-#' for(variable in colnames(res)[-c(1, 2, 4, 5, 44, 45)]){
-#'  plot_mcmc_jive(res, burnin = 0, variable = variable, lab = variable)
+#' for(variable in colnames(res)[3]){
+#'  plot_mcmc_jive(res, burnin = 0, variable = variable, cex.est = .7)
 #' }
 
-plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = NULL, variable = "log.lik", label = "log(Likelihood)", col = "#000000", ...){
+plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = 0, variable = "log.lik",
+                           label = variable, col = "#000000", cex.est = 1, ...){
   
   par(mar =c(5,4,2,1))
   if(length(type) == 2){
@@ -39,7 +40,8 @@ plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = NULL
   }
   
   if(!is.null(burnin)){
-    burn <- mcmc.log[,"Iter"] <= burnin
+    if(burnin < 1) burnin <- burnin*nrow(mcmc.log)
+    burn <- mcmc.log[,"iter"] <= burnin
   } else {
     burn <- rep(F, nrow(mcmc.log))
   }
@@ -49,9 +51,9 @@ plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = NULL
   hpd <- HPDinterval(x[,variable])
   
   if("trace" %in% type){
-    plot(mcmc.log[,"Iter"], mcmc.log[,variable], type = "l", ylab = label, xlab = "Iterations", las = 1, ...)
-    lines(mcmc.log[burn,"Iter"], mcmc.log[burn,variable], col = adjustcolor("#FFFFFF", .7))
-    mtext(sprintf("Estimated sample size: ESS = %s", ess), 3, at = 0, adj = 0)
+    plot(mcmc.log[,"iter"], mcmc.log[,variable], type = "l", ylab = label, xlab = "Iterations", las = 1, ...)
+    lines(mcmc.log[burn,"iter"], mcmc.log[burn,variable], col = adjustcolor("#FFFFFF", .7))
+    mtext(sprintf("Estimated sample size: ESS = %s", ess), 3, at = 0, adj = 0, cex = cex.est)
   }
 
   if("density" %in% type){
@@ -59,6 +61,7 @@ plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = NULL
     whpd <- dens$x >= hpd[,1] & dens$x <= hpd[,2]
     plot(dens$x, dens$y, type = "l", las = 1, xlab = label, ylab = "Density", ...)
     polygon(c(hpd[,1], dens$x[whpd], hpd[,2]), c(0, dens$y[whpd], 0), col = adjustcolor(col, .7), border = NA)
+    mtext(sprintf("HPD = [%s,%s] ; mean = %s", round(hpd[1], 2), round(hpd[2], 2), round(mean(x[,variable]), 2)), 3, adj = 0, cex = cex.est)
   }
 
 }
