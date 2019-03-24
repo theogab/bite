@@ -4,9 +4,9 @@
 \alias{plot_pvo}
 \title{Plots estimates of species traits distribution}
 \usage{
-plot_pvo(traits, mcmc.log, tip = 1, burnin = 0, label = "tip 1",
-  conf = 0.95, stat = "median", trait.lab = "trait", col = NULL,
-  border = NULL, legend = F, lolipop = T, ...)
+plot_pvo(traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95,
+  stat = "median", trait.lab = "trait", col = NULL, border = NULL,
+  legend = F, lolipop = T, ...)
 }
 \arguments{
 \item{traits}{trait data used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}}
@@ -16,8 +16,6 @@ plot_pvo(traits, mcmc.log, tip = 1, burnin = 0, label = "tip 1",
 \item{tip}{An integer giving the row corresponding to the species to be plotted}
 
 \item{burnin}{The size of the burnin in number of iterations or the proportion of iteration you want to remove}
-
-\item{label}{A character giving the species name}
 
 \item{conf}{A number of [0,1] giving the confidence level desired.}
 
@@ -30,6 +28,8 @@ plot_pvo(traits, mcmc.log, tip = 1, burnin = 0, label = "tip 1",
 \item{border}{color of denstiy contour. Could be of size one or two. If border = NULL, no borders are plotted}
 
 \item{lolipop}{a logical specifying wether the sample positions should be presented as lolipops}
+
+\item{label}{A character giving the species name}
 }
 \description{
 Density plot representing estimated species trait distributions under a jive model.
@@ -39,8 +39,16 @@ This function plots the mean or median density distribution and the HPD distribu
 ## Load test data
 data(Anolis_traits)
 data(Anolis_tree)
-data(Anolis_map)
 
+# Run a simple MCMC chain
+my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM", root.station = T)
+mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
+
+## import the results in R
+logfile <- "my.jive_mcmc.log"
+res <- read.csv(logfile, header = T, sep = "\\t")
+
+plot_pvo(Anolis_traits, res, 5)
 }
 \author{
 Theo Gaboriau

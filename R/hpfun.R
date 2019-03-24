@@ -8,7 +8,7 @@
 #' Uniform, Gamma and Normal. Each of these densities requires two input parameters and hp.pars 
 #' must be a vector of two values and cannot be left empty.
 #' 
-#' @param hpf name of a density function. Supported density functions are: Uniform, Gamma and Normal
+#' @param hpf name of a density function. Supported density functions are: Uniform, Gamma and Normal (abbreviations are not supported)
 #' @param hp.pars a vector of density function parameters
 #' @param ... additional parameters that can be passed to a density function
 #' @export
@@ -28,13 +28,15 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	# Returns:
 	#	Hyper-prior function (function).
   
+  if(!hpf %in% c("Uniform", "Gamma", "Normal")) stop(sprintf("%s distribution is not supported", hpf))
+  
   force(hp.pars)
   
   #uniform
 	if (hpf == "Uniform"){
 		my.f <- function(x, ...){
 			hp <- sum(dunif(x, min=hp.pars[1], max=hp.pars[2], log=TRUE))
-			return(c(hp, hp.pars))
+			return(list(hp, list(hpf, hp.pars)))
 		}
 	}
 		
@@ -42,7 +44,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	if (hpf == "Gamma"){
 		my.f <- function(x, ...){
 			hp <- sum(dgamma(x, shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
-			return(c(hp, hp.pars))
+			return(list(hp, list(hpf, hp.pars)))
 		}
 	}
 		
@@ -50,7 +52,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	if (hpf == "Normal"){
 		my.f <- function(x, ...){
 			hp <- sum(dnorm(x, mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
-			return(c(hp, hp.pars))
+			return(list(hp, list(hpf, hp.pars)))
 		}
 	}	
 		
@@ -58,7 +60,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	if (hpf == "Loggamma"){
 		my.f <- function(x, ...){
 			hp <- sum(dgamma(exp(x), shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
-			return(c(hp, hp.pars))
+			return(list(hp, list(hpf, hp.pars)))
 		}
 	}
   
@@ -66,7 +68,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
   if (hpf == "Lognormal"){
     my.f <- function(x, ...){
       hp <- sum(dnorm(exp(x), mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
-      return(c(hp, hp.pars))
+      return(list(hp, list(hpf, hp.pars)))
     }
   }	
 		

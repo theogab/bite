@@ -18,25 +18,38 @@
 #' ## Load test data
 #' data(Anolis_traits)
 #' data(Anolis_tree)
-#' data(Anolis_map)
 #' 
+#' # Run a simple MCMC chain
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM", root.station = T)
+#' mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
+#'
+#' ## import the results in R
+#' logfile <- "my.jive_mcmc.log"
+#' res <- read.csv(logfile, header = T, sep = "\t")
+#' 
+#' plot_pvo(Anolis_traits, res, 5)
 
 
-plot_pvo <- function(traits, mcmc.log, tip = 1, burnin = 0, label = "tip 1", conf = 0.95, stat = "median", trait.lab = "trait",
+plot_pvo <- function(traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95, stat = "median", trait.lab = "trait",
                           col = NULL, border = NULL, legend = F, lolipop = T,...){
   
-  chain <- as.mcmc(mcmc.log[,sprintf(c("%s_m", "%s_v"), rownames(traits)[tip])])
+  if(is.numeric(tip)) label <- rownames(traits)[tip]
+  else label <- tip
   
   if(burnin < 1) burnin <- burnin * nrow(mcmc.log)
+  chain <- as.mcmc(mcmc.log[-(1:burnin),sprintf(c("%s_m", "%s_v"), label)])
   
-  hpd <- HPDinterval(chain)
+  sam <- sample(1:nrow(chain), 5e6, replace = T)
+  rhpd <- rnorm(1e6, chain[sam,1], sqrt(chain[sam,2]))
+  hpd <- HPDinterval(as.mcmc(rhpd), prob = conf)
   if(stat == "median") mid <- apply(chain,2,median)
   else if(stat == "mean") mid <- apply(chain,2,mean)
   else stop(sprintf("%s: unknown stat"))
   
   rmid <- density(rnorm(1e6, mid[1], sqrt(mid[2])))
-  rhpd <- density(rnorm(1e6, sample(hpd[1,], 1e6, T), sqrt(sample(hpd[2,], 1e6, T))))
+  rhpd <- density(rhpd[rhpd >= hpd[1] & rhpd <= hpd[2] ])
   
+  label <- gsub("_", " ", label)
   plot(c(rhpd$x, rmid$x),c(rhpd$y, rmid$y), type = "n", main = label, ylab = "density", xlab = trait.lab)             
   
   if(is.null(border) & is.null(col)){

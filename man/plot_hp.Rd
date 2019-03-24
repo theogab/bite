@@ -4,7 +4,8 @@
 \alias{plot_hp}
 \title{plot Hyper-prior function}
 \usage{
-plot_hp(hpf, range, col = NULL, border = NULL, ...)
+plot_hp(hpf, col = c("#bfdbf7", "#f49e4c"), border = c("#2e86ab",
+  "#a31621"), bty = "n", ...)
 }
 \arguments{
 \item{hpf}{name of a density function. Supported density functions are: Uniform, Gamma and Normal}
@@ -26,7 +27,17 @@ Uniform, Gamma and Normal. Each of these densities requires two input parameters
 must be a vector of two values and cannot be left empty.
 }
 \examples{
-my.hp <- plot_hp(hpf="Uniform", hp.pars=c(1,2))
+
+## Load test data
+data(Anolis_traits)
+data(Anolis_tree)
+  
+my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
+plot_hp(my.hp)
+
+my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
+par(mfrow = c(2,3))
+plot_hp(my.jive, cex.main = .8)
 }
 \author{
 Theo Gaboriau

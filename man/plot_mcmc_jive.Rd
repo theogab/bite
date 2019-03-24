@@ -5,7 +5,8 @@
 \title{Plot \code{\link{jive_mcmc}} results}
 \usage{
 plot_mcmc_jive(mcmc.log, type = c("trace", "density"), burnin = 0,
-  variable = "log.lik", label = variable, col = "#000000",
+  variable = "log.lik", label = ifelse(is.numeric(variable),
+  colnames(mcmc.log)[variable], variable), col = "#000000",
   cex.est = 1, ...)
 }
 \arguments{
@@ -36,16 +37,15 @@ data(Anolis_map)
 
 ## Run a simple MCMC chain
 my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM", root.station = T)
-mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=50000) 
+mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 
 ## import the results in R
-logfile <- "my.jive_MCMC.log"
+logfile <- "my.jive_mcmc.log"
 res <- read.csv(logfile, header = T, sep = "\\t")
 
 ## plot the results
-for(variable in colnames(res)[3]){
- plot_mcmc_jive(res, burnin = 0, variable = variable, cex.est = .7)
-}
+plot_mcmc_jive(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
+
 }
 \author{
 Theo Gaboriau

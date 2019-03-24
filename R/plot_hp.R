@@ -14,26 +14,31 @@
 #' @author Theo Gaboriau
 #' @return plot
 #' @examples
-#' my.hp <- plot_hp(hpf="Uniform", hp.pars=c(1,2))
+#'
+#' ## Load test data
+#' data(Anolis_traits)
+#' data(Anolis_tree)
+#'   
+#' my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
+#' plot_hp(my.hp)
+#' 
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
+#' par(mfrow = c(2,3))
+#' plot_hp(my.jive, cex.main = .8)
 
 
-plot_hp <- function(hpf, range, col = NULL, border = NULL, ...){
+plot_hp <- function(hpf, col = c("#bfdbf7", "#f49e4c"), border = c("#2e86ab", "#a31621"), bty = "n", ...){
   
-  ss <- seq(range[1], range[2], length.out = 1e4)
-  d <- exp(sapply(ss, hpf))
-  plot(d~ss, type = "n", xlab = "x", ylab = "density", ...)
-  if(is.null(border) & is.null(col)){
-    col <- "#2e86ab"
-  } 
-  if(is.null(border)){
-    polygon(ss, d, col = col, border = NA)
-  } else if(is.null(col)){
-    lines(ss, d, col = border)
+  if("JIVE" %in% class(hpf)){
+    for(i in 1:length(hpf$prior.mean$hprior)){
+      plot_hyper(hpf$prior.mean$hprior[[i]], col = col[1], border = border[1], xlab = paste("M-",names(hpf$prior.mean$hprior)[i]), bty = bty, ...)
+    }
+    for(i in 1:length(hpf$prior.var$hprior)){
+      plot_hyper(hpf$prior.var$hprior[[i]], col = col[2], border = border[2], xlab = paste("V-", names(hpf$prior.var$hprior)[i]), bty = bty, ...)
+    }
   } else {
-    polygon(ss, d, col = col, border = NA)
-    lines(ss, d, col = border)
+    plot_hyper(hpf, col = col[1], border = border[1], bty = bty, ...)
   }
-      
 }
 
     

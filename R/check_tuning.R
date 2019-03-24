@@ -28,7 +28,7 @@ check_tuning <- function(jive){
       if(any(jive[[level]]$init$wn.sig <= 0)) stop(sprintf("initial values for sigma^2 should not be negative: check obj$%s$init", level))
       if(length(unlist(jive[[level]]$init)) != (ncol(jive[[level]]$map) + 1)) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
       for(i in 1:ncol(jive[[level]]$map)){
-        if(is.finite(jive[[level]]$hprior[[i]](-1)[1])){
+        if(is.finite(jive[[level]]$hprior[[i]](-1)[[1]])){
           stop(sprintf("Hyper prior should not allow sigma^2 <= 0: check obj$%s$hprior$%s", level, names(jive[[level]]$hprior[i])))
         }  
       }
@@ -43,7 +43,7 @@ check_tuning <- function(jive){
       if(length(unlist(jive[[level]]$init)) != (ncol(jive[[level]]$map) + 1)) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
       # hyperprior
       for(i in 1:ncol(jive[[level]]$map)){
-        if(is.finite(jive[[level]]$hprior[[i]](-1)[1])){
+        if(is.finite(jive[[level]]$hprior[[i]](-1)[[1]])){
           stop(sprintf("Hyper prior should not allow sigma^2 <= 0: check obj$%s$hprior$%s", level, names(jive[[level]]$hprior[i])))
         }  
       }
@@ -57,7 +57,7 @@ check_tuning <- function(jive){
       if(any(jive[[level]]$init$ou.sig <= 0)) stop(sprintf("initial values for %s should not be negative: check obj$%s$init", level))
       if(length(unlist(jive[[level]]$init)) != (ncol(jive[[level]]$map) + ifelse(jive$data$root.station, 2, 3))) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
       # hyperprior
-      if(is.finite(jive[[level]]$hprior[[2]](-1)[1])) stop(sprintf("Hyper prior should not allow sigma^2 <= 0: check obj$%s$hprior$%s", level, names(jive[[level]]$hprior[i])))
+      if(is.finite(jive[[level]]$hprior[[2]](-1)[[1]])) stop(sprintf("Hyper prior should not allow sigma^2 <= 0: check obj$%s$hprior$%s", level, names(jive[[level]]$hprior[i])))
     }
     
   }

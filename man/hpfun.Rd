@@ -7,7 +7,7 @@
 hpfun(hpf = "Uniform", hp.pars = c(1, 2), ...)
 }
 \arguments{
-\item{hpf}{name of a density function. Supported density functions are: Uniform, Gamma and Normal}
+\item{hpf}{name of a density function. Supported density functions are: Uniform, Gamma and Normal (abbreviations are not supported)}
 
 \item{hp.pars}{a vector of density function parameters}
 

@@ -66,12 +66,12 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   # prior mean level
   pars.m0 <- do.call(c, jive$prior.mean$init)
   prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
-  hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[1,]
+  hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[[1]]
   
   # prior var level
   pars.v0 <- do.call(c, jive$prior.var$init)
   prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
-  hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[1,]
+  hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[[1]]
   
   # mcmc parameters
   cat("generation\tposterior\n")
@@ -139,7 +139,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       jive$prior.mean$data <- lapply(1:length(jive$prior.mean$data), function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
       # calculate prior and hprior
       prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
-      hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))
+      hprior.mean0 <- mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[[1]]
       hasting.ratio <- tmp$lnHastingsRatio
     } 
     
@@ -160,7 +160,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
       # calculate prior and hprior
       prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
-      hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))
+      hprior.var0 <- mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[[1]]
       hasting.ratio <- tmp$lnHastingsRatio
     }
     

@@ -20,10 +20,10 @@
 #' 
 #' ## Run a simple MCMC chain
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM", root.station = T)
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=50000) 
+#' mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 #'
 #' ## import the results in R
-#' logfile <- "my.jive_MCMC.log"
+#' logfile <- "my.jive_mcmc.log"
 #' res <- read.csv(logfile, header = T, sep = "\t")
 #' 
 #' ## plot the results
