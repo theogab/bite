@@ -23,14 +23,14 @@
 #' plot_hp(my.hp)
 #' 
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
-#' par(mfrow = c(2,3))
 #' plot_hp(my.jive, cex.main = .8)
 
 
 plot_hp <- function(hpf, col = c("#bfdbf7", "#f49e4c"), border = c("#2e86ab", "#a31621"), bty = "n", ...){
   
   if("JIVE" %in% class(hpf)){
-    par(mfrow = c(length(hpf$prior.mean$hprior),length(hpf$prior.var$hprior)))
+    n <- length(hpf$prior.mean$hprior)+length(hpf$prior.var$hprior)
+    par(mfrow = c(floor(sqrt(n)),ceiling(sqrt(n))))
     for(i in 1:length(hpf$prior.mean$hprior)){
       plot_hyper(hpf$prior.mean$hprior[[i]], col = col[1], border = border[1], xlab = paste("M-",names(hpf$prior.mean$hprior)[i]), bty = bty, ...)
     }
