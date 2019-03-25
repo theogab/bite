@@ -30,6 +30,7 @@
 plot_hp <- function(hpf, col = c("#bfdbf7", "#f49e4c"), border = c("#2e86ab", "#a31621"), bty = "n", ...){
   
   if("JIVE" %in% class(hpf)){
+    par(mfrow = c(length(hpf$prior.mean$hprior),length(hpf$prior.var$hprior)))
     for(i in 1:length(hpf$prior.mean$hprior)){
       plot_hyper(hpf$prior.mean$hprior[[i]], col = col[1], border = border[1], xlab = paste("M-",names(hpf$prior.mean$hprior)[i]), bty = bty, ...)
     }

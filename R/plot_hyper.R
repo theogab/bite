@@ -11,7 +11,7 @@ plot_hyper <- function(hpf, col = "#2e86ab", border = "#000000", ...){
   }
   
   if(hpf(0)[[2]][[1]] == "Normal"){
-    minmax <- range(rnorm(1e6, min = hpf(0)[[2]][[2]][1], hpf(0)[[2]][[2]][2]))
+    minmax <- range(rnorm(1e6, mean = hpf(0)[[2]][[2]][1], sd = hpf(0)[[2]][[2]][2]))
     main <- sprintf("Normal with mean = %s and variance = %s",round(hpf(0)[[2]][[2]][1],2), round(hpf(0)[[2]][[2]][2],2))
   }
   

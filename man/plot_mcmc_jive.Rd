@@ -16,11 +16,11 @@ plot_mcmc_jive(mcmc.log, type = c("trace", "density"), burnin = 0,
 
 \item{burnin}{The size of the burnin in number of iterations or the proportion of iteration you want to remove}
 
+\item{variable}{The name or number of the variable to plot}
+
 \item{label}{Full variable name to be plotted}
 
 \item{...}{Other graphical parameters to parse to \code{\link{par()}}}
-
-\item{var}{The name or number of the variable to plot}
 }
 \description{
 This function plots the trace and/or density of each mcmc sample
