@@ -161,7 +161,6 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       # calculate prior and hprior
       prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
       hprior.var0 <- unlist(mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[1,])
-      cat(hprior.var0, "\n")
       hasting.ratio <- tmp$lnHastingsRatio
     }
     
