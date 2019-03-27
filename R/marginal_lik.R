@@ -29,9 +29,19 @@ marginal_lik <- function(mcmc.log, burnin = 0) {
 	if (!("prior.mean" %in% colnames(mcmc.log))) stop('No \'prior_mean\' column in the log file')
   if (!("prior.var" %in% colnames(mcmc.log))) stop('No \'prior_var\' column in the log file')
 	if (!("temperature" %in% colnames(mcmc.log))) stop('No \'temperature\' column in the log file')
-
+  
+  temp <- unique(mcmc.log$temperature)
+  
+  if(burnin>0){
+    if(burnin < 1) burnin <- sapply(temp, function(t) quantile(mcmc.log$iter[mcmc.log$temperature == t], burnin))
+    else burnin <- sapply(temp, function(t) min(mcmc.log$iter[mcmc.log$temperature == t])) + burnin
+    burn <- unlist(lapply(1:length(temp), function(t) mcmc.log[mcmc.log$temperature == temp[t],"iter"] <= burnin[t]))
+  } else {
+    burn <- rep(F, nrow(mcmc.log))
+  }
+    
 	# Get mean marginal likelihood for each temperature
-	lik <- sapply(unique(mcmc.log$temperature), function(temp) mean(mcmc.log$prior.mean[mcmc.log$temperature == temp] + mcmc.log$prior.var[mcmc.log$temperature == temp], na.rm = T)) 
+	lik <- sapply(temp, function(temp) mean(mcmc.log$prior.mean[mcmc.log$temperature == temp & !burn] + mcmc.log$prior.var[mcmc.log$temperature == temp & !burn], na.rm = T)) 
 
 	if (length(lik)<=1) warning('Only one temerature for the thermodynamic integration')
 

@@ -29,7 +29,7 @@
 #' plot_bf(m.liks, dir = "horizontal", srt.lab = -60, adj.lab = c(0,0.8))
 
 plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c("#d32f23","#2e86ab","#000000"),
-                    col.thr = c("#a6e1fa"), ax.lab = expression(Delta~"BF"), main = "", mod.lab = NULL, rank = T, dec = T,
+                    col.thr = c("#a6e1fa"), ax.lab = "log(BF)", main = "", mod.lab = NULL, rank = T, dec = T,
                     group.pattern = NULL, cex = c(1.2,1,1), srt.lab = 0, adj.lab = 0, space = c(1.2,0.8)){
   
   BF <- max(m.liks, na.rm = T) - m.liks
