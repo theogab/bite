@@ -125,14 +125,14 @@ make_jive <- function(phy, traits, map = NULL, model.mean="BM", model.var="OU", 
   #### Prepare headers of log file ####
   
   jive$header <- c("iter", "posterior", "log.lik", "prior mean", "prior var", 
-                   paste("mean.", rep(names(jive$prior.mean$init), lengths(jive$prior.mean$init)),
-                         unlist(lapply(lengths(jive$prior.mean$init), function(x){  
+                   paste("mean.", rep(names(jive$prior.mean$init), sapply(jive$prior.mean$init, length)),
+                         unlist(lapply(sapply(jive$prior.mean$init, length), function(x){  
                            if (x == 1) ""
                            else if (model.mean %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
                            else seq(1, x)
                          } )), sep =""),
-                   paste("var.", rep(names(jive$prior.var$init), lengths(jive$prior.var$init)),
-                         unlist(lapply(lengths(jive$prior.var$init), function(x){  
+                   paste("var.", rep(names(jive$prior.var$init), sapply(jive$prior.var$init, length)),
+                         unlist(lapply(sapply(jive$prior.var$init,length), function(x){  
                            if (x == 1) ""
                            else if (model.var %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
                            else seq(1, x)
