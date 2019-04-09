@@ -15,6 +15,11 @@ plot_hyper <- function(hpf, col = "#2e86ab", border = "#000000", ...){
     main <- sprintf("Normal with mean = %s and variance = %s",round(hpf(0)[[2]][[2]][1],2), round(hpf(0)[[2]][[2]][2],2))
   }
   
+  if(hpf(0)[[2]][[1]] == "Lognormal"){
+    minmax <- range(rlnorm(1e6, mean = hpf(0)[[2]][[2]][1], sd = hpf(0)[[2]][[2]][2]))
+    main <- sprintf("Lognormal with mean = %s and variance = %s",round(hpf(0)[[2]][[2]][1],2), round(hpf(0)[[2]][[2]][2],2))
+  }
+  
   x <- seq(minmax[1] - diff(minmax)*0.05, minmax[2] + diff(minmax)*0.05, length.out = 1e5)
   Density <- exp(sapply(x, function(s) hpf(s)[[1]]))
   

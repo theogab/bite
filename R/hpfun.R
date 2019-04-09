@@ -28,7 +28,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 	# Returns:
 	#	Hyper-prior function (function).
   
-  if(!hpf %in% c("Uniform", "Gamma", "Normal")) stop(sprintf("%s distribution is not supported", hpf))
+  if(!hpf %in% c("Uniform", "Gamma", "Normal","Lognormal")) stop(sprintf("%s distribution is not supported", hpf))
   
   force(hp.pars)
   
@@ -56,18 +56,10 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
 		}
 	}	
 		
-  #log gamma
-	if (hpf == "Loggamma"){
-		my.f <- function(x, ...){
-			hp <- sum(dgamma(exp(x), shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
-			return(list(hp, list(hpf, hp.pars)))
-		}
-	}
-  
   #log normal
   if (hpf == "Lognormal"){
     my.f <- function(x, ...){
-      hp <- sum(dnorm(exp(x), mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
+      hp <- sum(dlnorm(x, mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
       return(list(hp, list(hpf, hp.pars)))
     }
   }	
