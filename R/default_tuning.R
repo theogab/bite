@@ -59,9 +59,10 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       # map and nreg
       if(model.evo == "WNM"){
         nreg <- ncol(map)
+        newmap <- map
       } else {
         nreg <- 1
-        map <- as.matrix(rowSums(map))
+        newmap <- as.matrix(rowSums(map))
       }
       # name
       name <- paste(model.evo," [",nreg,"]", sep="")
@@ -90,9 +91,10 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       # map and nreg
       if(model.evo == "BMM"){
         nreg <- ncol(map)
+        newmap <- map
       } else {
         nreg <- 1
-        map <- as.matrix(rowSums(map))
+        newmap <- as.matrix(rowSums(map))
       }
       # name
       name <- paste(model.evo," [",nreg,"]", sep="")
@@ -121,9 +123,10 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       # map and nreg
       if(model.evo == "OUM"){
         nreg <- ncol(map)
+        newmap <- map
       } else {
         nreg <- 1
-        map <- as.matrix(rowSums(map))
+        newmap <- as.matrix(rowSums(map))
       }
       # name
       name <- paste(model.evo," [",nreg,"]", sep="")
@@ -155,7 +158,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       names(hprior) <- c("ou.sv", "ou.sig", sprintf("ou.the.%s", ifelse(root.station,1,0):nreg))
     }
     
-    eval(parse(text = sprintf("%s <- list(name = name, model = model, ws = ws, init = init, prop = prop, map = map, hprior = hprior, update.freq = update.freq)", level)))
+    eval(parse(text = sprintf("%s <- list(name = name, model = model, ws = ws, init = init, prop = prop, map = newmap, hprior = hprior, update.freq = update.freq)", level)))
 
   }
   
