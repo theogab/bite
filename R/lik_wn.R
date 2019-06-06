@@ -14,7 +14,7 @@ update_wn <-function(n, n.p, pars, tree, map, ...){
   # theta has been updated: change e
   if (any(length(pars) %in% n.p)) {
     e  <- matrix(1, n, 1)
-    e[,] <- pars[2] # ancestral mean
+    e[,] <- pars[length(pars)] # ancestral mean
     mat$e[[1]] <- T
     mat$e[[2]] <- e
   }

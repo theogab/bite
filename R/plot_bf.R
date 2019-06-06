@@ -53,6 +53,7 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
         find.groups[[length(find.groups)+1]] <- colSums(do.call(rbind, find.groups)) == 0
       }
       groups <- lapply(find.groups, which)
+      cat(groups, "\n")
       y <- cumsum(unlist(lapply(groups, function(n) c(space[1], rep(space[2],length(n)-1)))))
       y <- (y/max(y+space[1])) * length(BF)
     } else {
