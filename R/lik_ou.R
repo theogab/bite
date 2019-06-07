@@ -9,7 +9,7 @@ update_ou <- function(n, n.p, pars, tree, map, t.vcv, root.station){
               inv = list(F))
   
   ## extract variables
-  alp  <- pars[2]/2*pars[1]
+  alp  <- pars[2]/(2*pars[1])
   sig <- pars[2]
   the  <- pars[3:length(pars)]
   T.len  <- t.vcv[1, 1]

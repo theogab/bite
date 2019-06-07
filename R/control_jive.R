@@ -111,7 +111,7 @@ control_jive <- function(jive, level = c("lik", "prior.mean", "prior.var"), wind
       if (!is.null(hyperprior)){
         jive$prior.mean$hprior[[1]] <- hyperprior[[1]]
         jive$prior.mean$hprior[[2]] <- hyperprior[[2]]
-        for(i in 3:(nreg+ ifelse(root.station, 2, 3))){
+        for(i in 3:(nreg+ ifelse(jive$data$root.station, 2, 3))){
           jive$prior.mean$hprior[[i]]	<- hyperprior[[3]]
         }
       }
@@ -181,7 +181,7 @@ control_jive <- function(jive, level = c("lik", "prior.mean", "prior.var"), wind
       if (!is.null(hyperprior)){
         jive$prior.var$hprior[[1]] <- hyperprior[[1]]
         jive$prior.var$hprior[[2]] <- hyperprior[[2]]
-        for(i in 3:(nreg+ ifelse(root.station, 2, 3))){
+        for(i in 3:(nreg+ ifelse(jive$data$root.station, 2, 3))){
           jive$prior.var$hprior[[i]]	<- hyperprior[[3]]
         }
       }
