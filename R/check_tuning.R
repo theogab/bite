@@ -5,12 +5,12 @@ check_tuning <- function(jive){
   
   ### Likelihood level ###
   # window sizes
-  if(length(jive$lik$ws$m.sp) != nrow(jive$data$traits)) stop("Vector of window sizes for mean values is not the same length as the number of species")
-  if(length(jive$lik$ws$v.sp) != nrow(jive$data$traits)) stop("Vector of window sizes for variance values is not the same length as the number of species")
+  if(length(jive$lik$ws$m.sp) != length(jive$data$traits)) stop("Vector of window sizes for mean values is not the same length as the number of species")
+  if(length(jive$lik$ws$v.sp) != length(jive$data$traits)) stop("Vector of window sizes for variance values is not the same length as the number of species")
   if(any(is.na(c(jive$lik$ws$m.sp, jive$lik$ws$v.sp)))) stop("Missing values are not allowed in window sizes: check obj$lik$ws")
   # initial values
-  if(length(jive$lik$init$m.sp) != nrow(jive$data$traits))  stop("Vector of initial values for means is not the same length as the number of species")
-  if(length(jive$lik$init$v.sp) != nrow(jive$data$traits))  stop("Vector of initial values for variances is not the same length as the number of species")
+  if(length(jive$lik$init$m.sp) != length(jive$data$traits))  stop("Vector of initial values for means is not the same length as the number of species")
+  if(length(jive$lik$init$v.sp) != length(jive$data$traits))  stop("Vector of initial values for variances is not the same length as the number of species")
   if(any(is.na(unlist(jive$lik$init))))  stop("Missing values are not allowed in initial values: check obj$lik$init")
   
   ## Prior level ##

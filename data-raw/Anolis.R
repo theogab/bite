@@ -16,14 +16,7 @@ for(i in 1:nrow(Anolis_tree$edge)){
 }
 Anolis_map <- Anolis_map * Anolis_tree$edge.length
 
-Anolis_traits <- sapply(unique(data[,1]), function(x){
-  data$svl.mm[data[,1] == x]
-})
-nb <- max(sapply(Anolis_traits, length))
-Anolis_traits <- t(sapply(Anolis_traits, function(x){
-  c(x, rep(NA, nb - length(x)))
-}))
-rownames(Anolis_traits) <- unique(data[,1])
+Anolis_traits <- data[,c(1,7)]
 
 use_data(Anolis_tree, Anolis_map, Anolis_traits, overwrite = T)
 

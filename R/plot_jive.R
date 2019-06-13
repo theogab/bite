@@ -62,13 +62,13 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     init.usr <- par()$usr
     init.mar <- par()$mar
     par(new = TRUE, fig = c(0,1,ifelse(rep(show.tip.label,2),c(0.35,0.7),c(0.5,1))), bty = "n")
-    plot(c(1,length(tree$tip.label)), range(traits, na.rm = T), type = "n", xaxt = "n", ylab = trait.lab,
-         xlab = "", ylim = ifelse(rep(!is.null(trait.lim),2), trait.lim, range(traits,na.rm = T)))
+    plot(c(1,length(tree$tip.label)), range(unlist(traits), na.rm = T), type = "n", xaxt = "n", ylab = trait.lab,
+         xlab = "", ylim = ifelse(rep(!is.null(trait.lim),2), trait.lim, range(unlist(traits),na.rm = T)))
     pp <- get("last_plot.phylo", envir = .PlotPhyloEnv)
     
     for(i in 1:length(tree$tip.label)){
       sp <- tree$tip.label[i]
-      vioplot(traits[sp,!is.na(traits[sp,])], add = T, at = pp$xx[i], col = col, ...)
+      vioplot(traits[[sp]][!is.na(traits[[sp]])], add = T, at = pp$xx[i], col = col, ...)
     } 
     
     par(fig=c(0,1,0,1), usr = init.usr, mar = init.mar)
@@ -93,14 +93,14 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     init.usr <- par()$usr
     init.mar <- par()$mar
     par(new = TRUE, fig = c(ifelse(rep(show.tip.label,2),c(0.35,0.7),c(0.5,1)),0,1), bty = "n")
-    plot(range(traits, na.rm = T), c(1,length(tree$tip.label)), type = "n", yaxt = "n", xlab = trait.lab,
-         ylab = "", xlim = ifelse(rep(!is.null(trait.lim),2), trait.lim, range(traits,na.rm = T)))
+    plot(range(unlist(traits), na.rm = T), c(1,length(tree$tip.label)), type = "n", yaxt = "n", xlab = trait.lab,
+         ylab = "", xlim = ifelse(rep(!is.null(trait.lim),2), trait.lim, range(unlist(traits),na.rm = T)))
     
     pp <- get("last_plot.phylo", envir = .PlotPhyloEnv)
     
     for(i in 1:length(tree$tip.label)){
       sp <- tree$tip.label[i]
-      vioplot(traits[sp,!is.na(traits[sp,])], add = T, at = pp$yy[i], horizontal = T, col = col, ...)
+      vioplot(traits[[sp]][!is.na(traits[[sp]])], add = T, at = pp$yy[i], horizontal = T, col = col, ...)
     } 
     
     par(fig=c(0,1,0,1), usr = init.usr, mar = init.mar)

@@ -4,11 +4,11 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
                            model.var = c("BM", "OU", "WN", "OUM", "BMM", "WNM"),
                            traits, map, root.station = F){
   
-  var.sp <- apply(traits, 1, var, na.rm = T)
+  var.sp <- sapply(traits, var, na.rm = T)
   var.sp[is.na(var.sp)] <- var(var.sp, na.rm = T)
-  mean.sp <- apply(traits, 1, mean, na.rm = T)
-  ran.sp <- apply(traits, 1, range, na.rm = T)
-  counts <- apply(traits, 1, function(x) sum(!is.na(x)))
+  mean.sp <- sapply(traits, mean, na.rm = T)
+  ran.sp <- sapply(traits, range, na.rm = T)
+  counts <- sapply(traits, function(x) sum(!is.na(x)))
   
   ### Likelihood level ###
   # update.freq
@@ -79,7 +79,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       prop[[nreg+1]] <- proposal("slidingWin") # theta
       # hyper priors
       hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
-      bounds <- c(ifelse(min(x) < 0, 2*min(x),min(x)/2),ifelse(max(x) < 0, max(x)/2,2*max(x)))
+      bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
       hprior[[nreg+1]] <- hpfun("Uniform", bounds) # theta
       names(hprior) <- c(if(nreg==1) "wn.sig" else sprintf("wn.sig.%s", 1:nreg), "wn.the")
     } 
@@ -111,7 +111,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       prop[[nreg+1]] <- proposal("slidingWin") # theta
       # hyper priors
       hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
-      bounds <- c(ifelse(min(x) < 0, 2*min(x),min(x)/2),ifelse(max(x) < 0, max(x)/2,2*max(x)))
+      bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
       hprior[[nreg+1]] <- hpfun("Uniform", bounds) # theta
       names(hprior) <- c(if(nreg==1) "bm.sig" else sprintf("bm.sig.%s", 1:nreg), "bm.the")
     }
@@ -151,7 +151,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       hprior <- list()
       hprior[[1]] <- hpfun("Gamma", c(1.1,5))
       hprior[[2]]	<- hpfun("Gamma", c(1.1,5))
-      bounds <- c(ifelse(min(x) < 0, 2*min(x),min(x)/2),ifelse(max(x) < 0, max(x)/2,2*max(x)))
+      bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
       for(i in 3:(nreg + ifelse(root.station, 2, 3))){
         hprior[[i]]	<- hpfun("Uniform", bounds) ## <- test loggamma??
       }

@@ -7,7 +7,7 @@
 #' @details This function creates a jive object needed for \code{\link{mcmc_jive}} function.  
 #' Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data. Rownames are species names that should match exactly tip labels of the phylogenetic tree.
 #'
-#' Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map.
+#' Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map. If you keep the phy = NULL options the JIVE object can only be parsed to the \code{\link{make_xml}} function.
 #' 
 #' map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
 #' 
@@ -44,79 +44,116 @@
 
 
 
-make_jive <- function(phy, traits, map = NULL, model.mean="BM", model.var="OU", root.station = F, scale = F, control = list()){
+make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var="OU", root.station = F, scale = F, control = list()){
+  
+  ### dealing with the tree
+  is.phy <- !is.null(phy)
+  if(!is.phy){
+    phy <- list()
+    phy$tip.label <- unique(traits[,1])
+  }
+  
+  ### dealing with traits
+  traits <- sapply(phy$tip.label, function(sp){
+    if(any(traits[,1]  == sp)){
+      traits[traits[,1]  == sp,2]
+    } else {
+      NA  
+    }
+  }, USE.NAMES = T, simplify = F) 
   
   ### validity test ###
-  if (!all(phy$tip.label %in% rownames(traits))) {
-    stop("Species do not match in tree and traits")
-  }
-  
-  ### dealing with the map
-  if (is.null(map)) {
-    if (is.null(phy$mapped.edge)){ # It is assumed there is only one regime
-      map <- matrix(phy$edge.length)
-    } else {
-      map <- phy$mapped.edge
+  missing <- character(0)
+  for(i in 1:length(traits)){
+    if(all(is.na(traits[[i]]))){
+      missing <- c(missing, names(traits)[[i]])
     } 
   }
-  
-  if (dim(map)[1] != length(phy$edge.length)) {
-    stop("map must provide mapping for every edge of phy")
-  }
-  if (!all(abs(rowSums(map) - phy$edge.length) < 1e-5)) {
-    stop("Mapping does not correspond to edge lengths")
+  if(length(missing) > 0){
+    warning(sprintf("species: %s can not be found in traits. Check matching between species names in phy and traits", paste0(missing, collapse = ", ")))
   }
   
-  ### scale height ###
-  if(scale){
-    t.len <- max(branching.times(phy))
-    phy$edge.length <- phy$edge.length/t.len
-    map <- map/t.len
+  if(is.phy){
+    ### dealing with the map
+    if (is.null(map)) {
+      if (is.null(phy$mapped.edge)){ # It is assumed there is only one regime
+        map <- matrix(phy$edge.length)
+      } else {
+        map <- phy$mapped.edge
+      } 
+    }
+    
+    if (dim(map)[1] != length(phy$edge.length)) {
+      stop("map must provide mapping for every edge of phy")
+    }
+    if (!all(abs(rowSums(map) - phy$edge.length) < 1e-5)) {
+      stop("Mapping does not correspond to edge lengths")
+    }
+    
+    ### scale height ###
+    if(scale){
+      t.len <- max(branching.times(phy))
+      phy$edge.length <- phy$edge.length/t.len
+      map <- map/t.len
+    }
+  } else {
+    map <- matrix(0, ncol = 2, nrow = 2)
   }
+  
   
   jive <- list()
   
   ### Global variables ###
-  jive$data$traits 					<- traits[phy$tip.label,]
-  jive$data$counts 					<- apply(jive$data$traits, 1, function (x) {sum( !is.na(x) )})
+  jive$data$traits          <- traits
+  jive$data$counts 					<- sapply(jive$data$traits, function (x) {sum( !is.na(x) )})
   jive$data$n               <- length(phy$tip.label)
-  jive$data$tree   					<- phy
-  jive$data$vcv             <- vcv(phy)
-  jive$data$root.station   	<- root.station
-  jive$data$scale    	      <- scale
   jive$data$map             <- map
+  jive$data$root.station   	<- root.station
+  if(is.phy){
+    jive$data$tree   					<- phy
+    jive$data$vcv             <- vcv(phy)
+    jive$data$scale    	      <- scale
+  }
   
   
   dt <- default_tuning(model.mean = model.mean, model.var = model.var, traits = jive$data$traits, map = jive$data$map, root.station = jive$data$root.station)
+  
   ### Likelihood parameters ###
   jive$lik <- dt$lik
   
   #### Models for means ####
   jive$prior.mean <- dt$prior.mean
   
-  # rownames for map
-  rownames(jive$prior.mean$map) <- apply(phy$edge, 1, paste, collapse = ",")
   
   # Calculate expectation and var/covar matrices #
-  jive$prior.mean$data <- lapply(jive$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.mean$init)),
-                                                       pars = do.call(c,jive$prior.mean$init), tree = jive$data$tree,
-                                                       map = jive$prior.mean$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
-                                 function(x) if (x[[1]]) x[[2]])
+  if(is.phy){
+    # rownames for map
+    rownames(jive$prior.mean$map) <- apply(phy$edge, 1, paste, collapse = ",")
+    
+    jive$prior.mean$data <- lapply(jive$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.mean$init)),
+                                                         pars = do.call(c,jive$prior.mean$init), tree = jive$data$tree,
+                                                         map = jive$prior.mean$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
+                                   function(x) if (x[[1]]) x[[2]])
+  }
   
   cat("Mean prior model: ",model.mean," [",ncol(jive$prior.mean$map),"]","\n",sep="")
   
   #### Models for variance ####
   jive$prior.var <- dt$prior.var
 
-  # rownames for map
-  rownames(jive$prior.var$map) <- apply(phy$edge, 1, paste, collapse = ",")
   
   # Calculate expectation and var/covar matrices #
-  jive$prior.var$data <- lapply(jive$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.var$init)),
-                                                     pars = do.call(c,jive$prior.var$init), tree = jive$data$tree,
-                                                     map = jive$prior.var$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
-                                function(x) if (x[[1]]) x[[2]])
-  
+  if(is.phy){
+    
+    # rownames for map
+    rownames(jive$prior.var$map) <- apply(phy$edge, 1, paste, collapse = ",")
+    
+    jive$prior.var$data <- lapply(jive$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.var$init)),
+                                                       pars = do.call(c,jive$prior.var$init), tree = jive$data$tree,
+                                                       map = jive$prior.var$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
+                                  function(x) if (x[[1]]) x[[2]])
+  }
+    
   cat("Variance prior model: ",model.var," [",ncol(jive$prior.var$map),"]","\n",sep="")
   
   ## Checks
@@ -124,7 +161,7 @@ make_jive <- function(phy, traits, map = NULL, model.mean="BM", model.var="OU", 
   
   #### Prepare headers of log file ####
   
-  jive$header <- c("iter", "posterior", "log.lik", "prior mean", "prior var", 
+  jive$header <- c("iter", "posterior", "log.lik", "prior.mean", "prior.var", 
                    paste("mean.", rep(names(jive$prior.mean$init), sapply(jive$prior.mean$init, length)),
                          unlist(lapply(sapply(jive$prior.mean$init, length), function(x){  
                            if (x == 1) ""
@@ -137,8 +174,8 @@ make_jive <- function(phy, traits, map = NULL, model.mean="BM", model.var="OU", 
                            else if (model.var %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
                            else seq(1, x)
                          } )), sep =""),
-                   paste(rownames(jive$data$traits), "_m", sep=""),
-                   paste(rownames(jive$data$traits), "_v", sep=""),
+                   paste(names(jive$data$traits), "_m", sep=""),
+                   paste(names(jive$data$traits), "_v", sep=""),
                    "acc", "temperature")			
   
   class(jive) <- c("JIVE", "list")
