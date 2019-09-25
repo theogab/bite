@@ -32,7 +32,7 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
                     col.thr = c("#a6e1fa"), ax.lab = "log(BF)", main = "", mod.lab = NULL, rank = T, dec = T,
                     group.pattern = NULL, cex = c(1.2,1,1), srt.lab = 0, adj.lab = 0, space = c(1.2,0.8)){
   
-  BF <- max(m.liks, na.rm = T) - m.liks
+  BF <- 2*(max(m.liks, na.rm = T) - m.liks)
   
   if(dir[1] == "vertical"){
     plot(0, ylim = c(0,length(BF)), xlim = c(0,max(BF)*(11/10)), xaxt = "n", yaxt = "n", bty = "n", xlab = ax.lab, ylab = "", col = "#000000", main = main, type = "n")
@@ -53,7 +53,6 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
         find.groups[[length(find.groups)+1]] <- colSums(do.call(rbind, find.groups)) == 0
       }
       groups <- lapply(find.groups, which)
-      cat(groups, "\n")
       y <- cumsum(unlist(lapply(groups, function(n) c(space[1], rep(space[2],length(n)-1)))))
       y <- (y/max(y+space[1])) * length(BF)
     } else {

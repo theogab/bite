@@ -42,8 +42,11 @@ plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = 0, v
   
   if(burnin>0){
     temp <- unique(mcmc.log$temperature)
-    if(burnin < 1) burnin <- sapply(temp, function(t) quantile(mcmc.log$iter[mcmc.log$temperature == t], burnin))
-    else burnin <- sapply(temp, function(t) min(mcmc.log$iter[mcmc.log$temperature == t])) + burnin
+    if(burnin < 1){
+      burnin <- sapply(temp, function(t) quantile(mcmc.log$iter[mcmc.log$temperature == t], burnin))
+    } else {
+      burnin <- sapply(temp, function(t) min(mcmc.log$iter[mcmc.log$temperature == t])) + burnin
+    }
     burn <- unlist(lapply(1:length(temp), function(t) mcmc.log[mcmc.log$temperature == temp[t],"iter"] <= burnin[t]))
   } else {
     burn <- rep(F, nrow(mcmc.log))
