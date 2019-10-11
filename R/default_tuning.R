@@ -1,8 +1,8 @@
 ## Default tuning for Jive analysis
 
-default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM"),
-                           model.var = c("BM", "OU", "WN", "OUM", "BMM", "WNM"),
-                           traits, map, root.station = F){
+default_tuning <- function(model.mean = c("BM", "OU", "WN"),
+                           model.var = c("BM", "OU", "WN"),
+                           phy, traits, map){
   
   var.sp <- sapply(traits, var, na.rm = T)
   var.sp[is.na(var.sp)] <- var(var.sp, na.rm = T)
@@ -48,24 +48,25 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
     
     
     ## check model specification
-    if (!model.evo %in% c("OU", "BM", "WN", "OUM", "BMM", "WNM")){
-      stop(sprintf("in %s: model %s is not supported", level, model.evo))
+    if (!model.evo[1] %in% c("OU", "BM", "WN")){
+      stop(sprintf("in %s: specified model is not supported", level))
     }
     
     # White Noise #
-    if (grepl("WN", model.evo)){
+    if ("WN" %in% model.evo){
       # model
       model <- update_wn
       # map and nreg
-      if(model.evo == "WNM"){
-        nreg <- ncol(map)
+      if("sigma" %in% model.evo){
+        nreg <- max(do.call(cbind,map)[1,])
         newmap <- map
       } else {
         nreg <- 1
-        newmap <- as.matrix(rowSums(map))
+        newmap <- input_to_map(phy)
       }
       # name
-      name <- paste(model.evo," [",nreg,"]", sep="")
+      name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
+      nr <- c(nreg,1)
       # window size
       ws <- list()
       ws$wn.sig <- rep(0.5, nreg)
@@ -75,7 +76,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       init$wn.sig <- runif(nreg, 0.5, 3)
       init$wn.the <- mean(x)
       # proposals
-      prop <- lapply(1:nreg, proposal, prop = "multiplierProposalLakner") # sigma(s)
+      prop <- lapply(1:nreg, proposal, prop = "multiplierProposal") # sigma(s)
       prop[[nreg+1]] <- proposal("slidingWin") # theta
       # hyper priors
       hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
@@ -85,19 +86,20 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
     } 
     
     # Brownian Motion #
-    if (grepl("BM", model.evo)){
+    if ("BM" %in% model.evo){
       # model
       model <- update_bm
       # map and nreg
-      if(model.evo == "BMM"){
-        nreg <- ncol(map)
+      if("sigma" %in% model.evo){
+        nreg <- max(do.call(cbind,map)[1,])
         newmap <- map
       } else {
         nreg <- 1
-        newmap <- as.matrix(rowSums(map))
+        newmap <- input_to_map(phy)
       }
       # name
-      name <- paste(model.evo," [",nreg,"]", sep="")
+      name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
+      nr <- c(nreg,1)
       # window size
       ws <- list()
       ws$bm.sig <- rep(2, nreg)
@@ -107,7 +109,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
       init$bm.sig <- runif(nreg, 0.5, 3)
       init$bm.the <- mean(x)
       # proposals
-      prop <- lapply(1:nreg, proposal, prop = "multiplierProposalLakner") # sigma(s)
+      prop <- lapply(1:nreg, proposal, prop = "multiplierProposal") # sigma(s)
       prop[[nreg+1]] <- proposal("slidingWin") # theta
       # hyper priors
       hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
@@ -117,48 +119,57 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN", "OUM", "BMM", "WNM")
     }
     
     # Ornstein-Uhlenbeck #
-    if (grepl("OU", model.evo)){
+    if ("OU" %in% model.evo){
       # model
       model <- update_ou
       # map and nreg
-      if(model.evo == "OUM"){
-        nreg <- ncol(map)
+      if(any(c("sigma", "theta", "alpha") %in% model.evo)){
+        nreg <-  max(do.call(cbind,map)[1,])
         newmap <- map
       } else {
         nreg <- 1
-        newmap <- as.matrix(rowSums(map))
+        newmap <- input_to_map(phy)
       }
       # name
-      name <- paste(model.evo," [",nreg,"]", sep="")
+      name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
+      # number of regimes for each parameter
+      rsv <- ifelse(any(c("alpha", "sigma") %in% model.evo), nreg, 1)
+      rsig <- ifelse("sigma" %in% model.evo, nreg, 1)
+      rthe <- ifelse("theta" %in% model.evo, nreg, 1) + ifelse("root" %in% model.evo, 1, 0)
+      nr <- c(rsv, rsig, rthe)
       # window size
       ws <- list()
-      ws$ou.sv <- 0.5
-      ws$ou.sig <- 2
-      ws$ou.the <- rep(sd(x), nreg + ifelse(root.station, 0, 1)) # 2 in the previous version?
+      ws$ou.sv <- rep(0.5, rsv)
+      ws$ou.sig <- rep(2, rsig)
+      ws$ou.the <- rep(sd(x), rthe) # 2 in the previous version?
       # initial parameter values
       init <- list()
-      init$ou.sv <- runif(1, 0.1, 1)
-      init$ou.sig <- runif(1, 0.5, 3)
-      init$ou.the <- rep(mean(x), nreg + ifelse(root.station, 0, 1))
+      init$ou.sv <- runif(rsv, 0.1, 1)
+      init$ou.sig <- runif(rsig, 0.5, 3)
+      init$ou.the <- rep(mean(x), rthe)
       # proposals
       prop <- list()
-      prop[[1]]	<- proposal("multiplierProposalLakner")
-      prop[[2]]	<- proposal("multiplierProposalLakner")
-      for(i in 3:(nreg+ ifelse(root.station, 2, 3))){
-        prop[[i]]	<- proposal("slidingWin")
+      i <- 1
+      while(i <= (rsv + rsig + rthe)){
+        if (i <= rsv) prop[[i]] <- proposal("multiplierProposal")
+        else if (i <= (rsv + rsig)) prop[[i]] <- proposal("multiplierProposal")
+        else prop[[i]] <- proposal("slidingWin")
+        i <- i + 1
       }
       # hyper priors
       hprior <- list()
-      hprior[[1]] <- hpfun("Gamma", c(1.1,5))
-      hprior[[2]]	<- hpfun("Gamma", c(1.1,5))
+      i <- 1
       bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
-      for(i in 3:(nreg + ifelse(root.station, 2, 3))){
-        hprior[[i]]	<- hpfun("Uniform", bounds) ## <- test loggamma??
+      while(i <= (rsv + rsig + rthe)){
+        if (i <= rsv)  hprior[[i]] <- hpfun("Gamma", c(1.1,5))
+        else if (i <= (rsv + rsig)) hprior[[i]]	<- hpfun("Gamma", c(1.1,5))
+        else hprior[[i]]	<- hpfun("Uniform", bounds)
+        i <- i + 1
       }
-      names(hprior) <- c("ou.sv", "ou.sig", sprintf("ou.the.%s", ifelse(root.station,1,0):nreg))
+      names(hprior) <- c(sprintf("ou.sv.%s", 1:rsv), sprintf("ou.sig.%s", 1:rsig), sprintf("ou.the.%s", if("root" %in% model.evo) 0:(rthe-1) else 1:rthe))
     }
     
-    eval(parse(text = sprintf("%s <- list(name = name, model = model, ws = ws, init = init, prop = prop, map = newmap, hprior = hprior, update.freq = update.freq)", level)))
+    eval(parse(text = sprintf("%s <- list(name = name, model = model, ws = ws, init = init, prop = prop, map = newmap, hprior = hprior, nr = nr, update.freq = update.freq)", level)))
 
   }
   

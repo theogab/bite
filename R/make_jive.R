@@ -37,22 +37,28 @@
 #' data(Anolis_map)
 #' 
 #' ## JIVE object to run jive with single regimes
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var= c("OU", "root"))
 #'
 #' ## JIVE object to run jive with multiple regimes
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.mean="BM", model.var="OUM")
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.mean="BM", model.var=c("OU", "theta", "alpha"))
 
 
 
-make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var="OU", root.station = F, scale = F, control = list()){
+make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.var=c("OU"), scale = F, control = list()){
   
   ### dealing with the tree
   is.phy <- !is.null(phy)
   if(!is.phy){
     phy <- list()
     phy$tip.label <- unique(traits[,1])
+  } else {
+    if(!is.null(map)){
+      rownames(map) <- sprintf("%s,%s", phy$edge[,1], phy$edge[,2])
+    }
+    phy <- reorder(phy, "postorder")
+    map <- map[sprintf("%s,%s", phy$edge[,1], phy$edge[,2]),]
   }
-  
+
   ### dealing with traits
   traits <- sapply(phy$tip.label, function(sp){
     if(any(traits[,1]  == sp)){
@@ -76,17 +82,24 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var
   if(is.phy){
     ### dealing with the map
     if (is.null(map)) {
-      if (is.null(phy$mapped.edge)){ # It is assumed there is only one regime
-        map <- matrix(phy$edge.length)
+      if (is.null(phy$maps)){ 
+        if (is.null(phy$nodelabels)){
+          map <- input_to_map(phy) # It is assumed there is only one regime
+        } else {
+          map <- input_to_map(phy, ndlabels = phy$nodelabels)
+        }
       } else {
-        map <- phy$mapped.edge
+        map <- input_to_map(phy, simmap = phy$maps)
       } 
+    } else {
+      map <- input_to_map(phy, map = map)
     }
     
-    if (dim(map)[1] != length(phy$edge.length)) {
+    if (length(map) < length(phy$edge.length)) {
       stop("map must provide mapping for every edge of phy")
     }
-    if (!all(abs(rowSums(map) - phy$edge.length) < 1e-5)) {
+  
+    if (!all(abs(sapply(1:nrow(phy$edge), function(i) max(map[[phy$edge[i,2]]][3,])-min(map[[phy$edge[i,2]]][2,])) - phy$edge.length) < 1e-5)) {
       stop("Mapping does not correspond to edge lengths")
     }
     
@@ -94,10 +107,15 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var
     if(scale){
       t.len <- max(branching.times(phy))
       phy$edge.length <- phy$edge.length/t.len
-      map <- map/t.len
+      map <- lapply(map, function(x){
+        out <- x
+        out[2:3,] <- out[2:3,]/t.len
+        return(out)
+      })
     }
+    
   } else {
-    map <- matrix(0, ncol = 2, nrow = 2)
+    map <- list()
   }
   
   
@@ -108,7 +126,6 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var
   jive$data$counts 					<- sapply(jive$data$traits, function (x) {sum( !is.na(x) )})
   jive$data$n               <- length(phy$tip.label)
   jive$data$map             <- map
-  jive$data$root.station   	<- root.station
   if(is.phy){
     jive$data$tree   					<- phy
     jive$data$vcv             <- vcv(phy)
@@ -116,7 +133,7 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var
   }
   
   
-  dt <- default_tuning(model.mean = model.mean, model.var = model.var, traits = jive$data$traits, map = jive$data$map, root.station = jive$data$root.station)
+  dt <- default_tuning(model.mean = model.mean, model.var = model.var, phy = jive$data$tree, traits = jive$data$traits, map = jive$data$map)
   
   ### Likelihood parameters ###
   jive$lik <- dt$lik
@@ -127,16 +144,13 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var
   
   # Calculate expectation and var/covar matrices #
   if(is.phy){
-    # rownames for map
-    rownames(jive$prior.mean$map) <- apply(phy$edge, 1, paste, collapse = ",")
-    
     jive$prior.mean$data <- lapply(jive$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.mean$init)),
                                                          pars = do.call(c,jive$prior.mean$init), tree = jive$data$tree,
-                                                         map = jive$prior.mean$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
+                                                         map = jive$prior.mean$map, t.vcv = jive$data$vcv, nr = jive$prior.mean$nr),
                                    function(x) if (x[[1]]) x[[2]])
   }
   
-  cat("Mean prior model: ",model.mean," [",ncol(jive$prior.mean$map),"]","\n",sep="")
+  cat("Mean prior model: ",model.mean[1]," [",max(do.call(cbind,jive$prior.mean$map)[1,]),"]","\n",sep="")
   
   #### Models for variance ####
   jive$prior.var <- dt$prior.var
@@ -145,16 +159,13 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var
   # Calculate expectation and var/covar matrices #
   if(is.phy){
     
-    # rownames for map
-    rownames(jive$prior.var$map) <- apply(phy$edge, 1, paste, collapse = ",")
-    
     jive$prior.var$data <- lapply(jive$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.var$init)),
                                                        pars = do.call(c,jive$prior.var$init), tree = jive$data$tree,
-                                                       map = jive$prior.var$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station),
+                                                       map = jive$prior.var$map, t.vcv = jive$data$vcv, nr = jive$prior.var$nr),
                                   function(x) if (x[[1]]) x[[2]])
   }
     
-  cat("Variance prior model: ",model.var," [",ncol(jive$prior.var$map),"]","\n",sep="")
+  cat("Variance prior model: ",model.var[1]," [",max(do.call(cbind,jive$prior.var$map)[1,]),"]","\n",sep="")
   
   ## Checks
   check_tuning(jive)
@@ -165,13 +176,13 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean="BM", model.var
                    paste("mean.", rep(names(jive$prior.mean$init), sapply(jive$prior.mean$init, length)),
                          unlist(lapply(sapply(jive$prior.mean$init, length), function(x){  
                            if (x == 1) ""
-                           else if (model.mean %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
+                           else if ("root" %in% model.mean) c("0", seq(1, x-1))
                            else seq(1, x)
                          } )), sep =""),
                    paste("var.", rep(names(jive$prior.var$init), sapply(jive$prior.var$init, length)),
                          unlist(lapply(sapply(jive$prior.var$init,length), function(x){  
                            if (x == 1) ""
-                           else if (model.var %in% c("OU", "OUM") & !root.station) c("0", seq(1, x-1))
+                           else if ("root" %in% model.var) c("0", seq(1, x-1))
                            else seq(1, x)
                          } )), sep =""),
                    paste(names(jive$data$traits), "_m", sep=""),
