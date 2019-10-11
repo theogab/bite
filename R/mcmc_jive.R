@@ -27,7 +27,7 @@
 #' 
 #' ## Run a simple MCMC chain
 #' set.seed(300)
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.var=c("OU", "root", "theta"), model.mean="BM")
 #' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
 #'
 #' ## Run an MCMC chain with thermodynamic integration
@@ -96,7 +96,6 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
     r <- runif(1) <= update.freq
     r[2] <- r[2] & !r[1]
     r[3] <- r[3] & !r[2] & !r[1]
-    
     proposals[r] <- proposals[r] + 1
     
     if (r[1]) # update m.sp, v.sp, calculate new lik
@@ -133,13 +132,17 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       pars.m0[par.n] <- tmp$v
       # calculate new var/covar and expectation
       mat.mean1 <- jive$prior.mean$data
-      mat.mean0 <- jive$prior.mean$model(n = jive$data$n, n.p = par.n,
-                                         pars = pars.m0, tree = jive$data$tree,
-                                         map = jive$prior.mean$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
-      jive$prior.mean$data <- lapply(1:length(jive$prior.mean$data), function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
-      # calculate prior and hprior
-      prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
-      hprior.mean0 <- unlist(mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[1,])
+      mat.mean0 <- try(jive$prior.mean$model(n = jive$data$n, n.p = par.n,
+                                           pars = pars.v0, tree = jive$data$tree,
+                                           map = jive$prior.mean$map, t.vcv = jive$data$vcv, nr = jive$prior.mean$nr), silent = T)
+      if(any(grepl("inf values", mat.mean0))){
+        prior.mean0 <- Inf
+      } else {
+        jive$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
+        # calculate prior and hprior
+        prior.mean0 <- jive:::calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+        hprior.mean0 <- unlist(mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[1,])
+      }
       hasting.ratio <- tmp$lnHastingsRatio
     } 
     
@@ -154,13 +157,17 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       pars.v0[par.n] <- tmp$v 
       # calculate new var/covar and expectation
       mat.var1 <- jive$prior.var$data
-      mat.var0 <- jive$prior.var$model(n = jive$data$n, n.p = par.n,
+      mat.var0 <- try(jive$prior.var$model(n = jive$data$n, n.p = par.n,
                                        pars = pars.v0, tree = jive$data$tree,
-                                       map = jive$prior.var$map, t.vcv = jive$data$vcv, root.station = jive$data$root.station)
-      jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
-      # calculate prior and hprior
-      prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
-      hprior.var0 <- unlist(mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[1,])
+                                       map = jive$prior.var$map, t.vcv = jive$data$vcv, nr = jive$prior.var$nr), silent = T)
+      if(any(grepl("inf values", mat.var0))){
+        prior.var0 <- Inf
+      } else {
+        jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
+        # calculate prior and hprior
+        prior.var0 <- jive:::calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
+        hprior.var0 <- unlist(mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[1,])
+      }
       hasting.ratio <- tmp$lnHastingsRatio
     }
     

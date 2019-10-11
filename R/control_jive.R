@@ -80,65 +80,67 @@ control_jive <- function(jive, level = c("lik", "prior.mean", "prior.var"), wind
   
   ### Prior level ###
   if (level == "prior.mean"){
-    nreg <- ncol(jive$prior.mean$map)
     # Ornstein-Uhlenbeck #
     if (grepl("OU", jive$prior.mean$name)){
       
       # window size
       if(!is.null(window.size)){
-        jive$prior.mean$ws[[1]] <- window.size[1]
-        jive$prior.mean$ws[[2]] <- window.size[2]
-        jive$prior.mean$ws[[3]] <- window.size[3:(nreg + ifelse(jive$data$root.station, 2, 3))]
+        jive$prior.mean$ws[[1]] <- window.size[1:jive$prior.mean$nr[1]]
+        jive$prior.mean$ws[[2]] <- window.size[jive$prior.mean$nr[1] + 1:jive$prior.mean$nr[2]]
+        jive$prior.mean$ws[[3]] <- window.size[jive$prior.mean$nr[2] + 1:jive$prior.mean$nr[3]]
       }
       
       # initial parameter values
       if(!is.null(initial.values)){
-        jive$prior.mean$init[[1]] <- initial.values[1]
-        jive$prior.mean$init[[2]] <- initial.values[2]
-        jive$prior.mean$init[[3]] <- initial.values[3:(nreg+ ifelse(jive$data$root.station, 2, 3))]
+        jive$prior.mean$init[[1]] <- initial.values[1:jive$prior.mean$nr[1]]
+        jive$prior.mean$init[[2]] <- initial.values[jive$prior.mean$nr[1] + 1:jive$prior.mean$nr[2]]
+        jive$prior.mean$init[[3]] <- initial.values[jive$prior.mean$nr[2] + 1:jive$prior.mean$nr[3]]
       }
       
       # proposals
       if (!is.null(proposals)){
-        jive$prior.mean$prop[[1]] <- proposal(proposals[1])
-        jive$prior.mean$prop[[2]]	<- proposal(proposals[2])
-        for(i in 3:(nreg+ ifelse(jive$data$root.station, 2, 3))){
-          jive$prior.mean$prop[[i]]	<-  proposal(proposals[3])
+        i <- 1
+        while(i <= sum(jive$prior.mean$nr)){
+          if (i <= jive$prior.mean$nr[1]) jive$prior.mean$prop[[i]] <- proposal(proposals[1])
+          else if (i <= sum(jive$prior.mean$nr[1:2])) jive$prior.mean$prop[[i]] <- proposal(proposals[2])
+          else jive$prior.mean$prop[[i]] <- proposal(proposals[3])
+          i <- i + 1
         }
       }
-      
       # hyper priors
       if (!is.null(hyperprior)){
-        jive$prior.mean$hprior[[1]] <- hyperprior[[1]]
-        jive$prior.mean$hprior[[2]] <- hyperprior[[2]]
-        for(i in 3:(nreg+ ifelse(jive$data$root.station, 2, 3))){
-          jive$prior.mean$hprior[[i]]	<- hyperprior[[3]]
+        i <- 1
+        while(i <= sum(jive$prior.mean$nr)){
+          if (i <= jive$prior.mean$nr[1]) jive$prior.mean$hprior[[i]] <- hyperprior[[1]]
+          else if (i <= sum(jive$prior.mean$nr[1:2])) jive$prior.mean$hprior[[i]] <- hyperprior[[2]]
+          else jive$prior.mean$hprior[[i]] <- hyperprior[[3]]
+          i <- i + 1
         }
       }
     } else {
       
       # window size
       if(!is.null(window.size)){
-        jive$prior.mean$ws[[1]] <- window.size[1:nreg]
-        jive$prior.mean$ws[[2]] <- window.size[nreg+1]
+        jive$prior.mean$ws[[1]] <- window.size[1:jive$prior.mean$nr[1]]
+        jive$prior.mean$ws[[2]] <- window.size[jive$prior.mean$nr[1]+1]
       }
       
       # initial parameter values
       if(!is.null(initial.values)){
-        jive$prior.mean$init[[1]] <- initial.values[1:nreg]
-        jive$prior.mean$init[[2]] <- initial.values[nreg]
+        jive$prior.mean$init[[1]] <- initial.values[1:jive$prior.mean$nr[1]]
+        jive$prior.mean$init[[2]] <- initial.values[jive$prior.mean$nr[1]]
       }
       
       # proposals
       if (!is.null(proposals)){
-        jive$prior.mean$prop <- lapply(1:nreg, proposal, prop = proposals[1]) # sigma(s)
-        jive$prior.mean$prop[[nreg+1]]	<- proposal(proposals[2]) # theta
+        jive$prior.mean$prop <- lapply(1:jive$prior.mean$nr[1], proposal, prop = proposals[1]) # sigma(s)
+        jive$prior.mean$prop[[jive$prior.mean$nr[1]+1]]	<- proposal(proposals[2]) # theta
       }
       
       # hyper priors
       if (!is.null(hyperprior)){
-        jive$prior.mean$hprior <- lapply(1:nreg, function(x) hyperprior[[1]]) # sigma(s)
-        jive$prior.mean$hprior[[nreg+1]] <- hyperprior[[2]] # theta
+        jive$prior.mean$hprior <- lapply(1:jive$prior.mean$nr[1], function(x) hyperprior[[1]]) # sigma(s)
+        jive$prior.mean$hprior[[jive$prior.mean$nr[1]+1]] <- hyperprior[[2]] # theta
       }
       
       
@@ -150,65 +152,67 @@ control_jive <- function(jive, level = c("lik", "prior.mean", "prior.var"), wind
     }
   }
   if (level == "prior.var"){
-    nreg <- ncol(jive$prior.var$map)
     # Ornstein-Uhlenbeck #
     if (grepl("OU", jive$prior.var$name)){
       
       # window size
       if(!is.null(window.size)){
-        jive$prior.var$ws[[1]] <- window.size[1]
-        jive$prior.var$ws[[2]] <- window.size[2]
-        jive$prior.var$ws[[3]] <- window.size[3:(nreg + ifelse(jive$data$root.station, 2, 3))]
+        jive$prior.var$ws[[1]] <- window.size[1:jive$prior.var$nr[1]]
+        jive$prior.var$ws[[2]] <- window.size[jive$prior.var$nr[1] + 1:jive$prior.var$nr[2]]
+        jive$prior.var$ws[[3]] <- window.size[jive$prior.var$nr[2] + 1:jive$prior.var$nr[3]]
       }
       
       # initial parameter values
       if(!is.null(initial.values)){
-        jive$prior.var$init[[1]] <- initial.values[1]
-        jive$prior.var$init[[2]] <- initial.values[2]
-        jive$prior.var$init[[3]] <- initial.values[3:(nreg+ ifelse(jive$data$root.station, 2, 3))]
+        jive$prior.var$init[[1]] <- initial.values[1:jive$prior.var$nr[1]]
+        jive$prior.var$init[[2]] <- initial.values[jive$prior.var$nr[1] + 1:jive$prior.var$nr[2]]
+        jive$prior.var$init[[3]] <- initial.values[jive$prior.var$nr[2] + 1:jive$prior.var$nr[3]]
       }
       
       # proposals
       if (!is.null(proposals)){
-        jive$prior.var$prop[[1]] <- proposal(proposals[1])
-        jive$prior.var$prop[[2]]	<- proposal(proposals[2])
-        for(i in 3:(nreg+ ifelse(jive$data$root.station, 2, 3))){
-          jive$prior.var$prop[[i]]	<-  proposal(proposals[3])
+        i <- 1
+        while(i <= sum(jive$prior.var$nr)){
+          if (i <= jive$prior.var$nr[1]) jive$prior.var$prop[[i]] <- proposal(proposals[1])
+          else if (i <= sum(jive$prior.var$nr[1:2])) jive$prior.var$prop[[i]] <- proposal(proposals[2])
+          else jive$prior.var$prop[[i]] <- proposal(proposals[3])
+          i <- i + 1
         }
       }
-      
       # hyper priors
       if (!is.null(hyperprior)){
-        jive$prior.var$hprior[[1]] <- hyperprior[[1]]
-        jive$prior.var$hprior[[2]] <- hyperprior[[2]]
-        for(i in 3:(nreg+ ifelse(jive$data$root.station, 2, 3))){
-          jive$prior.var$hprior[[i]]	<- hyperprior[[3]]
+        i <- 1
+        while(i <= sum(jive$prior.var$nr)){
+          if (i <= jive$prior.var$nr[1]) jive$prior.var$hprior[[i]] <- hyperprior[[1]]
+          else if (i <= sum(jive$prior.var$nr[1:2])) jive$prior.var$hprior[[i]] <- hyperprior[[2]]
+          else jive$prior.var$hprior[[i]] <- hyperprior[[3]]
+          i <- i + 1
         }
       }
     } else {
       
       # window size
       if(!is.null(window.size)){
-        jive$prior.var$ws[[1]] <- window.size[1:nreg]
-        jive$prior.var$ws[[2]] <- window.size[nreg+1]
+        jive$prior.var$ws[[1]] <- window.size[1:jive$prior.var$nr[1]]
+        jive$prior.var$ws[[2]] <- window.size[jive$prior.var$nr[1]+1]
       }
       
       # initial parameter values
       if(!is.null(initial.values)){
-        jive$prior.var$init[[1]] <- initial.values[1:nreg]
-        jive$prior.var$init[[2]] <- initial.values[nreg]
+        jive$prior.var$init[[1]] <- initial.values[1:jive$prior.var$nr[1]]
+        jive$prior.var$init[[2]] <- initial.values[jive$prior.var$nr[1]]
       }
       
       # proposals
       if (!is.null(proposals)){
-        jive$prior.var$prop <- lapply(1:nreg, proposal, prop = proposals[1]) # sigma(s)
-        jive$prior.var$prop[[nreg+1]]	<- proposal(proposals[2]) # theta
+        jive$prior.var$prop <- lapply(1:jive$prior.var$nr[1], proposal, prop = proposals[1]) # sigma(s)
+        jive$prior.var$prop[[jive$prior.var$nr[1]+1]]	<- proposal(proposals[2]) # theta
       }
       
       # hyper priors
       if (!is.null(hyperprior)){
-        jive$prior.var$hprior <- lapply(1:nreg, function(x) hyperprior[[1]]) # sigma(s)
-        jive$prior.var$hprior[[nreg+1]] <- hyperprior[[2]] # theta
+        jive$prior.var$hprior <- lapply(1:jive$prior.var$nr[1], function(x) hyperprior[[1]]) # sigma(s)
+        jive$prior.var$hprior[[jive$prior.var$nr[1]+1]] <- hyperprior[[2]] # theta
       }
       
       
