@@ -28,7 +28,9 @@
 #' ## Run a simple MCMC chain
 #' set.seed(300)
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=1000, ngen=5000000) 
+#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.var=c("OU", "root", "theta"), model.mean="BM")
+#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
 #'
 #' ## Run an MCMC chain with thermodynamic integration
 #' mcmc_jive(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
