@@ -22,12 +22,13 @@ check_tuning <- function(jive){
     
     # White Noise #
     if (grepl("WN", jive[[level]]$name)){
+      nreg <- max(do.call(cbind,jive[[level]]$map)[1,])
       # window sizes
-      if(length(unlist(jive[[level]]$ws)) != (ncol(jive[[level]]$map) + 1)) stop(sprintf("Vector of window sizes for %s is not the same length as the number of parameters: check obj$%s$ws", level))
+      if(length(unlist(jive[[level]]$ws)) != (nreg + 1)) stop(sprintf("Vector of window sizes for %s is not the same length as the number of parameters: check obj$%s$ws", level))
       # initial values
       if(any(jive[[level]]$init$wn.sig <= 0)) stop(sprintf("initial values for sigma^2 should not be negative: check obj$%s$init", level))
-      if(length(unlist(jive[[level]]$init)) != (ncol(jive[[level]]$map) + 1)) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
-      for(i in 1:ncol(jive[[level]]$map)){
+      if(length(unlist(jive[[level]]$init)) != (nreg + 1)) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
+      for(i in 1:nreg){
         if(is.finite(jive[[level]]$hprior[[i]](-1)[[1]])){
           stop(sprintf("Hyper prior should not allow sigma^2 <= 0: check obj$%s$hprior$%s", level, names(jive[[level]]$hprior[i])))
         }  
@@ -36,13 +37,14 @@ check_tuning <- function(jive){
     
     # Brownian Motion
     if (grepl("BM", jive[[level]]$name)){
+      nreg <- max(do.call(cbind,jive[[level]]$map)[1,])
       # window sizes
-      if(length(unlist(jive[[level]]$ws)) != (ncol(jive[[level]]$map) + 1)) stop(sprintf("Vector of window sizes for %s is not the same length as the number of parameters: check obj$%s$ws", level))
+      if(length(unlist(jive[[level]]$ws)) != (nreg + 1)) stop(sprintf("Vector of window sizes for %s is not the same length as the number of parameters: check obj$%s$ws", level))
       # initial values
       if(any(jive[[level]]$init$bm.sig <= 0)) stop(sprintf("initial values for %s should not be negative: check obj$%s$init", level))
-      if(length(unlist(jive[[level]]$init)) != (ncol(jive[[level]]$map) + 1)) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
+      if(length(unlist(jive[[level]]$init)) != (nreg + 1)) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
       # hyperprior
-      for(i in 1:ncol(jive[[level]]$map)){
+      for(i in 1:nreg){
         if(is.finite(jive[[level]]$hprior[[i]](-1)[[1]])){
           stop(sprintf("Hyper prior should not allow sigma^2 <= 0: check obj$%s$hprior$%s", level, names(jive[[level]]$hprior[i])))
         }  
@@ -51,14 +53,22 @@ check_tuning <- function(jive){
     
     # Ornstein-Uhlenbeck #
     if (grepl("OU", jive[[level]]$name)){
+      # number of regimes for each parameter
+      nreg <- max(do.call(cbind,jive[[level]]$map)[1,])
+      rsig <- ifelse(grepl("sigma",  jive[[level]]$name), nreg, 1)
+      rsv <- ifelse(any(grepl("alpha", jive[[level]]$name), grepl("sigma", jive[[level]]$name)), nreg, 1)
+      rthe <- ifelse(grepl("theta", jive[[level]]$name), nreg, 1) + ifelse(grepl("root", jive[[level]]$name), 1, 0)
       # window sizes
-      if(length(unlist(jive[[level]]$ws)) != (ncol(jive[[level]]$map) + ifelse(jive$data$root.station, 2, 3))) stop(sprintf("Vector of window sizes for %s is not the same length as the number of parameters: check obj$%s$ws", level))
+      if(length(unlist(jive[[level]]$ws)) != (rsig + rsv + rthe)) stop(sprintf("Vector of window sizes for %s is not the same length as the number of parameters: check obj$%s$ws", level))
       # initial values
       if(any(jive[[level]]$init$ou.sig <= 0)) stop(sprintf("initial values for %s should not be negative: check obj$%s$init", level))
-      if(length(unlist(jive[[level]]$init)) != (ncol(jive[[level]]$map) + ifelse(jive$data$root.station, 2, 3))) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
+      if(length(unlist(jive[[level]]$init)) != (rsig + rsv + rthe)) stop(sprintf("Vector of initial values for %s is not the same length as the number of parameters: check obj$%s$init", level))
       # hyperprior
-      if(is.finite(jive[[level]]$hprior[[2]](-1)[[1]])) stop(sprintf("Hyper prior should not allow sigma^2 <= 0: check obj$%s$hprior$%s", level, names(jive[[level]]$hprior[i])))
+      for(i in rsv + 1:rsig){
+        if(is.finite(jive[[level]]$hprior[[2]](-1)[[1]])){
+          stop(sprintf("Hyper prior should not allow sigma^2 <= 0: check obj$%s$hprior$%s", level, names(jive[[level]]$hprior[i])))
+        } 
+      }
     }
-    
   }
 }
