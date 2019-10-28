@@ -1,6 +1,6 @@
-Package: jive
+Package: bite
 Type: Package
-Title: Analysis of joint intra and inter-specific trait evolution
+Title: Bayesian Integrative models of Trait Evolution
 Version: 0.3
 Date: 2019-03-19
 Author: Theo Gaboriau <theo.gaboriau@unil.ch>, Anna Kostikova <anna.kostikova@unil.ch>, Daniele Silvestro <daniele.Silvestro@unil.ch>, Sacha Laurent <Sacha.Laurent@unil.ch>, Martha Serrano <martha.serrano@unil.ch>, Glenn Litsios <glenn.litsios@unil.ch>, Wim Hordijk <wim@WorldWideWanderings.net>, Nicolas Salamin <nicolas.salamin@unil.ch>, Simon Joly <joly.simon@gmail.com>
