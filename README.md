@@ -1,12 +1,12 @@
-# jive-package
+# bite
 
-**Joint Inter- and intraspecific Variance Evolution**
+**Bayesian Integrative models for Trait Evolution**
 
-This is the working repository for the jive R package. The original source code was obtained as supplementary data from Kostikova et al. (2016), but this version includes many improvements and updates.
+This is the working repository for the bite R package. This package implements the jive model and other Bayesian models aimed at understanding traits evolution. The original source code was obtained as supplementary data from Kostikova et al. (2016), but this version includes many improvements and updates.
 
 ## About
 
-The **jive** R package implements the Joint Inter- and intraspecific Variance Evolution (Kostikova et al. 2016). It uses a MCMC approach to estimates species means and variances of a trait, as well as the parameters of evolutionary models that describe the evolution of these shapes and variances.
+The **bite** R package implements the Joint Inter- and intraspecific Variance Evolution (Kostikova et al. 2016). It uses a MCMC approach to estimates species means and variances of a trait, as well as the parameters of evolutionary models that describe the evolution of these shapes and variances.
 
 ## Installation
 
@@ -18,7 +18,7 @@ $> install.packages("devtools")
 
 $> library(devtools)
 
-$> install_github("theogab/jive-package")
+$> install_github("theogab/bite")
 
 ### Source and binaries 
 
