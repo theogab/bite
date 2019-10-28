@@ -11,6 +11,7 @@
 #' @param hpf name of a density function. Supported density functions are: Uniform, Gamma and Normal (abbreviations are not supported)
 #' @param hp.pars a vector of density function parameters
 #' @param ... additional parameters that can be passed to a density function
+#' @import stats
 #' @export
 #' @author Anna Kostikova and Daniele Silvestro
 #' @return A hyper-prior density function (function)

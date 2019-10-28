@@ -7,7 +7,7 @@
 #' @details This function creates a jive object needed for \code{\link{mcmc_jive}} function.  
 #' Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data. Rownames are species names that should match exactly tip labels of the phylogenetic tree.
 #'
-#' Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map. If you keep the phy = NULL options the JIVE object can only be parsed to the \code{\link{make_xml}} function.
+#' Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map. If you keep the phy = NULL options the JIVE object can only be parsed to the \code{\link{xml_jive}} function.
 #' 
 #' map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
 #' 
@@ -22,13 +22,14 @@
 #' @param map matrix mapping regimes on every edge of phy (see details) 
 #' @param model.mean model specification for trait mean evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")				
 #' @param model.var model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")
-#' @param root.station boolean indicating whether the theta_0 should be dropped from the OU or OUM models 
 #' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
 #' @param control list to control tuning parameters of the MCMC algorithm (see details)
+#' @param nreg integer giving the number of regimes for a Beast analysis. Only evaluated if phy == NULL
 #' @export
-#' @import ape 
+#' @import ape stats
 #' @author Theo Gaboriau, Anna Kostikova and Simon Joly
 #' @return A list of functions and tuning parameters to parse into \code{\link{mcmc_jive}} function.
+#' @seealso \code{\link{xml_jive}}, \code{\link{mcmc_jive}} 
 #' @examples
 #' 
 #' ## Load test data
@@ -37,14 +38,16 @@
 #' data(Anolis_map)
 #' 
 #' ## JIVE object to run jive with single regimes
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var= c("OU", "root"))
+#' my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits,
+#'  model.mean="BM", model.var= c("OU", "root"))
 #'
 #' ## JIVE object to run jive with multiple regimes
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.mean="BM", model.var=c("OU", "theta", "alpha"))
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
+#'  model.mean="BM", model.var=c("OU", "theta", "alpha"))
 
 
 
-make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.var=c("OU"), scale = F, control = list()){
+make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.var=c("OU"), scale = F, control = list(), nreg = NULL){
   
   ### dealing with the tree
   is.phy <- !is.null(phy)
@@ -115,7 +118,7 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
     }
     
   } else {
-    map <- list()
+    map <- input_to_map(phy, nreg = nreg)
   }
   
   
@@ -126,8 +129,9 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
   jive$data$counts 					<- sapply(jive$data$traits, function (x) {sum( !is.na(x) )})
   jive$data$n               <- length(phy$tip.label)
   jive$data$map             <- map
+  jive$data$tree   					<- phy
+  
   if(is.phy){
-    jive$data$tree   					<- phy
     jive$data$vcv             <- vcv(phy)
     jive$data$scale    	      <- scale
   }

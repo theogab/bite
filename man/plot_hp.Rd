@@ -36,7 +36,6 @@ my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
 plot_hp(my.hp)
 
 my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
-par(mfrow = c(2,3))
 plot_hp(my.jive, cex.main = .8)
 }
 \author{

@@ -4,8 +4,8 @@
 \alias{make_jive}
 \title{Create a list that can be used as an input to mcmc_jive}
 \usage{
-make_jive(phy, traits, map = NULL, model.mean = "BM",
-  model.var = "OU", root.station = F, scale = F, control = list())
+make_jive(phy = NULL, traits, map = NULL, model.mean = c("BM"),
+  model.var = c("OU"), scale = F, control = list(), nreg = NULL)
 }
 \arguments{
 \item{phy}{phylogenetic tree provided as either a simmap or a phylo object}
@@ -18,11 +18,11 @@ make_jive(phy, traits, map = NULL, model.mean = "BM",
 
 \item{model.var}{model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")}
 
-\item{root.station}{boolean indicating whether the theta_0 should be dropped from the OU or OUM models}
-
 \item{scale}{boolean indicating whether the tree should be scaled to unit length for the model fitting}
 
 \item{control}{list to control tuning parameters of the MCMC algorithm (see details)}
+
+\item{nreg}{integer giving the number of regimes for a Beast analysis. Only evaluated if phy == NULL}
 }
 \value{
 A list of functions and tuning parameters to parse into \code{\link{mcmc_jive}} function.
@@ -37,7 +37,7 @@ with NA for no data. Phylogenetic tree can be either a simmap object (\code{\lin
 This function creates a jive object needed for \code{\link{mcmc_jive}} function.  
 Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data. Rownames are species names that should match exactly tip labels of the phylogenetic tree.
 
-Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map.
+Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map. If you keep the phy = NULL options the JIVE object can only be parsed to the \code{\link{xml_jive}} function.
 
 map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
 
@@ -55,10 +55,15 @@ data(Anolis_tree)
 data(Anolis_map)
 
 ## JIVE object to run jive with single regimes
-my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
+my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits,
+ model.mean="BM", model.var= c("OU", "root"))
 
 ## JIVE object to run jive with multiple regimes
-my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.mean="BM", model.var="OUM")
+my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
+ model.mean="BM", model.var=c("OU", "theta", "alpha"))
+}
+\seealso{
+\code{\link{xml_jive}}, \code{\link{mcmc_jive}}
 }
 \author{
 Theo Gaboriau, Anna Kostikova and Simon Joly

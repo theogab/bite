@@ -27,13 +27,19 @@
 #' 
 #' ## Run a simple MCMC chain
 #' set.seed(300)
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map, model.var=c("OU", "root", "theta"), model.mean="BM")
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log", sampling.freq=10, print.freq=100, ngen=5000) 
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
+#'  model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
+#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log",
+#'  sampling.freq=10, print.freq=100, ngen=5000) 
+#'
+#'  my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
+#'   model.var=c("OU", "root", "theta"), model.mean="BM")
+#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log",
+#'  sampling.freq=10, print.freq=100, ngen=5000) 
 #'
 #' ## Run an MCMC chain with thermodynamic integration
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
+#' mcmc_jive(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
+#' sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
 
 
 mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000, print.freq = 1000, 
@@ -142,7 +148,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       } else {
         jive$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
         # calculate prior and hprior
-        prior.mean0 <- jive:::calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+        prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
         hprior.mean0 <- unlist(mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[1,])
       }
       hasting.ratio <- tmp$lnHastingsRatio
@@ -167,7 +173,7 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       } else {
         jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
         # calculate prior and hprior
-        prior.var0 <- jive:::calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
+        prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
         hprior.var0 <- unlist(mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[1,])
       }
       hasting.ratio <- tmp$lnHastingsRatio

@@ -21,10 +21,11 @@
 #' #Does not go well with default margin sizes
 #' par(mar = c(5,1,4,6))
 #' plot_bf(m.liks)
-#' plot_bf(m.liks, thr = c(2,6), col.thr = c("#a2c5ac", "#ade1e5"), col = c("#d32f23", "#468189","#2e86ab","#000000"), cex = c(1.2,1,0.8,0.8))
-#' plot_bf(m.liks, group.pattern = "MBM", rank = F)
-#' plot_bf(m.liks, group.pattern = "MOU", rank = T)
-#' plot_bf(m.liks, group.pattern = c("VWN", "VOU", "VBM"), rank = T)
+#' plot_bf(m.liks, thr = c(2,6), col.thr = c("#a2c5ac", "#ade1e5"),
+#'  col = c("#d32f23", "#468189","#2e86ab","#000000"), cex = c(1.2,1,0.8,0.8))
+#' plot_bf(m.liks, group.pattern = "MBM", rank = FALSE)
+#' plot_bf(m.liks, group.pattern = "MOU", rank = TRUE)
+#' plot_bf(m.liks, group.pattern = c("VWN", "VOU", "VBM"), rank = TRUE)
 #' par(mar = c(6,5,1,2))
 #' plot_bf(m.liks, dir = "horizontal", srt.lab = -60, adj.lab = c(0,0.8))
 

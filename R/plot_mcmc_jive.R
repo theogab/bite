@@ -1,6 +1,5 @@
-#' @title Plot \code{\link{jive_mcmc}} results
+#' @title Plot \code{\link{mcmc_jive}} results
 #' @description This function plots the trace and/or density of each mcmc sample
-#' @details  
 #' @param mcmc.log Any mcmc sample with the saved iterations in rows and the variables in columns
 #' @param type character taken in c("trace", "density"). If both are specified, they are plotted side by side in the same graphical device
 #' @param burnin The size of the burnin in number of iterations or the proportion of iteration you want to remove
@@ -19,12 +18,12 @@
 #' data(Anolis_map)
 #' 
 #' ## Run a simple MCMC chain
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM", root.station = T)
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
 #' mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 #'
 #' ## import the results in R
 #' logfile <- "my.jive_mcmc.log"
-#' res <- read.csv(logfile, header = T, sep = "\t")
+#' res <- read.csv(logfile, header = TRUE, sep = "\t")
 #' 
 #' ## plot the results
 #' plot_mcmc_jive(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)

@@ -29,7 +29,8 @@
 #' jive_phy <- sim_jive(phy, phy$maps)
 #' 
 #' # MWNM and VOUM
-#' jive_phy <- sim_jive(phy, phy$maps, "OUM", "WNM",  v.pars = list(the = c(10,5,10), sig2 = 0.1, alp = c(0.2, 0.8)), m.pars = list(the = 0, sig2 = c(0.1, 0.5)))
+#' jive_phy <- sim_jive(phy, phy$maps, "OUM", "WNM",  v.pars = list(the = c(10,5,10), 
+#' sig2 = 0.1, alp = c(0.2, 0.8)), m.pars = list(the = 0, sig2 = c(0.1, 0.5)))
 
 sim_jive <- function(phy, map = NULL, model.var="OU", model.mean="BM",
                      v.pars = list(the = c(2,1), sig2 = 0.1, alp = 1), m.pars = list(the = 0, sig2 = 0.1),
