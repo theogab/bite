@@ -12,12 +12,6 @@ format_jive_traits(obs)
 \description{
 This function takes a dataframe with indivdual observations ans species names and returns a traits matrix to to parse into \code{\link{make_jive}} function
 }
-\details{
-
-}
-\examples{
-
-}
 \author{
 Theo Gaboriau
 }

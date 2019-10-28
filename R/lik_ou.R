@@ -1,6 +1,6 @@
 #' @import ape
 
-# input: n - number of species, n.p - which parameter has been updated, pars - c(alp,sig,the0,the1...theN), tree, map, vcv and vector of size 3 giving the number of regime every parameter is undergoing for nr 
+# input: n - number of species, n.p - which parameter has been updated, pars - c(alp,sig,the0,the1...theN), tree, map, vcv and vector of size 4 giving the number of regime every parameter is undergoing for nr 
 # does: calculate log-likelihood; see Butler and King 2004, appendix eq. A8 and A9 and Beaulieu et al. 2012
 update_ou <- function(n, n.p, pars, tree, map, t.vcv, nr){
   
@@ -10,9 +10,11 @@ update_ou <- function(n, n.p, pars, tree, map, t.vcv, nr){
   ## extract variables
   sv_i <- 1:nr[1]
   sig_i <- nr[1] + 1:nr[2]
-  the_i <- nr[1] + nr[2] + 1:nr[3]
+  root_i <- nr[1] + nr[2] + nr[3]
+  the_i <- nr[1] + nr[2] + nr[3] + 1:nr[4]
   alp  <- pars[sig_i]/(2*pars[sv_i])
   sig <- pars[sig_i]
+  if(nr[3] == 1) root <- pars[root_i]
   the  <- pars[the_i]
   T.len  <- t.vcv[1, 1]
 
@@ -24,6 +26,8 @@ update_ou <- function(n, n.p, pars, tree, map, t.vcv, nr){
   nreg <- max(do.call(cbind,map)[1,])
   if(length(sig) == 1) sig <- rep(sig, nreg)
   if(length(alp) == 1) alp <- rep(alp , nreg)
+  if(length(the) == 1) the <- rep(the, nreg)
+  if(nr[3] == 1) the <- c(root, the)
   
   ## Matrices used for the calculations of e and v
   if(any(c(sv_i, the_i) %in% n.p)){
@@ -78,7 +82,7 @@ update_ou <- function(n, n.p, pars, tree, map, t.vcv, nr){
     # calculate weight matrix
     if(any(is.infinite(var.cur.reg))){stop("inf values", call. = F)}
     w <- exp(t(var.reg))*t(var.cur.reg)
-    if(nr[3] > nreg) w <- cbind(exp(colSums(var.reg)), w)
+    if(nr[3] == 1) w <- cbind(exp(colSums(var.reg)), w)
     w <- w/rowSums(w)
   
     # calculate expectation

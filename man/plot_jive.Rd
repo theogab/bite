@@ -40,12 +40,17 @@ data(Anolis_traits)
 data(Anolis_tree)
 data(Anolis_map)
 
-my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
+my.jive <- make_jive(Anolis_tree, Anolis_traits, 
+ model.var="OU", model.mean="BM")
 par(cex.lab = .8, cex.axis = .8, las = 1, mgp = c(2,0.5,0))
-plot_jive(jive = my.jive, show.tip.label = T, trait.lab = "Snout to vent length (cm)", srt.label = 0)
-my.jive <- make_jive(Anolis_tree, Anolis_traits, Anolis_map*Anolis_tree$edge.length, model.var="OUM", model.mean="BM")
+plot_jive(jive = my.jive, show.tip.label = TRUE, 
+trait.lab = "Snout to vent length (cm)", srt.label = 0)
+my.jive <- make_jive(Anolis_tree, Anolis_traits, Anolis_map,
+ model.var=c("OU", "theta"), model.mean="BM")
 par(cex.lab = .8, cex.axis = .8, las = 1, mgp = c(2,0.5,0))
-plot_jive(jive = my.jive, show.tip.label = T, trait.lab = "Snout to vent length (cm)", srt.label = 70, direction = "upwards")
+plot_jive(jive = my.jive, show.tip.label = TRUE,
+ trait.lab = "Snout to vent length (cm)", srt.label = 70, direction = "upwards")
+ 
 }
 \author{
 Theo Gaboriau

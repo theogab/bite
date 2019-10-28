@@ -2,12 +2,12 @@
 % Please edit documentation in R/plot_mcmc_jive.R
 \name{plot_mcmc_jive}
 \alias{plot_mcmc_jive}
-\title{Plot \code{\link{jive_mcmc}} results}
+\title{Plot \code{\link{mcmc_jive}} results}
 \usage{
 plot_mcmc_jive(mcmc.log, type = c("trace", "density"), burnin = 0,
   variable = "log.lik", label = ifelse(is.numeric(variable),
   colnames(mcmc.log)[variable], variable), col = "#000000",
-  cex.est = 1, ...)
+  cex.est = 1, bty = "n", ...)
 }
 \arguments{
 \item{mcmc.log}{Any mcmc sample with the saved iterations in rows and the variables in columns}
@@ -25,9 +25,6 @@ plot_mcmc_jive(mcmc.log, type = c("trace", "density"), burnin = 0,
 \description{
 This function plots the trace and/or density of each mcmc sample
 }
-\details{
-
-}
 \examples{
 
 ## Load test data
@@ -36,12 +33,12 @@ data(Anolis_tree)
 data(Anolis_map)
 
 ## Run a simple MCMC chain
-my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM", root.station = T)
+my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
 mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 
 ## import the results in R
 logfile <- "my.jive_mcmc.log"
-res <- read.csv(logfile, header = T, sep = "\\t")
+res <- read.csv(logfile, header = TRUE, sep = "\\t")
 
 ## plot the results
 plot_mcmc_jive(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)

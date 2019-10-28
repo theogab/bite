@@ -7,7 +7,7 @@ Author: Theo Gaboriau <theo.gaboriau@unil.ch>, Anna Kostikova <anna.kostikova@un
 Maintainer: Theo Gaboriau <theo.gaboriau@unil.ch>
 Description: macroevolutionary analysis of joint intra and inter-specific variance evolution using comparative phylogenetic models. 
 Depends: R (>= 3.0.3)
-Imports: ape, MASS, phytools, coda, sm, vioplot
+Imports: ape, MASS, phytools, coda, sm, vioplot, xml2
 License: GPL-2
 Repository: CRAN
 NeedsCompilation: no

@@ -6,9 +6,9 @@
 \usage{
 plot_bf(m.liks, thr = 2, dir = c("vertical", "horizontal"),
   col = c("#d32f23", "#2e86ab", "#000000"), col.thr = c("#a6e1fa"),
-  ax.lab = expression(Delta ~ "BF"), main = "", mod.lab = NULL,
-  rank = T, dec = T, group.pattern = NULL, cex = c(1.2, 1, 1),
-  srt.lab = 0, adj.lab = 0, space = c(1.2, 0.8))
+  ax.lab = "log(BF)", main = "", mod.lab = NULL, rank = T,
+  dec = T, group.pattern = NULL, cex = c(1.2, 1, 1), srt.lab = 0,
+  adj.lab = 0, space = c(1.2, 0.8))
 }
 \arguments{
 \item{m.liks}{matrix of marginal likelihoods (see details)}
@@ -44,10 +44,11 @@ names(m.liks) <- c("MBM-VBM", "MBM-VWN", "MBM-VOU", "MOU-VBM", "MOU-VWN", "MOU-V
 #Does not go well with default margin sizes
 par(mar = c(5,1,4,6))
 plot_bf(m.liks)
-plot_bf(m.liks, thr = c(2,6), col.thr = c("#a2c5ac", "#ade1e5"), col = c("#d32f23", "#468189","#2e86ab","#000000"), cex = c(1.2,1,0.8,0.8))
-plot_bf(m.liks, group.pattern = "MBM", rank = F)
-plot_bf(m.liks, group.pattern = "MOU", rank = T)
-plot_bf(m.liks, group.pattern = c("VWN", "VOU", "VBM"), rank = T)
+plot_bf(m.liks, thr = c(2,6), col.thr = c("#a2c5ac", "#ade1e5"),
+ col = c("#d32f23", "#468189","#2e86ab","#000000"), cex = c(1.2,1,0.8,0.8))
+plot_bf(m.liks, group.pattern = "MBM", rank = FALSE)
+plot_bf(m.liks, group.pattern = "MOU", rank = TRUE)
+plot_bf(m.liks, group.pattern = c("VWN", "VOU", "VBM"), rank = TRUE)
 par(mar = c(6,5,1,2))
 plot_bf(m.liks, dir = "horizontal", srt.lab = -60, adj.lab = c(0,0.8))
 }

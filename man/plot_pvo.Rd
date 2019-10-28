@@ -4,14 +4,16 @@
 \alias{plot_pvo}
 \title{Plots estimates of species traits distribution}
 \usage{
-plot_pvo(traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95,
+plot_pvo(phy, traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95,
   stat = "median", trait.lab = "trait", col = NULL, border = NULL,
   legend = F, lolipop = T, ...)
 }
 \arguments{
+\item{phy}{phylogenetic tree provided as either a simmap or a phylo object}
+
 \item{traits}{trait data used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}}
 
-\item{mcmc.log}{the output file of a \code{\link{jive_mcmc}} run}
+\item{mcmc.log}{the output file of a \code{\link{mcmc_jive}} run}
 
 \item{tip}{An integer giving the row corresponding to the species to be plotted}
 
@@ -27,9 +29,9 @@ plot_pvo(traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95,
 
 \item{border}{color of denstiy contour. Could be of size one or two. If border = NULL, no borders are plotted}
 
-\item{lolipop}{a logical specifying wether the sample positions should be presented as lolipops}
+\item{legend}{A character giving the species name}
 
-\item{label}{A character giving the species name}
+\item{lolipop}{a logical specifying wether the sample positions should be presented as lolipops}
 }
 \description{
 Density plot representing estimated species trait distributions under a jive model.
@@ -41,14 +43,14 @@ data(Anolis_traits)
 data(Anolis_tree)
 
 # Run a simple MCMC chain
-my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM", root.station = T)
+my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
 mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 
 ## import the results in R
 logfile <- "my.jive_mcmc.log"
-res <- read.csv(logfile, header = T, sep = "\\t")
+res <- read.csv(logfile, header = TRUE, sep = "\\t")
 
-plot_pvo(Anolis_traits, res, 5)
+plot_pvo(Anolis_tree, Anolis_traits, res, 5)
 }
 \author{
 Theo Gaboriau

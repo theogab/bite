@@ -1,3 +1,4 @@
+#' @import stats
 ## Default tuning for Jive analysis
 
 default_tuning <- function(model.mean = c("BM", "OU", "WN"),
@@ -62,7 +63,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
         newmap <- map
       } else {
         nreg <- 1
-        newmap <- input_to_map(phy)
+        newmap <- input_to_map(phy, nreg = nreg)
       }
       # name
       name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
@@ -95,7 +96,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
         newmap <- map
       } else {
         nreg <- 1
-        newmap <- input_to_map(phy)
+        newmap <- input_to_map(phy, nreg = nreg)
       }
       # name
       name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
@@ -128,29 +129,30 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
         newmap <- map
       } else {
         nreg <- 1
-        newmap <- input_to_map(phy)
+        newmap <- input_to_map(phy, nreg = nreg)
       }
       # name
       name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
       # number of regimes for each parameter
       rsv <- ifelse(any(c("alpha", "sigma") %in% model.evo), nreg, 1)
       rsig <- ifelse("sigma" %in% model.evo, nreg, 1)
-      rthe <- ifelse("theta" %in% model.evo, nreg, 1) + ifelse("root" %in% model.evo, 1, 0)
-      nr <- c(rsv, rsig, rthe)
+      rthe <- ifelse("theta" %in% model.evo, nreg, 1)
+      rroot <- ifelse("root" %in% model.evo, 1, 0)
+      nr <- c(rsv, rsig, rroot, rthe)
       # window size
       ws <- list()
       ws$ou.sv <- rep(0.5, rsv)
       ws$ou.sig <- rep(2, rsig)
-      ws$ou.the <- rep(sd(x), rthe) # 2 in the previous version?
+      ws$ou.the <- rep(sd(x), rroot+rthe) # 2 in the previous version?
       # initial parameter values
       init <- list()
       init$ou.sv <- runif(rsv, 0.1, 1)
       init$ou.sig <- runif(rsig, 0.5, 3)
-      init$ou.the <- rep(mean(x), rthe)
+      init$ou.the <- rep(mean(x), rroot+rthe)
       # proposals
       prop <- list()
       i <- 1
-      while(i <= (rsv + rsig + rthe)){
+      while(i <= (rsv + rsig + rroot + rthe)){
         if (i <= rsv) prop[[i]] <- proposal("multiplierProposal")
         else if (i <= (rsv + rsig)) prop[[i]] <- proposal("multiplierProposal")
         else prop[[i]] <- proposal("slidingWin")
@@ -160,13 +162,13 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       hprior <- list()
       i <- 1
       bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
-      while(i <= (rsv + rsig + rthe)){
+      while(i <= (rsv + rsig + rroot + rthe)){
         if (i <= rsv)  hprior[[i]] <- hpfun("Gamma", c(1.1,5))
         else if (i <= (rsv + rsig)) hprior[[i]]	<- hpfun("Gamma", c(1.1,5))
         else hprior[[i]]	<- hpfun("Uniform", bounds)
         i <- i + 1
       }
-      names(hprior) <- c(sprintf("ou.sv.%s", 1:rsv), sprintf("ou.sig.%s", 1:rsig), sprintf("ou.the.%s", if("root" %in% model.evo) 0:(rthe-1) else 1:rthe))
+      names(hprior) <- c(sprintf("ou.sv.%s", 1:rsv), sprintf("ou.sig.%s", 1:rsig), sprintf("ou.the.%s", if("root" %in% model.evo) 0:(rthe) else 1:rthe))
     }
     
     eval(parse(text = sprintf("%s <- list(name = name, model = model, ws = ws, init = init, prop = prop, map = newmap, hprior = hprior, nr = nr, update.freq = update.freq)", level)))
