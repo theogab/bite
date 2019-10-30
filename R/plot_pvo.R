@@ -3,7 +3,7 @@
 #' This function plots the mean or median density distribution and the HPD distributions assuming that the trait is normally distributed
 #' @param phy phylogenetic tree provided as either a simmap or a phylo object
 #' @param traits trait data used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}
-#' @param mcmc.log the output file of a \code{\link{mcmc_jive}} run
+#' @param mcmc.log the output file of a \code{\link{mcmc_bite}} run
 #' @param tip An integer giving the row corresponding to the species to be plotted
 #' @param burnin The size of the burnin in number of iterations or the proportion of iteration you want to remove
 #' @param legend A character giving the species name
@@ -22,7 +22,7 @@
 #' 
 #' # Run a simple MCMC chain
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-#' mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
+#' mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 #'
 #' ## import the results in R
 #' logfile <- "my.jive_mcmc.log"

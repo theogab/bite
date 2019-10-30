@@ -16,11 +16,10 @@
 xml_jive <- function(jive, xml, out = sprintf("%s_edited.xml", gsub(".xml", "", xml))){
   
   x <- read_xml(xml)
-  cat(class(x), "#first\n")
   
-  treeid <- xml_attr(xml_find_first(x, "//stateNode"), "id")
+  treeid <- xml_attr(xml_find_first(x, "//tree"), "id")
   
-  spnames <- sapply(xml_find_all(x, "//taxon[@spec='TaxonSet']"), xml_attr, "id")
+  spnames <- unique(sapply(xml_find_all(x, "//taxon[@spec='Taxon']"), xml_attr, "id"))
   
   ## Likelihood
   likelihood_xml(x, jive$lik, jive$data$traits, spnames)
@@ -44,18 +43,28 @@ xml_jive <- function(jive, xml, out = sprintf("%s_edited.xml", gsub(".xml", "", 
   
   ## operators
   operator_xml(x, jive$lik, vari = "lik")
-  operator_xml(x, jive$prior.var, vari = "logVar", treeid, spnames)
+  operator_xml(x, jive$prior.var, vari = "LogVar", treeid, spnames)
   operator_xml(x, jive$prior.mean, vari = "Mean", treeid, spnames)
   
   pars <- xml_attr(xml_find_all(x, "//*[@spec[starts-with(., 'parameter')] and @id[starts-with(., 'Jive')]]"), "id")
   
   ## States
   state <- xml_find_first(x, "//state[@id = 'state']")
-  for(p in pars) xml_add_child(state,"stateNode", idref = p, .where = 0)
+  for(p in pars){
+    rm <- (any(c("theta", "sigma", "alpha") %in% jive$prior.mean$name) & grepl("MeanAssignments", p)) | (any(c("theta", "sigma", "alpha") %in% jive$prior.var$name) & grepl("LogVarAssignments", p))
+    if(!rm){
+      xml_add_child(state,"stateNode", idref = p, .where = 0)
+    }
+  } 
   
   ## Logger
   log <- xml_find_first(x, "//logger[@id = 'tracelog']")
-  for(p in pars) xml_add_child(log,"log", idref = p, .where = 3)
+  for(p in pars){
+    rm <- (any(c("theta", "sigma", "alpha") %in% jive$prior.mean$name) & grepl("MeanAssignments", p)) | (any(c("theta", "sigma", "alpha") %in% jive$prior.var$name) & grepl("LogVarAssignments", p))
+    if(!rm){
+      xml_add_child(log,"log", idref = p, .where = 3)
+    }
+  } 
   
   write_xml(x, out)
 }

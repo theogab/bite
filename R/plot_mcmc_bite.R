@@ -1,4 +1,4 @@
-#' @title Plot \code{\link{mcmc_jive}} results
+#' @title Plot \code{\link{mcmc_bite}} results
 #' @description This function plots the trace and/or density of each mcmc sample
 #' @param mcmc.log Any mcmc sample with the saved iterations in rows and the variables in columns
 #' @param type character taken in c("trace", "density"). If both are specified, they are plotted side by side in the same graphical device
@@ -19,17 +19,17 @@
 #' 
 #' ## Run a simple MCMC chain
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-#' mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
+#' mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 #'
 #' ## import the results in R
 #' logfile <- "my.jive_mcmc.log"
 #' res <- read.csv(logfile, header = TRUE, sep = "\t")
 #' 
 #' ## plot the results
-#' plot_mcmc_jive(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
+#' plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
 #' 
 
-plot_mcmc_jive <- function(mcmc.log, type = c("trace", "density"), burnin = 0, variable = "log.lik",
+plot_mcmc_bite <- function(mcmc.log, type = c("trace", "density"), burnin = 0, variable = "log.lik",
                            label = ifelse(is.numeric(variable),colnames(mcmc.log)[variable], variable), col = "#000000", cex.est = 1, bty = "n", ...){
   
   par(mar =c(5,4,2,1))
