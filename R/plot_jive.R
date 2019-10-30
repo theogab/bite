@@ -62,7 +62,10 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     if("simmap" %in% class(tree)){
       plotSimmap(tree, direction = "upwards", ftype = "off", ylim = ylim, mar = par()$mar, colors = col.map)
     } else {
-      plot(tree, direction = "upwards", show.tip.label = F, y.lim = ylim, edge.col = col.map[unlist(sapply(map, function(x) x[1,which.max(x[3,]-x[1,])]))])
+      plot(tree, direction = "upwards", show.tip.label = F, y.lim = ylim, edge.col = col.map[unlist(sapply(tree$edge[,2], function(i){
+        x <- map[[i]]
+        x[1,which.max(x[3,]-x[1,])]
+      }))])
     }
     init.usr <- par()$usr
     init.mar <- par()$mar
@@ -78,7 +81,7 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     
     par(fig=c(0,1,0,1), usr = init.usr, mar = init.mar)
     if(show.tip.label){
-      text(x = pp$xx[1:length(tree$tip.label)], y = 0.7*par()$usr[4], labels = gsub("_", " ", tree$tip.label), srt = srt.label, adj = 0, xpd = T)
+      text(x = pp$xx[1:length(tree$tip.label)], y = 0.7*par()$usr[4], labels = gsub("_", " ", tree$tip.label), srt = srt.label, adj = 0, xpd = NA)
     }
     
   } else if (direction == "rightwards"){
@@ -93,7 +96,10 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     if("simmap" %in% class(tree)){
       plotSimmap(tree, direction = "rightwards", ftype = "off", xlim = xlim, mar = par()$mar, colors = col.map)
     } else {
-      plot(tree, direction = "rightwards", show.tip.label = F, x.lim = xlim, edge.col = col.map[unlist(sapply(map, function(x) x[1,which.max(x[3,]-x[1,])]))])
+      plot(tree, direction = "rightwards", show.tip.label = F, x.lim = xlim, edge.col = col.map[unlist(sapply(tree$edge[,2], function(i){
+        x <- map[[i]]
+        x[1,which.max(x[3,]-x[1,])]
+      }))])
     }
     init.usr <- par()$usr
     init.mar <- par()$mar
@@ -108,12 +114,12 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
       vioplot(traits[[sp]][!is.na(traits[[sp]])], add = T, at = pp$yy[i], horizontal = T, col = col, ...)
     } 
     
-    par(fig=c(0,1,0,1), usr = init.usr, mar = init.mar)
+    par(new = T, fig=c(0,1,0,1), usr = init.usr, mar = init.mar)
     if(show.tip.label){
-      text(y = pp$yy[1:length(tree$tip.label)], x = 0.7*par()$usr[2], labels = gsub("_", " ", tree$tip.label), srt = srt.label, adj = 0, xpd = T)
+      text(y = pp$yy[1:length(tree$tip.label)], x = 0.7*par()$usr[2], labels = gsub("_", " ", tree$tip.label), srt = srt.label, adj = 0, xpd = NA)
     }
     
-  } else stop(sprintf("%s: unknown direction", direction))
+} else stop(sprintf("%s: unknown direction", direction))
   
 }
 

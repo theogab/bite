@@ -13,7 +13,7 @@ plot_pvo(phy, traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95,
 
 \item{traits}{trait data used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}}
 
-\item{mcmc.log}{the output file of a \code{\link{mcmc_jive}} run}
+\item{mcmc.log}{the output file of a \code{\link{mcmc_bite}} run}
 
 \item{tip}{An integer giving the row corresponding to the species to be plotted}
 
@@ -44,7 +44,7 @@ data(Anolis_tree)
 
 # Run a simple MCMC chain
 my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-mcmc_jive(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
+mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 
 ## import the results in R
 logfile <- "my.jive_mcmc.log"

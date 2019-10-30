@@ -71,7 +71,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       # window size
       ws <- list()
       ws$wn.sig <- rep(0.5, nreg)
-      ws$wm.the <- sd(x) # 2 in the previous version?
+      ws$wn.the <- sd(x) # 2 in the previous version?
       # initial parameter values
       init <- list()
       init$wn.sig <- runif(nreg, 0.5, 3)

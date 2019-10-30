@@ -1,13 +1,13 @@
-#' @title Jive MCMC algorithm
-#' @description Implements Markov chain Monte Carlo sampling for trait evolutionary models with intraspecific data
+#' @title MCMC algorithm
+#' @description Implements Markov chain Monte Carlo sampling for trait evolution models
 #' 
-#' @details This function runs MCMC sampling on jive object \code{\link{make_jive}}. The jive object contains 
-#' both the dataset and set of model to be used in MCMC. This function implements both a conventional MCMC
+#' @details This function runs MCMC sampling on jive object \code{\link{make_jive}} or objects describing other models of the bite package.
+#' The jive object contains both the dataset and set of model to be used in MCMC. This function implements both a conventional MCMC
 #' and an MCMC with thermodynamic integration. The latter option is turned off by default and can be changed by
 #' setting ncat to values > 1. The recommended ncat for TI is 10. When setting ncat > 1, make sure to specify burning.
 #' As a rule of thumb set burning to 1/10 fraction of ngen. 
 #' 
-#' @param jive an object of class "jive" (see details)
+#' @param model an object of class "jive" or other objects from the bite package (see details)
 #' @param log.file name of the output file that will store the log of MCMC chain
 #' @param sampling.freq sampling frequency of the MCMC chain (how often chain will be saved into output file
 #' @param print.freq printing frequency of the MCMC chain (how often chain will be printed in the R console)					
@@ -29,20 +29,20 @@
 #' set.seed(300)
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
 #'  model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log",
+#' mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
 #'  sampling.freq=10, print.freq=100, ngen=5000) 
 #'
 #'  my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
 #'   model.var=c("OU", "root", "theta"), model.mean="BM")
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC.log",
+#' mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
 #'  sampling.freq=10, print.freq=100, ngen=5000) 
 #'
 #' ## Run an MCMC chain with thermodynamic integration
-#' mcmc_jive(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
+#' mcmc_bite(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
 #' sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
 
 
-mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000, print.freq = 1000, 
+mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, print.freq = 1000, 
                       ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0)
 {
   
@@ -67,28 +67,28 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
   ## initial conditions
   cat("setting initial conditions\n")
   # likelihood level
-  m.sp0 <- jive$lik$init$m.sp
-  v.sp0 <- jive$lik$init$v.sp
-  lik0 <- jive$lik$model(m.sp0, v.sp0, jive$data$traits, jive$data$counts)
+  m.sp0 <- model$lik$init$m.sp
+  v.sp0 <- model$lik$init$v.sp
+  lik0 <- model$lik$model(m.sp0, v.sp0, model$data$traits, model$data$counts)
   
   # prior mean level
-  pars.m0 <- do.call(c, jive$prior.mean$init)
-  prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
-  hprior.mean0 <- unlist(mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[1,])
+  pars.m0 <- do.call(c, model$prior.mean$init)
+  prior.mean0 <- calc_prior(n = model$data$n, mat = model$prior.mean$data, x = m.sp0)
+  hprior.mean0 <- unlist(mapply(do.call, model$prior.mean$hprior, lapply(pars.m0, list))[1,])
   
   # prior var level
-  pars.v0 <- do.call(c, jive$prior.var$init)
-  prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
-  hprior.var0 <- unlist(mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[1,])
+  pars.v0 <- do.call(c, model$prior.var$init)
+  prior.var0 <- calc_prior(n = model$data$n, mat = model$prior.var$data, x = log(v.sp0))
+  hprior.var0 <- unlist(mapply(do.call, model$prior.var$hprior, lapply(pars.v0, list))[1,])
   
   # mcmc parameters
   cat("generation\tposterior\n")
-  cat(paste(jive$header, collapse = "\t"), "\n", append = FALSE, file = log.file)
+  cat(paste(model$header, collapse = "\t"), "\n", append = FALSE, file = log.file)
   it.beta <- 1
   bet <- beta.class[it.beta]
   if(ncat > 1) cat("beta = ", bet, "\n")
   # making sure the update frequencies sum to 1
-  update.freq <- c(jive$lik$update.freq, jive$prior.mean$update.freq, jive$prior.var$update.freq)
+  update.freq <- c(model$lik$update.freq, model$prior.mean$update.freq, model$prior.var$update.freq)
   update.freq <- cumsum(update.freq/sum(update.freq))
   proposals <- c(0,0,0) # 1st number: update means and variance; 2nd: update mean priors, 3rd: update variance prior
   proposals.accepted <- c(0,0,0)
@@ -116,65 +116,65 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
       prior.mean1 <- prior.mean0
       prior.var1 <- prior.var0
       
-      tmp <- jive$lik$prop$m.sp(i = m.sp0[ind], d = jive$lik$ws$m.sp[ind], u)
+      tmp <- model$lik$prop$m.sp(i = m.sp0[ind], d = model$lik$ws$m.sp[ind], u)
       m.sp0[ind] <- tmp$v
-      prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
+      prior.mean0 <- calc_prior(n = model$data$n, mat = model$prior.mean$data, x = m.sp0)
         
-      tmp <- jive$lik$prop$v.sp(i = v.sp0[ind], d = jive$lik$ws$v.sp[ind], u)
+      tmp <- model$lik$prop$v.sp(i = v.sp0[ind], d = model$lik$ws$v.sp[ind], u)
       v.sp0[ind] <- tmp$v
-      prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
+      prior.var0 <- calc_prior(n = model$data$n, mat = model$prior.var$data, x = log(v.sp0))
       
-      lik0 <- jive$lik$model(m.sp0, v.sp0, jive$data$traits, jive$data$counts)
+      lik0 <- model$lik$model(m.sp0, v.sp0, model$data$traits, model$data$counts)
       hasting.ratio <- sum(tmp$lnHastingsRatio)
       
     }
     
     if (r[2]) # update parameters of the mean prior, calculate new prior_mean and new hprior_mean
     {
-      par.n <- sample(1:length(jive$prior.mean$prop), 1) # one parameter at a time for now (update simultaneously sigmas/thetas for multiple regimes?)
+      par.n <- sample(1:length(model$prior.mean$prop), 1) # one parameter at a time for now (update simultaneously sigmas/thetas for multiple regimes?)
       u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
       pars.m1 <- pars.m0 # ancient parameter values are kept
       prior.mean1 <- prior.mean0 # ancient prior_mean value is kept
       hprior.mean1 <- hprior.mean0 # ancient hprior_mean value is kept
-      tmp <- jive$prior.mean$prop[[par.n]](i = pars.m0[par.n], d = do.call(c,jive$prior.mean$ws)[par.n], u) #update with proposal function
+      tmp <- model$prior.mean$prop[[par.n]](i = pars.m0[par.n], d = do.call(c,model$prior.mean$ws)[par.n], u) #update with proposal function
       pars.m0[par.n] <- tmp$v
       # calculate new var/covar and expectation
-      mat.mean1 <- jive$prior.mean$data
-      mat.mean0 <- try(jive$prior.mean$model(n = jive$data$n, n.p = par.n,
-                                           pars = pars.v0, tree = jive$data$tree,
-                                           map = jive$prior.mean$map, t.vcv = jive$data$vcv, nr = jive$prior.mean$nr), silent = T)
+      mat.mean1 <- model$prior.mean$data
+      mat.mean0 <- try(model$prior.mean$model(n = model$data$n, n.p = par.n,
+                                           pars = pars.v0, tree = model$data$tree,
+                                           map = model$prior.mean$map, t.vcv = model$data$vcv, nr = model$prior.mean$nr), silent = T)
       if(any(grepl("inf values", mat.mean0))){
         prior.mean0 <- Inf
       } else {
-        jive$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
+        model$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
         # calculate prior and hprior
-        prior.mean0 <- calc_prior(n = jive$data$n, mat = jive$prior.mean$data, x = m.sp0)
-        hprior.mean0 <- unlist(mapply(do.call, jive$prior.mean$hprior, lapply(pars.m0, list))[1,])
+        prior.mean0 <- calc_prior(n = model$data$n, mat = model$prior.mean$data, x = m.sp0)
+        hprior.mean0 <- unlist(mapply(do.call, model$prior.mean$hprior, lapply(pars.m0, list))[1,])
       }
       hasting.ratio <- tmp$lnHastingsRatio
     } 
     
     if (r[3]) # update parameters of the var prior, calculate new prior_var and new hprior_var
     {
-      par.n <- sample(1:length(jive$prior.var$prop), 1) # one parameter at a time for now (update simultaneously sigmas/thetas for multiple regimes?)
+      par.n <- sample(1:length(model$prior.var$prop), 1) # one parameter at a time for now (update simultaneously sigmas/thetas for multiple regimes?)
       u = runif(1) # parameter of the multiplier proposal (ignored if proposal == "SlidingWin")
       pars.v1 <- pars.v0 # ancient parameter values are kept
       prior.var1 <- prior.var0 # ancient prior_var value is kept
       hprior.var1 <- hprior.var0 # ancient hprior_var value is kept
-      tmp <- jive$prior.var$prop[[par.n]](i = pars.v0[par.n], d = do.call(c, jive$prior.var$ws)[par.n], u) #update with proposal function
+      tmp <- model$prior.var$prop[[par.n]](i = pars.v0[par.n], d = do.call(c, model$prior.var$ws)[par.n], u) #update with proposal function
       pars.v0[par.n] <- tmp$v 
       # calculate new var/covar and expectation
-      mat.var1 <- jive$prior.var$data
-      mat.var0 <- try(jive$prior.var$model(n = jive$data$n, n.p = par.n,
-                                       pars = pars.v0, tree = jive$data$tree,
-                                       map = jive$prior.var$map, t.vcv = jive$data$vcv, nr = jive$prior.var$nr), silent = T)
+      mat.var1 <- model$prior.var$data
+      mat.var0 <- try(model$prior.var$model(n = model$data$n, n.p = par.n,
+                                       pars = pars.v0, tree = model$data$tree,
+                                       map = model$prior.var$map, t.vcv = model$data$vcv, nr = model$prior.var$nr), silent = T)
       if(any(grepl("inf values", mat.var0))){
         prior.var0 <- Inf
       } else {
-        jive$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
+        model$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
         # calculate prior and hprior
-        prior.var0 <- calc_prior(n = jive$data$n, mat = jive$prior.var$data, x = log(v.sp0))
-        hprior.var0 <- unlist(mapply(do.call, jive$prior.var$hprior, lapply(pars.v0, list))[1,])
+        prior.var0 <- calc_prior(n = model$data$n, mat = model$prior.var$data, x = log(v.sp0))
+        hprior.var0 <- unlist(mapply(do.call, model$prior.var$hprior, lapply(pars.v0, list))[1,])
       }
       hasting.ratio <- tmp$lnHastingsRatio
     }
@@ -209,14 +209,14 @@ mcmc_jive <- function(jive, log.file = "my_jive_mcmc.log", sampling.freq = 1000,
         pars.m0 <- pars.m1
         prior.mean0 <- prior.mean1
         hprior.mean0 <- hprior.mean1
-        jive$prior.mean$data <- mat.mean1
+        model$prior.mean$data <- mat.mean1
       }
       
       if (r[3]){
         pars.v0 <- pars.v1
         prior.var0 <- prior.var1
         hprior.var0 <- hprior.var1
-        jive$prior.var$data <- mat.var1
+        model$prior.var$data <- mat.var1
       }
     }
     

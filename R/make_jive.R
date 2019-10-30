@@ -11,7 +11,7 @@
 #' 
 #' map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
 #' 
-#' variance and mean evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas only for OU (OUM) and on sigmas only for WN (WNM) and BM (BMM)
+#' variance and mean evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas: model.mean/var = c("OU", "theta"), sigmas: model.mean/var = c("OU", "sigma") or alphas: model.mean/var = c("OU", "alpha") for OU and on sigmas only for WN: model.mean/var = c("WN", "sigma") and BM: model.mean/var = c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: model.mean/var = c("OU", "root") and relax several assumptions at the same tme model.mean/var = c("OU", "root", "theta") 
 #' Species-specific distributions are modeled as multivariate normal distributions
 #' 
 #' control is a list containig tuning parameters acting at different levels of the MCMC algorithm ($lik for likelihood level, $prior.mean for mean prior level and $prior.var for variance prior level). Inside each level ($lik, $prior.mean, $prior.var), the user can modify the default value of initial parameter value ($pv), initial window size ($ws), proposal methods ($prop) for $lik, $prior.mean and $prior.var and hyperpriors ($hprior) for $prior.mean and $prior.var. 
@@ -20,8 +20,8 @@
 #' @param phy phylogenetic tree provided as either a simmap or a phylo object
 #' @param traits matrix of traits value for every species of phy (see details)
 #' @param map matrix mapping regimes on every edge of phy (see details) 
-#' @param model.mean model specification for trait mean evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")				
-#' @param model.var model specification for trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")
+#' @param model.mean model specification for trait mean evolution. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed (see details)				
+#' @param model.var model specification for trait variance evolution. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed (see details)
 #' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
 #' @param control list to control tuning parameters of the MCMC algorithm (see details)
 #' @param nreg integer giving the number of regimes for a Beast analysis. Only evaluated if phy == NULL
@@ -59,7 +59,9 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
       rownames(map) <- sprintf("%s,%s", phy$edge[,1], phy$edge[,2])
     }
     phy <- reorder(phy, "postorder")
-    map <- map[sprintf("%s,%s", phy$edge[,1], phy$edge[,2]),]
+    if(!is.null(map)){
+      map <- map[sprintf("%s,%s", phy$edge[,1], phy$edge[,2]),]
+    }
   }
 
   ### dealing with traits
