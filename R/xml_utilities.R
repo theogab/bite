@@ -86,7 +86,7 @@ prior_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
   
   if(grepl("OU", model)){
     optimum <- xml_add_child(anc, "optimumManager", id="OptimumManager", spec="contraband.TreeToVCVMat", coalCorrection="false")
-    if(any(model %in% "theta")){
+    if(grepl("theta", model)){
       mod <- xml_add_child(optimum, "branchRateModel", id=sprintf("Jive%sCatClock", vari), spec="contraband.RandomLocalColorModel", scaling="false", includeRoot="true")
       xml_add_child(mod, "indicators", id="JiveShiftIndicators", spec="parameter.BooleanParameter", value=paste(rep("true", nreg), rep("false", 2*length(spnames)-2-nreg), collapse = " "))
       if(jive$hprior$ou.the.1(NA)[[2]][[1]] == "Uniform"){ # Uniform hyperprior must be specified here
@@ -240,7 +240,7 @@ operator_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
     if(grepl("OU", model)){
       xml_add_sibling(op, "operator", id = sprintf("Jive%sThetaRandomWalk", vari), spec = "RealRandomWalkOperator", parameter = sprintf("@Jive%sTheta", vari), windowSize = as.character(jive$ws$ou.the[ifelse(grepl("root", model), 2, 1)]), weight = "20.0", .where = "before")
       if(grepl("theta", model)){
-        shift <- xml_add_sibling(op, "operator", id = sprintf("Jive%sShiftIndicatorsShiftIndicatorMove", vari), spec = "contraband.operators.BitMoveOperator",  weight = "40.0", parameter = sprintf("@Jive%sShiftIndicators", vari), k = as.character(nreg), .where = "before")
+        shift <- xml_add_sibling(op, "operator", id = sprintf("Jive%sShiftIndicatorMove", vari), spec = "contraband.operators.BitMoveOperator",  weight = "40.0", parameter = sprintf("@Jive%sShiftIndicators", vari), k = as.character(nreg), .where = "before")
         xml_add_child(shift, "tree", idref = treeid)
       }
       xml_add_sibling(op, "operator", id = sprintf("Jive%sAlphaScaler", vari), spec = "ScaleOperator", parameter = sprintf("@Jive%sAlpha", vari), scaleFactor = as.character(jive$ws$ou.sv), weight = "3.0", .where = "before")

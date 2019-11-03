@@ -56,7 +56,7 @@ check_tuning <- function(jive){
       # number of regimes for each parameter
       nreg <- max(do.call(cbind,jive[[level]]$map)[1,])
       rsig <- ifelse(grepl("sigma",  jive[[level]]$name), nreg, 1)
-      rsv <- ifelse(any(grepl("alpha", jive[[level]]$name), grepl("sigma", jive[[level]]$name)), nreg, 1)
+      rsv <- ifelse(any(grepl("sv", jive[[level]]$name), grepl("sigma", jive[[level]]$name)), nreg, 1)
       rthe <- ifelse(grepl("theta", jive[[level]]$name), nreg, 1) + ifelse(grepl("root", jive[[level]]$name), 1, 0)
       # window sizes
       if(length(unlist(jive[[level]]$ws)) != (rsig + rsv + rthe)) stop(sprintf("Vector of window sizes for %s is not the same length as the number of parameters: check obj$%s$ws", level))
