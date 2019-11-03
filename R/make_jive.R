@@ -11,11 +11,26 @@
 #' 
 #' map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
 #' 
-#' variance and mean evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas: model.mean/var = c("OU", "theta"), sigmas: model.mean/var = c("OU", "sigma") or alphas: model.mean/var = c("OU", "alpha") for OU and on sigmas only for WN: model.mean/var = c("WN", "sigma") and BM: model.mean/var = c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: model.mean/var = c("OU", "root") and relax several assumptions at the same tme model.mean/var = c("OU", "root", "theta") 
+#' variance and mean evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas: model.mean/var = c("OU", "theta"), sigmas: model.mean/var = c("OU", "sigma") or stationary variances: model.mean/var = c("OU", "sv") for OU and on sigmas only for WN: model.mean/var = c("WN", "sigma") and BM: model.mean/var = c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: model.mean/var = c("OU", "root") and relax several assumptions at the same tme model.mean/var = c("OU", "root", "theta") 
 #' Species-specific distributions are modeled as multivariate normal distributions
 #' 
 #' control is a list containig tuning parameters acting at different levels of the MCMC algorithm ($lik for likelihood level, $prior.mean for mean prior level and $prior.var for variance prior level). Inside each level ($lik, $prior.mean, $prior.var), the user can modify the default value of initial parameter value ($pv), initial window size ($ws), proposal methods ($prop) for $lik, $prior.mean and $prior.var and hyperpriors ($hprior) for $prior.mean and $prior.var. 
 #' The \code{\link{control_jive}} function provides an easy way to modify control parameters (see examples) 
+#' 
+#' parameters used in the differnet models:
+#' White Noise model (WN):
+#' -theta0: root value, abbreviated wn.the
+#' -sigma square: evolutionary rate, abbreviated wn.sig or wn.sig.1, wn.sig.2, ..., wn.sig.n for n regimes if "sigma" is specified in model.mean/var
+#' 
+#' Brownian Motion model (BM):
+#' -theta0: root value, abbreviated bm.the
+#' -sigma square: evolutionary rate, abbreviated bm.sig or bm.sig.1, bm.sig.2, ..., bm.sig.n for n regimes if "sigma" is specified in model.mean/var
+#' 
+#' Ornstein Uhlenbeck model (OU):
+#' -theta0: root value, abbreviated ou.the.0. Only used if "root" is specified in model.mean/var
+#' -sigma square: evolutionary rate, abbreviated ou.sig or ou.sig.1, ou.sig.2, ..., ou.sig.n for n regimes if "sigma" is specified in model.mean/var
+#' -optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes ¨if "theta" is specified in model.mean/var
+#' -stationary variance (alpha/2*sigma_sq with alpha being the strength of selection), abbreviated ou.sv or ou.sv.1
 #' 
 #' @param phy phylogenetic tree provided as either a simmap or a phylo object
 #' @param traits matrix of traits value for every species of phy (see details)
@@ -43,7 +58,7 @@
 #'
 #' ## JIVE object to run jive with multiple regimes
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
-#'  model.mean="BM", model.var=c("OU", "theta", "alpha"))
+#'  model.mean="BM", model.var=c("OU", "theta", "sv"))
 
 
 
@@ -147,31 +162,35 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
   #### Models for means ####
   jive$prior.mean <- dt$prior.mean
   
-  
-  # Calculate expectation and var/covar matrices #
-  if(is.phy){
-    jive$prior.mean$data <- lapply(jive$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.mean$init)),
-                                                         pars = do.call(c,jive$prior.mean$init), tree = jive$data$tree,
-                                                         map = jive$prior.mean$map, t.vcv = jive$data$vcv, nr = jive$prior.mean$nr),
-                                   function(x) if (x[[1]]) x[[2]])
-  }
-  
-  cat("Mean prior model: ",model.mean[1]," [",max(do.call(cbind,jive$prior.mean$map)[1,]),"]","\n",sep="")
-  
   #### Models for variance ####
   jive$prior.var <- dt$prior.var
-
   
-  # Calculate expectation and var/covar matrices #
   if(is.phy){
-    
-    jive$prior.var$data <- lapply(jive$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,jive$prior.var$init)),
-                                                       pars = do.call(c,jive$prior.var$init), tree = jive$data$tree,
-                                                       map = jive$prior.var$map, t.vcv = jive$data$vcv, nr = jive$prior.var$nr),
-                                  function(x) if (x[[1]]) x[[2]])
+    done <- F
+    while(!done){
+      # Calculate expectation and var/covar matrices #
+      jive$prior.mean$data <- try(lapply(dt$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,dt$prior.mean$init)),
+                                                             pars = do.call(c,dt$prior.mean$init), tree = jive$data$tree,
+                                                             map = dt$prior.mean$map, t.vcv = jive$data$vcv, nr = dt$prior.mean$nr),
+                                        function(x) if (x[[1]]) x[[2]]), silent = T)
+      # Calculate expectation and var/covar matrices #
+      jive$prior.var$data <- try(lapply(dt$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,dt$prior.var$init)),
+                                                             pars = do.call(c,dt$prior.var$init), tree = jive$data$tree,
+                                                             map = dt$prior.var$map, t.vcv = jive$data$vcv, nr = dt$prior.var$nr),
+                                        function(x) if (x[[1]]) x[[2]]), silent = T)
+      if(all(!grepl("Error", jive$prior.mean$data)) & all(!grepl("Error", jive$prior.var$data))){
+        done <- T
+      } else {
+        # new initial conditions
+        dt <- default_tuning(model.mean = model.mean, model.var = model.var, phy = jive$data$tree, traits = jive$data$traits, map = jive$data$map)
+        jive$prior.mean <- dt$prior.mean
+        jive$prior.var <- dt$prior.var
+      }
+    }
   }
-    
-  cat("Variance prior model: ",model.var[1]," [",max(do.call(cbind,jive$prior.var$map)[1,]),"]","\n",sep="")
+  
+  cat("Mean prior model: ",model.mean[1]," [",max(do.call(cbind,dt$prior.mean$map)[1,]),"]","\n",sep="")
+  cat("Variance prior model: ",model.var[1]," [",max(do.call(cbind,dt$prior.var$map)[1,]),"]","\n",sep="")
   
   ## Checks
   check_tuning(jive)

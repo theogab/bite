@@ -5,8 +5,8 @@
 \title{plot input data from a jive object}
 \usage{
 plot_jive(jive, col.map = NULL, col = "lightgrey",
-  show.tip.label = T, direction = "rightwards", trait.lab = "",
-  trait.lim = NULL, srt.label = 0, tip.color, ...)
+  show.tip.label = T, show.models = T, direction = "rightwards",
+  trait.lab = "", trait.lim = NULL, srt.label = 0, tip.color, ...)
 }
 \arguments{
 \item{jive}{a jive object built with the function \code{\link{make_jive}}}

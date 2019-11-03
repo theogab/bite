@@ -124,7 +124,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       # model
       model <- update_ou
       # map and nreg
-      if(any(c("sigma", "theta", "alpha") %in% model.evo)){
+      if(any(c("sigma", "theta", "sv") %in% model.evo)){
         nreg <-  max(do.call(cbind,map)[1,])
         newmap <- map
       } else {
@@ -134,7 +134,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       # name
       name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
       # number of regimes for each parameter
-      rsv <- ifelse(any(c("alpha", "sigma") %in% model.evo), nreg, 1)
+      rsv <- ifelse(any(c("sv", "sigma") %in% model.evo), nreg, 1)
       rsig <- ifelse("sigma" %in% model.evo, nreg, 1)
       rthe <- ifelse("theta" %in% model.evo, nreg, 1)
       rroot <- ifelse("root" %in% model.evo, 1, 0)

@@ -33,7 +33,7 @@
 
 
 
-plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = T, direction = "rightwards",
+plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = T, show.models = T, direction = "rightwards",
                       trait.lab = "", trait.lim = NULL, srt.label = 0, tip.color, ...){
   
   tree <- jive$data$tree
@@ -43,7 +43,7 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
   if(is.null(col.map)){
     st <- max(do.call(cbind,map)[1,])
     col.map <- palette()[1:st]
-    names(col.map) <- st
+    if("simmap" %in% class(tree)) names(col.map) <- colnames(tree$mapped.edge)
     if (length(st) > 1) {
       cat("no colors provided. using the following legend:\n")
       print(col.map)
@@ -85,7 +85,12 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     }
     
   } else if (direction == "rightwards"){
-    par(mar = c(4,1,2,1))
+    if(show.models){
+      par(mar = c(4,1,4,1))
+    } else {
+      par(mar = c(4,1,2,1))
+    }
+    
     root.len <- max(branching.times(tree))
     if(show.tip.label){
       xlim = c(0, 3*root.len)
@@ -101,6 +106,25 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
         x[1,which.max(x[3,]-x[1,])]
       }))])
     }
+    
+    if(show.models){
+      mm <- strsplit(jive$prior.mean$name, " ")[[1]][1]
+      mv <- strsplit(jive$prior.var$name, " ")[[1]][1]
+      pars.m <- sapply(strsplit(names(jive$prior.mean$hprior), "[.]"), function(pr){
+        if(length(pr)==2){
+          if(pr[2] == "sig") out <- "sigma^2"
+          if(pr[2] == "the") out <- "theta[0]"
+        }
+        if(length(pr) == 3){
+          if(pr[2] == "sig") out <- "sigma^2"
+          if(pr[2] == "the") out <- "theta[0]"
+        }
+        return(out)
+      })
+      mtext(eval(parse(text = paste("substitute(a~~list(", paste(pars.m, collapse = ","),"), list(a=sprintf('Mean prior model: %s' , jive$prior.mean$name)))"))), line = 2, at = 0, adj = 0, cex = 0.6)
+      mtext(eval(parse(text = paste("substitute(a~~list(", paste(pars.v, collapse = ","),"), list(a=sprintf('LogVariance prior model: %s' , jive$prior.var$name)))"))), line = 2, at = 0, adj = 0, cex = 0.6)
+    }
+    
     init.usr <- par()$usr
     init.mar <- par()$mar
     par(new = TRUE, fig = c(ifelse(rep(show.tip.label,2),c(0.35,0.7),c(0.5,1)),0,1), bty = "n")

@@ -51,7 +51,10 @@ xml_jive <- function(jive, xml, out = sprintf("%s_edited.xml", gsub(".xml", "", 
   ## States
   state <- xml_find_first(x, "//state[@id = 'state']")
   for(p in pars){
-    rm <- (any(c("theta", "sigma", "alpha") %in% jive$prior.mean$name) & grepl("MeanAssignments", p)) | (any(c("theta", "sigma", "alpha") %in% jive$prior.var$name) & grepl("LogVarAssignments", p))
+    rm <- (!any(sapply(c("theta", "sigma", "alpha"), grepl, jive$prior.mean$name)) & grepl("MeanAssignments", p)) |
+      (!any(sapply(c("theta", "sigma", "alpha"), grepl, jive$prior.var$name)) & grepl("LogVarAssignments", p) | 
+         (grepl("OU", jive$prior.mean$name) & !grepl("root", jive$prior.mean$name) & grepl("JiveMeanRootValue", p)) |
+         (grepl("OU", jive$prior.var$name) & !grepl("root", jive$prior.var$name) & grepl("JiveLogVarRootValue", p)))
     if(!rm){
       xml_add_child(state,"stateNode", idref = p, .where = 0)
     }
@@ -60,12 +63,16 @@ xml_jive <- function(jive, xml, out = sprintf("%s_edited.xml", gsub(".xml", "", 
   ## Logger
   log <- xml_find_first(x, "//logger[@id = 'tracelog']")
   for(p in pars){
-    rm <- (any(c("theta", "sigma", "alpha") %in% jive$prior.mean$name) & grepl("MeanAssignments", p)) | (any(c("theta", "sigma", "alpha") %in% jive$prior.var$name) & grepl("LogVarAssignments", p))
+    rm <- (!any(sapply(c("theta", "sigma", "alpha"), grepl, jive$prior.mean$name)) & grepl("MeanAssignments", p)) |
+      (!any(sapply(c("theta", "sigma", "alpha"), grepl, jive$prior.var$name)) & grepl("LogVarAssignments", p) | 
+         (grepl("OU", jive$prior.mean$name) & !grepl("root", jive$prior.mean$name) & grepl("JiveMeanRootValue", p)) |
+         (grepl("OU", jive$prior.var$name) & !grepl("root", jive$prior.var$name) & grepl("JiveLogVarRootValue", p)))
     if(!rm){
       xml_add_child(log,"log", idref = p, .where = 3)
     }
   } 
   
   write_xml(x, out)
+  
 }
 

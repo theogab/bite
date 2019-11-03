@@ -5,7 +5,7 @@
 #' window.size and initial.values must be entered as a matrix with 2 columns (respectively mean and variance) and a number of rows equal to the number of species. proposal must be a vector of size 2 (respectively mean and variance)
 #' 
 #' If level == "prior.mean" or "prior.var" changes will be applied to the prior level of the algorithm
-#' window.size and initial.values must be entered as a vector of variable size depending on the chosen evolutionary model. for OU and OUM, the window size and parameter values must be entered in the following order c(alpha, sigma, theta0, theta1, ..., thetaN). for BM, BMM, WN and WNM, the window size and parameter values must be entered in the following order c(sigma1, ..., sigmaN, theta0), proposal must be a vector of size three for OU and OUM c(alpha, sigma, thetas) and of size two for BM, BMM, WN and WNM c(sigmas, theta)
+#' window.size and initial.values must be entered as a vector of variable size depending on the chosen evolutionary model. for OU, the window size and parameter values must be entered in the following order c(sv, sigma, theta0, theta1, ..., thetaN). for BM, BMM, WN and WNM, the window size and parameter values must be entered in the following order c(sigma1, ..., sigmaN, theta0), proposal must be a vector of size three for OU c(sv, sigma, thetas) and of size two for BM, BMM, WN and WNM c(sigmas, theta)
 #' 
 #' Note that if you want to change the tuning at the three levels of the algorithm, you will have to use the control_jive function three times
 #' 

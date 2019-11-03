@@ -143,7 +143,7 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
       mat.mean0 <- try(model$prior.mean$model(n = model$data$n, n.p = par.n,
                                            pars = pars.v0, tree = model$data$tree,
                                            map = model$prior.mean$map, t.vcv = model$data$vcv, nr = model$prior.mean$nr), silent = T)
-      if(any(grepl("inf values", mat.mean0))){
+      if(any(grepl("Error", mat.mean0))){
         prior.mean0 <- Inf
       } else {
         model$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
@@ -168,7 +168,7 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
       mat.var0 <- try(model$prior.var$model(n = model$data$n, n.p = par.n,
                                        pars = pars.v0, tree = model$data$tree,
                                        map = model$prior.var$map, t.vcv = model$data$vcv, nr = model$prior.var$nr), silent = T)
-      if(any(grepl("inf values", mat.var0))){
+      if(any(grepl("Error", mat.var0))){
         prior.var0 <- Inf
       } else {
         model$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
