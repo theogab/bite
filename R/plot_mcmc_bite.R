@@ -1,11 +1,12 @@
 #' @title Plot \code{\link{mcmc_bite}} results
 #' @description This function plots the trace and/or density of each mcmc sample
 #' @param mcmc.log Any mcmc sample with the saved iterations in rows and the variables in columns
-#' @param type character taken in c("trace", "density"). If both are specified, they are plotted side by side in the same graphical device
+#' @param type Character taken in c("trace", "density"). If both are specified, they are plotted side by side in the same graphical device
 #' @param burnin The size of the burnin in number of iterations or the proportion of iteration you want to remove
 #' @param variable The name or number of the variable to plot
 #' @param label Full variable name to be plotted
-#' @param ... Other graphical parameters to parse to \code{\link{par()}}
+#' @param cex.est The magnification to be used for estimates display
+#' @param col,bty,... Other graphical parameters to parse to \code{\link[graphics]{par}}
 #' @export
 #' @import coda
 #' @author Theo Gaboriau
@@ -28,6 +29,7 @@
 #' ## plot the results
 #' plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
 #' 
+#' @encoding UTF-8
 
 plot_mcmc_bite <- function(mcmc.log, type = c("trace", "density"), burnin = 0, variable = "log.lik",
                            label = ifelse(is.numeric(variable),colnames(mcmc.log)[variable], variable), col = "#000000", cex.est = 1, bty = "n", ...){

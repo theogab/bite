@@ -9,7 +9,9 @@
 #' must be a vector of two values and cannot be left empty.
 #' 
 #' @param hpf name of a density function. Supported density functions are: Uniform, Gamma and Normal
-#' @param ... additional parameters that can be passed to a density function and  \code{\link{par}}
+#' @param col color of the density area. Can be of size 2 (hpriors for the means, hpriors for the logvars) if a jive object is plotted
+#' @param border color of the density curve. Can be of size 2 (hpriors for the means, hpriors for the logvars) if a jive object is plotted
+#' @param bty,... additional parameters that can be passed to a density function and  \code{\link[graphics]{par}}
 #' @export
 #' @author Theo Gaboriau
 #' @return plot
@@ -24,6 +26,8 @@
 #' 
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
 #' plot_hp(my.jive, cex.main = .8)
+#' 
+#' @encoding UTF-8
 
 
 plot_hp <- function(hpf, col = c("#bfdbf7", "#f49e4c"), border = c("#2e86ab", "#a31621"), bty = "n", ...){

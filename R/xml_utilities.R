@@ -251,3 +251,4 @@ operator_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
     }
   }
 }
+

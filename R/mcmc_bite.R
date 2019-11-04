@@ -40,6 +40,8 @@
 #' ## Run an MCMC chain with thermodynamic integration
 #' mcmc_bite(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
 #' sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
+#' 
+#' @encoding UTF-8
 
 
 mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, print.freq = 1000, 

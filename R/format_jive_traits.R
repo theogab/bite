@@ -3,7 +3,7 @@
 #' @param obs a dataframe with species names in the first column and individual trait values in the second columns
 #' @export
 #' @author Theo Gaboriau
-#' 
+#' @encoding UTF-8
 
 
 format_jive_traits <- function(obs){

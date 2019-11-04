@@ -33,6 +33,7 @@
 #' plot_jive(jive = my.jive, show.tip.label = TRUE, c.reg = 2,
 #'  trait.lab = "Snout to vent length (cm)", srt.label = 70, direction = "upwards")
 #'  
+#' @encoding UTF-8
 
 
 

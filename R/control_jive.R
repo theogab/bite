@@ -47,6 +47,7 @@
 #' my.jive <- control_jive(my.jive, level = "prior.mean", hyperprior = new.hprior)
 #' plot_hp(my.jive) #mean initial values changed
 #' 
+#' @encoding UTF-8
 
 control_jive <- function(jive, level = c("lik", "prior.mean", "prior.var"), window.size = NULL,
                          initial.values = NULL, proposals = NULL, hyperprior = NULL, update.freq = NULL){

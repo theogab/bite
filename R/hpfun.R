@@ -17,6 +17,8 @@
 #' @return A hyper-prior density function (function)
 #' @examples
 #' my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
+#' 
+#' @encoding UTF-8
 
 
 hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){

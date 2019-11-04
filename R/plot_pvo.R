@@ -13,6 +13,7 @@
 #' @param col color of the density filling. Must be of size two for estimates and HPD. If col and border are NULL, two random colors are assigned
 #' @param border color of denstiy contour. Could be of size one or two. If border = NULL, no borders are plotted
 #' @param lolipop a logical specifying wether the sample positions should be presented as lolipops
+#' 
 #' @author Theo Gaboriau
 #' @export
 #' @examples
@@ -29,10 +30,12 @@
 #' res <- read.csv(logfile, header = TRUE, sep = "\t")
 #' 
 #' plot_pvo(Anolis_tree, Anolis_traits, res, 5)
+#' 
+#' @encoding UTF-8
 
 
 plot_pvo <- function(phy, traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95, stat = "median", trait.lab = "trait",
-                          col = NULL, border = NULL, legend = F, lolipop = T,...){
+                          col = NULL, border = NULL, legend = F, lolipop = T){
   
   
   ### dealing with traits

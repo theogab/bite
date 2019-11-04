@@ -17,20 +17,27 @@
 #' control is a list containig tuning parameters acting at different levels of the MCMC algorithm ($lik for likelihood level, $prior.mean for mean prior level and $prior.var for variance prior level). Inside each level ($lik, $prior.mean, $prior.var), the user can modify the default value of initial parameter value ($pv), initial window size ($ws), proposal methods ($prop) for $lik, $prior.mean and $prior.var and hyperpriors ($hprior) for $prior.mean and $prior.var. 
 #' The \code{\link{control_jive}} function provides an easy way to modify control parameters (see examples) 
 #' 
-#' parameters used in the differnet models:
+#' parameters used in the different models:
+#' 
 #' White Noise model (WN):
-#' -theta0: root value, abbreviated wn.the
-#' -sigma square: evolutionary rate, abbreviated wn.sig or wn.sig.1, wn.sig.2, ..., wn.sig.n for n regimes if "sigma" is specified in model.mean/var
-#' 
+#' \itemize{
+#'  \item theta0: root value, abbreviated wn.the
+#'  \item sigma square: evolutionary rate, abbreviated wn.sig or wn.sig.1, wn.sig.2, ..., wn.sig.n for n regimes if "sigma" is specified in model.mean/var
+#' }
+#'  
 #' Brownian Motion model (BM):
-#' -theta0: root value, abbreviated bm.the
-#' -sigma square: evolutionary rate, abbreviated bm.sig or bm.sig.1, bm.sig.2, ..., bm.sig.n for n regimes if "sigma" is specified in model.mean/var
-#' 
+#' \itemize{
+#'  \item theta0: root value, abbreviated bm.the
+#'  \item sigma square: evolutionary rate, abbreviated bm.sig or bm.sig.1, bm.sig.2, ..., bm.sig.n for n regimes if "sigma" is specified in model.mean/var
+#' }
+#'
 #' Ornstein Uhlenbeck model (OU):
-#' -theta0: root value, abbreviated ou.the.0. Only used if "root" is specified in model.mean/var
-#' -sigma square: evolutionary rate, abbreviated ou.sig or ou.sig.1, ou.sig.2, ..., ou.sig.n for n regimes if "sigma" is specified in model.mean/var
-#' -optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes if "theta" is specified in model.mean/var
-#' -stationary variance (alpha/2*sigma_sq with alpha being the strength of selection), abbreviated ou.sv or ou.sv.1
+#' \itemize{
+#'  \item theta0: root value, abbreviated ou.the.0. Only used if "root" is specified in model.mean/var
+#'  \item sigma square: evolutionary rate, abbreviated ou.sig or ou.sig.1, ou.sig.2, ..., ou.sig.n for n regimes if "sigma" is specified in model.mean/var
+#'  \item optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes if "theta" is specified in model.mean/var
+#'  \item stationary variance (alpha/2*sigma_sq with alpha being the strength of selection), abbreviated ou.sv or ou.sv.1
+#' }
 #' 
 #' @param phy phylogenetic tree provided as either a simmap or a phylo object
 #' @param traits matrix of traits value for every species of phy (see details)
@@ -73,6 +80,7 @@
 #' 
 #' my.jive <- make_jive(mapped_tree, Anolis_traits, model.mean=c("OU"), model.var=c("OU", "theta"))
 #'  
+#' @encoding UTF-8
 
 make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.var=c("OU"),
                       scale = F, control = list(), nreg = NULL){

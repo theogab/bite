@@ -11,6 +11,7 @@
 #' @export
 #' @author Theo Gaboriau
 #' @return none
+#' @encoding UTF-8
 
 
 xml_jive <- function(jive, xml, out = sprintf("%s_edited.xml", gsub(".xml", "", xml))){
@@ -72,7 +73,7 @@ xml_jive <- function(jive, xml, out = sprintf("%s_edited.xml", gsub(".xml", "", 
     }
   } 
   
-  write_xml(x, out)
+  cat(gsub("&amp;", "&", paste(xml_root(x))), append = FALSE, file = out)
   
 }
 
