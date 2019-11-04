@@ -19,7 +19,7 @@ A hyper-prior density function (function)
 \description{
 This function creates a hyper-prior density function. 
 Currently supported density function are Uniform, Gamma and Normal. 
-The resulting function is used during MCMC \code{\link{mcmc_jive}}
+The resulting function is used during MCMC \code{\link{mcmc_bite}}
 to estimate parameters of priors.
 }
 \details{
