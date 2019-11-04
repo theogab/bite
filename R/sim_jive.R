@@ -2,16 +2,26 @@
 #' @description Generate random values of trait mean and variance simulated under a JIVE process along a phylogenetic tree
 #' 
 #' @details map : the list must be ordered in the same order than phy$edge. Each element represents an edge and contains a vector indicating the time spent under each regime in the branch. The name of the regimes must appear on the map
-#' pars : depends on the chosen model.
-#' BM and WN : list containing the ancestral state (theta0) and the evolutionary rate (sigma^2)
-#' BMM and WNM : list containing the ancestral state (theta0) and the different evolutionary rates corresponding to the regimes (sigma^2i)
-#' OU : list containing the ancestral state and optimum (theta0, theta) the evolutionary rate (sigma^2) and the strentgh of selection (alpha)
-#' OUM : list containing the ancestral state and optima (theta0, thetai) the evolutionary rates (sigma^2i) and the strentghs of selection (alphai). At least one of thetas, sigmas^2 or alphas must have as many values as regimes.
+#' pars : list containing parameters depending on the chosen model.
+#' parameters used in the different models:
+#' White Noise model (WN):
+#' -theta0: root value, abbreviated the
+#' -sigma square: evolutionary rate, abbreviated sig of length n regimes n regimes if "sigma" is specified in model.mean/var
+#' 
+#' Brownian Motion model (BM):
+#' -theta0: root value, abbreviated the
+#' -sigma square: evolutionary rate, abbreviated sig of length n regimes n regimes if "sigma" is specified in model.mean/var
+#' 
+#' Ornstein Uhlenbeck model (OU):
+#' -theta0: root value, abbreviated the0 Only used if "root" is specified in model.mean/var
+#' -sigma square: evolutionary rate, abbreviated sig of length n regimes if "sigma" is specified in model.mean/var
+#' -theta: optimal value, abbreviated the of length n regimes if "theta" is specified in model.mean/var
+#' -alpha: strength of selection), abbreviated alp of length n regimes if "alpha" is specified in model.mean/var
 #' 
 #' @param phy Phylogenetic tree 
 #' @param map list containing the mapping of regimes over each edge (see details). 
-#' @param model.var model specification for the simulation of trait variance evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")
-#' @param model.mean model specification for the simulation of trait mean evolution. Supported models are c("OU", "BM", "WN", "OUM", "BMM", "WNM")					
+#' @param model.var model specification for the simulation of trait variance evolution. Supported models are c("OU", "BM", "WN")
+#' @param model.mean model specification for the simulation of trait mean evolution. Supported models are c("OU", "BM", "WN")					
 #' @param v.pars parameters used for the simulation of trait variance evolution (see details).
 #' @param m.pars parameters used for the simulation of trait mean evolution (see details).
 #'
@@ -28,12 +38,12 @@
 #' # MBM and VOU
 #' jive_phy <- sim_jive(phy, phy$maps)
 #' 
-#' # MWNM and VOUM
-#' jive_phy <- sim_jive(phy, phy$maps, "OUM", "WNM",  v.pars = list(the = c(10,5,10), 
+#' # MWN + sigma and VOU + theta + root + alpha
+#' jive_phy <- sim_jive(phy, phy$maps, c("WN", "sigma"), c("OU", "theta", "root", "alpha"),  v.pars = list(the = c(10,5,10), 
 #' sig2 = 0.1, alp = c(0.2, 0.8)), m.pars = list(the = 0, sig2 = c(0.1, 0.5)))
 
-sim_jive <- function(phy, map = NULL, model.var="OU", model.mean="BM",
-                     v.pars = list(the = c(2,1), sig2 = 0.1, alp = 1), m.pars = list(the = 0, sig2 = 0.1),
+sim_jive <- function(phy, map = NULL, model.mean="BM", model.var="OU",
+                    m.pars = list(the = 0, sig2 = 0.1), v.pars = list(the0 = 2, the = 1, sig2 = 0.1, alp = 1),
                      sampling = list(min = 0, max = 7)){
   
   ntips <- length(phy$tip.label)

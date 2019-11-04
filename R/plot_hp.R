@@ -1,7 +1,7 @@
 #' @title plot Hyper-prior function
 #' @description This function plots a hyper-prior density function. 
 #' Currently supported density function are Uniform, Gamma, Normal, Loggamma and Lognormal. 
-#' The resulting function is used during MCMC \code{\link{mcmc_jive}}
+#' The resulting function is used during MCMC \code{\link{mcmc_bite}}
 #' to estimate parameters of priors.
 #' 
 #' @details There are three currently implemented density function: 

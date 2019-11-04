@@ -1,10 +1,10 @@
-#' @title Create a list that can be used as an input to mcmc_jive
+#' @title Create a list that can be used as an input to mcmc_bite
 #' @description This function creates a jive object from a matrix of intraspecific observations
-#' and species phylogeny. The obtained jive object is a list that can than be used as an input to \code{\link{mcmc_jive}} function
+#' and species phylogeny. The obtained jive object is a list that can than be used as an input to \code{\link{mcmc_bite}} function
 #' Intraspecific observations should be stored as matrix, where lines are vector of observations for each species,
 #' with NA for no data. Phylogenetic tree can be either a simmap object (\code{\link{make.simmap}}) or phylo object (\code{\link{as.phylo}})
 #' 
-#' @details This function creates a jive object needed for \code{\link{mcmc_jive}} function.  
+#' @details This function creates a jive object needed for \code{\link{mcmc_bite}} function.  
 #' Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data. Rownames are species names that should match exactly tip labels of the phylogenetic tree.
 #'
 #' Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map. If you keep the phy = NULL options the JIVE object can only be parsed to the \code{\link{xml_jive}} function.
@@ -29,7 +29,7 @@
 #' Ornstein Uhlenbeck model (OU):
 #' -theta0: root value, abbreviated ou.the.0. Only used if "root" is specified in model.mean/var
 #' -sigma square: evolutionary rate, abbreviated ou.sig or ou.sig.1, ou.sig.2, ..., ou.sig.n for n regimes if "sigma" is specified in model.mean/var
-#' -optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes ¨if "theta" is specified in model.mean/var
+#' -optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes if "theta" is specified in model.mean/var
 #' -stationary variance (alpha/2*sigma_sq with alpha being the strength of selection), abbreviated ou.sv or ou.sv.1
 #' 
 #' @param phy phylogenetic tree provided as either a simmap or a phylo object
@@ -42,9 +42,9 @@
 #' @param nreg integer giving the number of regimes for a Beast analysis. Only evaluated if phy == NULL
 #' @export
 #' @import ape stats
-#' @author Theo Gaboriau, Anna Kostikova and Simon Joly
-#' @return A list of functions and tuning parameters to parse into \code{\link{mcmc_jive}} function.
-#' @seealso \code{\link{xml_jive}}, \code{\link{mcmc_jive}} 
+#' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro and Simon Joly
+#' @return A list of functions and tuning parameters to parse into \code{\link{mcmc_bite}} function.
+#' @seealso \code{\link{xml_jive}}, \code{\link{mcmc_bite}} 
 #' @examples
 #' 
 #' ## Load test data
@@ -59,10 +59,23 @@
 #' ## JIVE object to run jive with multiple regimes
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
 #'  model.mean="BM", model.var=c("OU", "theta", "sv"))
+#' 
+#' ## JIVE object to run jive from an ancestral state reconstruction (stochastic mapping)
+#' # First generate simmap object
+#' library(phytools)
+#' n= length(Anolis_tree$tip.label)
+#' trait = rep(0,n)
+#' trait[c(4,3,14,16, 6,5)] = 1
+#' names(trait) =  Anolis_tree$tip.label
+#' 
+#' mapped_tree=make.simmap(Anolis_tree, trait, model='SYM')
+#' plotSimmap(mapped_tree)
+#' 
+#' my.jive <- make_jive(mapped_tree, Anolis_traits, model.mean=c("OU"), model.var=c("OU", "theta"))
+#'  
 
-
-
-make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.var=c("OU"), scale = F, control = list(), nreg = NULL){
+make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.var=c("OU"),
+                      scale = F, control = list(), nreg = NULL){
   
   ### dealing with the tree
   is.phy <- !is.null(phy)
@@ -105,13 +118,17 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
       if (is.null(phy$maps)){ 
         if (is.null(phy$nodelabels)){
           map <- input_to_map(phy) # It is assumed there is only one regime
+          reg.names <- NA
         } else {
           map <- input_to_map(phy, ndlabels = phy$nodelabels)
+          reg.names <- unique(phy$nodelabels)
         }
       } else {
         map <- input_to_map(phy, simmap = phy$maps)
+        reg.names <- colnames(phy$mapped.edge)
       } 
     } else {
+      reg.names <- colnames(map)
       map <- input_to_map(phy, map = map)
     }
     
@@ -136,6 +153,7 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
     
   } else {
     map <- input_to_map(phy, nreg = nreg)
+    reg.names <- NA
   }
   
   
@@ -146,6 +164,7 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
   jive$data$counts 					<- sapply(jive$data$traits, function (x) {sum( !is.na(x) )})
   jive$data$n               <- length(phy$tip.label)
   jive$data$map             <- map
+  jive$data$reg             <- reg.names
   jive$data$tree   					<- phy
   
   if(is.phy){
@@ -198,18 +217,20 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
   #### Prepare headers of log file ####
   
   jive$header <- c("iter", "posterior", "log.lik", "prior.mean", "prior.var", 
-                   paste("mean.", rep(names(jive$prior.mean$init), sapply(jive$prior.mean$init, length)),
-                         unlist(lapply(sapply(jive$prior.mean$init, length), function(x){  
-                           if (x == 1) ""
-                           else if ("root" %in% model.mean) c("0", seq(1, x-1))
-                           else seq(1, x)
-                         } )), sep =""),
-                   paste("var.", rep(names(jive$prior.var$init), sapply(jive$prior.var$init, length)),
-                         unlist(lapply(sapply(jive$prior.var$init,length), function(x){  
-                           if (x == 1) ""
-                           else if ("root" %in% model.var) c("0", seq(1, x-1))
-                           else seq(1, x)
-                         } )), sep =""),
+                   paste("mean", rep(names(jive$prior.mean$init), sapply(jive$prior.mean$init, length)),
+                         unlist(sapply(names(jive$prior.mean$init), function(x){  
+                           len <- length(jive$prior.mean$init[[x]])
+                           if (len == 1) ""
+                           else if (grepl("the", x) & "root" %in% model.mean) c("0", jive$data$reg[seq(1, len-1)])
+                           else jive$data$reg[seq(1, len)]
+                         })), sep ="."),
+                   paste("var", rep(names(jive$prior.var$init), sapply(jive$prior.var$init, length)),
+                         unlist(sapply(names(jive$prior.var$init), function(x){  
+                           len <- length(jive$prior.var$init[[x]])
+                           if (len == 1) ""
+                           else if ("root" %in% model.var) c("0", jive$data$reg[seq(1, len-1)])
+                           else jive$data$reg[seq(1, len)]
+                         })), sep ="."),
                    paste(names(jive$data$traits), "_m", sep=""),
                    paste(names(jive$data$traits), "_v", sep=""),
                    "acc", "temperature")			

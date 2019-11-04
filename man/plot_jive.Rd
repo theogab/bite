@@ -6,7 +6,8 @@
 \usage{
 plot_jive(jive, col.map = NULL, col = "lightgrey",
   show.tip.label = T, show.models = T, direction = "rightwards",
-  trait.lab = "", trait.lim = NULL, srt.label = 0, tip.color, ...)
+  trait.lab = "x", trait.lim = NULL, srt.label = 0, c.reg = NULL,
+  tip.color, ...)
 }
 \arguments{
 \item{jive}{a jive object built with the function \code{\link{make_jive}}}
@@ -17,6 +18,8 @@ plot_jive(jive, col.map = NULL, col = "lightgrey",
 
 \item{show.tip.label}{a logical indicating whether to show the tip labels on the phylogeny (defaults to TRUE, i.e. the labels are shown).}
 
+\item{show.models}{a logical indicating whether to show details about model specification in the jive object.}
+
 \item{direction}{a character string specifying the direction of the tree. Two values are possible: "rightwards" (the default) and "upwards".}
 
 \item{trait.lab}{a charachter specifying the axis label for the traits}
@@ -24,6 +27,8 @@ plot_jive(jive, col.map = NULL, col = "lightgrey",
 \item{trait.lim}{a vector of mode numeric indicating the limits for trait ploting}
 
 \item{srt.label}{an integer indicating the string rotation in degrees for the tip labels}
+
+\item{c.reg}{a real number indicating where to plot the names of the regimes. The names are not plotted if c.reg == NULL.}
 
 \item{tip.color}{the colours used for the tip labels, eventually recycled.}
 
@@ -40,15 +45,16 @@ data(Anolis_traits)
 data(Anolis_tree)
 data(Anolis_map)
 
+colnames(Anolis_map) <- c("Hispaniola", "Cuba")
 my.jive <- make_jive(Anolis_tree, Anolis_traits, 
  model.var="OU", model.mean="BM")
 par(cex.lab = .8, cex.axis = .8, las = 1, mgp = c(2,0.5,0))
 plot_jive(jive = my.jive, show.tip.label = TRUE, 
-trait.lab = "Snout to vent length (cm)", srt.label = 0)
+trait.lab = "Snout to vent length (cm)", srt.label = 0, c.reg = 2)
 my.jive <- make_jive(Anolis_tree, Anolis_traits, Anolis_map,
  model.var=c("OU", "theta"), model.mean="BM")
 par(cex.lab = .8, cex.axis = .8, las = 1, mgp = c(2,0.5,0))
-plot_jive(jive = my.jive, show.tip.label = TRUE,
+plot_jive(jive = my.jive, show.tip.label = TRUE, c.reg = 2,
  trait.lab = "Snout to vent length (cm)", srt.label = 70, direction = "upwards")
  
 }
