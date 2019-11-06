@@ -143,7 +143,7 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
       # calculate new var/covar and expectation
       mat.mean1 <- model$prior.mean$data
       mat.mean0 <- try(model$prior.mean$model(n = model$data$n, n.p = par.n,
-                                           pars = pars.v0, tree = model$data$tree,
+                                           pars = pars.m0, tree = model$data$tree,
                                            map = model$prior.mean$map, t.vcv = model$data$vcv, nr = model$prior.mean$nr), silent = T)
       if(any(grepl("Error", mat.mean0))){
         prior.mean0 <- Inf

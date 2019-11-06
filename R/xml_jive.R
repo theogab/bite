@@ -4,7 +4,7 @@
 #' @details This function takes a xml file generated with Beauti and a jive object generated with \code{\link{make_jive}}
 #' Only jive objects that use models supported by the Beast implementation of jive ("BM", c("BM", "sigma"), "WN", "OU", c("OU", "theta"), c("OU", "root"), c("OU", "root", "theta"))
 #' 
-#' @param jive an object of class "jive" (see details)
+#' @param model an object of class "jive" (see details)
 #' @param xml name of the output file that will store the log of MCMC chain
 #' @param out where to write the edited xml
 #' @import xml2
@@ -14,7 +14,7 @@
 #' @encoding UTF-8
 
 
-xml_jive <- function(jive, xml, out = sprintf("%s_edited.xml", gsub(".xml", "", xml))){
+xml_bite <- function(model, xml, out = sprintf("%s_edited.xml", gsub(".xml", "", xml))){
   
   x <- read_xml(xml)
   
