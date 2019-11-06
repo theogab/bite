@@ -27,6 +27,8 @@
 #' 
 #' mlikSS <- marginal_lik(res, burnin = 0.1, method = "SS")
 #' mlikSS
+#' 
+#' @encoding UTF-8
 
 
 marginal_lik <- function(mcmc.log, burnin = 0, method = "SS") {

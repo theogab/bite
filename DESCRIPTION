@@ -2,14 +2,15 @@ Package: bite
 Type: Package
 Title: Bayesian Integrative models of Trait Evolution
 Version: 0.3
-Date: 2019-03-19
+Date: 2019-11-04
 Author: Theo Gaboriau <theo.gaboriau@unil.ch>, Anna Kostikova <anna.kostikova@unil.ch>, Daniele Silvestro <daniele.Silvestro@unil.ch>, Sacha Laurent <Sacha.Laurent@unil.ch>, Martha Serrano <martha.serrano@unil.ch>, Glenn Litsios <glenn.litsios@unil.ch>, Wim Hordijk <wim@WorldWideWanderings.net>, Nicolas Salamin <nicolas.salamin@unil.ch>, Simon Joly <joly.simon@gmail.com>
 Maintainer: Theo Gaboriau <theo.gaboriau@unil.ch>
-Description: macroevolutionary analysis of joint intra and inter-specific variance evolution using comparative phylogenetic models. 
+Description: Includes several bayesian models of trait evolution that tend to incorporate various type of data into comparative phylogenetic models.
 Depends: R (>= 3.0.3)
 Imports: ape, MASS, phytools, coda, sm, vioplot, xml2
 License: GPL-2
 Repository: CRAN
 NeedsCompilation: no
-Packaged: 2019-03-19 17:01:47 UTC; simjoly
+Packaged: 2019-11-04 17:01:47 UTC; theogab
+Encoding: UTF-8
 RoxygenNote: 6.1.1

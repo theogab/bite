@@ -30,9 +30,8 @@ prior_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
   ## Find where to put Jive priors
   dist <- xml_find_first(x, "//distribution[@id='prior' and @spec='util.CompoundDistribution']")
   model <- jive$name
-  nreg <- grep("\\[(.*?)\\]", model)
-  
-  
+  nreg <- as.numeric(gsub(".*?\\[(.*?)\\].*", "\\1", model, perl = T))
+
   ## prior node
   if(grepl("WN", model)){
     anc <- xml_add_child(dist, "distribution", id = sprintf("Jive%sPrior", vari), spec = "contraband.WNLikelihood", .where = 0)
@@ -55,10 +54,10 @@ prior_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
   
   # mapping
   if(grepl("BM", model)){
-    rate <- xml_add_child(anc, ifelse(any(model %in% "sigma"), sprintf("Jive%sRateManager", vari) ,"RateManager"), id = sprintf("Jive%sRateManager", vari), spec="contraband.TreeToVCVMat", coalCorrection="false")
+    rate <- xml_add_child(anc, ifelse(any(model %in% "sigma"), sprintf("Jive%srateManager", vari) ,"rateManager"), id = sprintf("Jive%srateManager", vari), spec="contraband.TreeToVCVMat", coalCorrection="false")
     if(grepl("sigma", model)){
       mod <- xml_add_child(rate, "branchRateModel", id=sprintf("Jive%sCatClock", vari), spec="contraband.RandomLocalColorModel", scaling="false", includeRoot="true")
-      xml_add_child(mod, "indicators", id="JiveShiftIndicators", spec="parameter.BooleanParameter", value= paste(rep("true", nreg), rep("false", 2*length(spnames)-2-nreg), collapse = " "))
+      xml_add_child(mod, "indicators", id=sprintf("Jive%sShiftIndicators", vari), spec="parameter.BooleanParameter", value= paste(c(rep("true", nreg), rep("false", 2*length(spnames)-2-nreg)), collapse = " "))
       if(jive$hprior$bm.sig.1(NA)[[2]][[1]] == "Uniform"){ # Uniform hyperprior must be specified here
         xml_add_child(mod, "colors", id = sprintf("Jive%sEvolRate", vari), spec="parameter.RealParameter",
                       lower = jive$hprior$bm.sig.1(NA)[[2]][[2]][1],
@@ -69,7 +68,7 @@ prior_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
       }
       xml_add_child(mod, "tree", idref = treeid)
     } else {
-      mod <- xml_add_child(rate, "branchRateModel", id="RateCatClock", spec="contraband.RateCategoryClockModel", nCat="1")
+      mod <- xml_add_child(rate, "branchRateModel", id=sprintf("Jive%sRateCatClock",vari), spec="contraband.RateCategoryClockModel", nCat="1")
       if(jive$hprior$bm.sig(NA)[[2]][[1]] == "Uniform"){ # Uniform hyperprior must be specified here
         xml_add_child(mod, "rates", id=sprintf("Jive%sEvolRate", vari), spec="parameter.RealParameter",
                       lower = jive$hprior$bm.sig(NA)[[2]][[2]][1],
@@ -88,7 +87,7 @@ prior_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
     optimum <- xml_add_child(anc, "optimumManager", id="OptimumManager", spec="contraband.TreeToVCVMat", coalCorrection="false")
     if(grepl("theta", model)){
       mod <- xml_add_child(optimum, "branchRateModel", id=sprintf("Jive%sCatClock", vari), spec="contraband.RandomLocalColorModel", scaling="false", includeRoot="true")
-      xml_add_child(mod, "indicators", id="JiveShiftIndicators", spec="parameter.BooleanParameter", value=paste(rep("true", nreg), rep("false", 2*length(spnames)-2-nreg), collapse = " "))
+      xml_add_child(mod, "indicators", id=sprintf("Jive%sShiftIndicators", vari), spec="parameter.BooleanParameter", value=paste(rep("true", nreg), rep("false", 2*length(spnames)-2-nreg), collapse = " "))
       if(jive$hprior$ou.the.1(NA)[[2]][[1]] == "Uniform"){ # Uniform hyperprior must be specified here
         xml_add_child(mod, "colors", id=sprintf("Jive%sTheta", vari), spec="parameter.RealParameter",
                       lower = as.character(jive$hprior$ou.the.1(NA)[[2]][[2]][1]),
@@ -99,7 +98,7 @@ prior_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
       }
       xml_add_child(mod, "tree", idref = treeid)
     } else {
-      mod <- xml_add_child(optimum, "branchRateModel", id="RateCatClock", spec="contraband.RateCategoryClockModel", nCat="1")
+      mod <- xml_add_child(optimum, "branchRateModel", id=sprintf("Jive%sRateCatClock", vari), spec="contraband.RateCategoryClockModel", nCat="1")
       if(jive$hprior$ou.the.1(NA)[[2]][[1]] == "Uniform"){ # Uniform hyperprior must be specified here
         xml_add_child(mod, "rates", id=sprintf("Jive%sTheta", vari), spec="parameter.RealParameter",
                       lower = as.character(jive$hprior$ou.the.1(NA)[[2]][[2]][1]),
@@ -229,7 +228,7 @@ operator_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
     if(grepl("BM", model)){
       if(grepl("sigma", model)){
         xml_add_sibling(op, "operator", id = sprintf("Jive%sEvolRateScaler", vari), spec = "ScaleOperator", parameter = sprintf("@Jive%sEvolRate", vari), scaleFactor = as.character(jive$ws$bm.sig[1]), weight = "3.0", .where = "before")
-        shift <- xml_add_sibling(op, "operator", id = sprintf("Jive%sShiftIndicatorsShiftIndicatorMove", vari), spec = "contraband.operators.BitMoveOperator",  weight = "40.0", parameter = sprintf("@Jive%sShiftIndicators", vari), k = as.character(nreg), .where = "before")
+        shift <- xml_add_sibling(op, "operator", id = sprintf("Jive%sShiftIndicatorMove", vari), spec = "contraband.operators.BitMoveOperator",  weight = "40.0", parameter = sprintf("@Jive%sShiftIndicators", vari), k = as.character(nreg), .where = "before")
         xml_add_child(shift, "tree", idref = treeid)
       } else {
         xml_add_sibling(op, "operator", id = sprintf("Jive%sEvolRateScaler", vari), spec = "ScaleOperator", parameter = sprintf("@Jive%sEvolRate", vari), scaleFactor = as.character(jive$ws$bm.sig), weight = "3.0", .where = "before")
@@ -251,3 +250,4 @@ operator_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
     }
   }
 }
+

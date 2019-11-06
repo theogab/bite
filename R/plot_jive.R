@@ -33,6 +33,7 @@
 #' plot_jive(jive = my.jive, show.tip.label = TRUE, c.reg = 2,
 #'  trait.lab = "Snout to vent length (cm)", srt.label = 70, direction = "upwards")
 #'  
+#' @encoding UTF-8
 
 
 
@@ -105,7 +106,7 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     
     if(st > 1 & !is.null(c.reg)){
       text(x = rep(0, st), y = c.reg - seq(0, max(branching.times(tree))/10,length.out = st), labels = paste(1:st,jive$data$reg, sep = ":"),
-           col = col.map, xpd = NA, cex = 0.6, adj = 0)
+           col = col.map, xpd = NA, cex = 1, adj = 0)
     }
     
     if(show.models){
@@ -155,7 +156,7 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     
     if(st > 1 & !is.null(c.reg)){
       text(x = rep(0, st), y = c.reg - 0:(st-1), labels = paste(1:st,jive$data$reg, sep = ":"),
-           col = col.map, xpd = NA, cex = 0.6, adj = 0)
+           col = col.map, xpd = NA, cex = 1, adj = 0)
     }
     
     if(show.models){

@@ -2,15 +2,19 @@
 #' @description Lolipop plot representing values of BF (Bayes Factor) scores for different models 
 #' @param m.liks matrix of marginal likelihoods (see details)
 #' @param thr value of BF threshold for model selection (default is 2), Several thresholds can be given in the form of a vector
+#' @param dir string giving the direction of the plot ("vertical", "horizontal")
+#' @param col color of the lines and dots. Could be of size one or more. The first element applies to the best model, the second to the ones below thr[1] and so on...
 #' @param col.thr color for the threshold area (must be at the sime length as thr)
 #' @param ax.lab label of the axis.
-#' @param mod.lab name of the models. If mod.lab = NULL the names of m.liks are used
+#' @param main an overall title for the plot
 #' @param rank logical: should models be ranked by BF scores? (default is TRUE)
 #' @param dec logical: should models be displayed in decreasing order? (default is TRUE)
 #' @param group.pattern Regular expression given a pattern to be matched in names(m.liks). The values matching that pattern will be grouped in the plot
-#' @param space only evaluated if group.pattern != NULL, numeric(2) indicating the space between groups and the space between members of the same groups
 #' @param cex size of the dots and width of the lines. Could be of size one or more. The first element applies to the best model, the second to the ones below thr[1] and so on...
-#' @param col color of the lines and dots. Could be of size one or more. The first element applies to the best model, the second to the ones below thr[1] and so on...
+#' @param space only evaluated if group.pattern != NULL, numeric(2) indicating the space between groups and the space between members of the same groups
+#' @param mod.lab name of the models. If mod.lab = NULL the names of m.liks are used
+#' @param srt.lab,adj.lab rotation and justification of model names, see srt and adj in \code{\link[graphics]{par}}
+#' 
 #' @author Theo Gaboriau
 #' @export
 #' @examples
@@ -28,10 +32,12 @@
 #' plot_bf(m.liks, group.pattern = c("VWN", "VOU", "VBM"), rank = TRUE)
 #' par(mar = c(6,5,1,2))
 #' plot_bf(m.liks, dir = "horizontal", srt.lab = -60, adj.lab = c(0,0.8))
+#' 
+#' @encoding UTF-8
 
 plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c("#d32f23","#2e86ab","#000000"),
-                    col.thr = c("#a6e1fa"), ax.lab = "log(BF)", main = "", mod.lab = NULL, rank = T, dec = T,
-                    group.pattern = NULL, cex = c(1.2,1,1), srt.lab = 0, adj.lab = 0, space = c(1.2,0.8)){
+                    col.thr = c("#a6e1fa"), ax.lab = "log(BF)", main = "", rank = T, dec = T,
+                    group.pattern = NULL, cex = c(1.2,1,1), mod.lab = NULL, srt.lab = 0, adj.lab = 0, space = c(1.2,0.8)){
   
   BF <- 2*(max(m.liks, na.rm = T) - m.liks)
   
