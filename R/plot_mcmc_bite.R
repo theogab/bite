@@ -1,14 +1,12 @@
-#' @title Plot \code{\link{mcmc_bite}} results
-#' 
-#' @description This function plots the trace and/or density of each mcmc sample
-#' 
+#' @title Plot trace and density from a log file
+#' @description This function plots the trace and/or density of each mcmc sample.
 #' @param mcmc.log Any mcmc sample with the saved iterations in rows and the variables in columns
 #' @param type Character taken in c("trace", "density"). If both are specified, they are plotted side by side in the same graphical device
 #' @param burnin The size of the burnin in number of iterations or the proportion of iteration you want to remove
 #' @param variable The name or number of the variable to plot. If is.na(variable), all columns of mcmc.log will be plotted except "iter" and "temperature"
 #' @param label Full variable name to be plotted
 #' @param cex.est The magnification to be used for estimates display
-#' @param kp.burn Logical specifying whether the plot window should adjust to the pre-burnin values (only evaluated if "trace" %in% type)
+#' @param kp.burn Logical specifying whether the plot window should adjust to the pre-burnin values (only evaluated if "trace" in type)
 #' @param col,bty,... Other graphical parameters to parse to \code{\link[graphics]{par}}
 #' @export
 #' @import coda
