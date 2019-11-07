@@ -100,7 +100,7 @@ my.jive <- make_jive(mapped_tree, Anolis_traits, model.mean=c("OU"), model.var=c
  
 }
 \seealso{
-\code{\link{xml_jive}}, \code{\link{mcmc_bite}}
+\code{\link{xml_bite}}, \code{\link{mcmc_bite}}
 }
 \author{
 Theo Gaboriau, Anna Kostikova, Daniele Silvestro and Simon Joly

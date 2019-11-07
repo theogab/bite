@@ -16,6 +16,7 @@
 #' @import phytools ape vioplot sm
 #' @author Theo Gaboriau
 #' @return plot 
+#' @encoding UTF-8
 #' @examples
 #' data(Anolis_traits)
 #' data(Anolis_tree)
@@ -33,7 +34,6 @@
 #' plot_jive(jive = my.jive, show.tip.label = TRUE, c.reg = 2,
 #'  trait.lab = "Snout to vent length (cm)", srt.label = 70, direction = "upwards")
 #'  
-#' @encoding UTF-8
 
 
 
