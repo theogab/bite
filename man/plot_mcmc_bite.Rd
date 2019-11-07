@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{plot_mcmc_bite}
 \alias{plot_mcmc_bite}
-\title{Plot \code{\link{mcmc_bite}} results}
+\title{Plot trace and density from a log file}
 \usage{
 plot_mcmc_bite(mcmc.log, type = c("trace", "density"), burnin = 0,
   variable = NA, label = NA, col = "#000000", cex.est = 1,
@@ -24,10 +24,10 @@ plot_mcmc_bite(mcmc.log, type = c("trace", "density"), burnin = 0,
 
 \item{cex.est}{The magnification to be used for estimates display}
 
-\item{kp.burn}{Logical specifying whether the plot window should adjust to the pre-burnin values (only evaluated if "trace" %in% type)}
+\item{kp.burn}{Logical specifying whether the plot window should adjust to the pre-burnin values (only evaluated if "trace" in type)}
 }
 \description{
-This function plots the trace and/or density of each mcmc sample
+This function plots the trace and/or density of each mcmc sample.
 }
 \examples{
 
