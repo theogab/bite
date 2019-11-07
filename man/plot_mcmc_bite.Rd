@@ -6,9 +6,8 @@
 \title{Plot \code{\link{mcmc_bite}} results}
 \usage{
 plot_mcmc_bite(mcmc.log, type = c("trace", "density"), burnin = 0,
-  variable = "log.lik", label = ifelse(is.numeric(variable),
-  colnames(mcmc.log)[variable], variable), col = "#000000",
-  cex.est = 1, bty = "n", ...)
+  variable = NA, label = NA, col = "#000000", cex.est = 1,
+  bty = "n", kp.burn = FALSE, ...)
 }
 \arguments{
 \item{mcmc.log}{Any mcmc sample with the saved iterations in rows and the variables in columns}
@@ -17,13 +16,15 @@ plot_mcmc_bite(mcmc.log, type = c("trace", "density"), burnin = 0,
 
 \item{burnin}{The size of the burnin in number of iterations or the proportion of iteration you want to remove}
 
-\item{variable}{The name or number of the variable to plot}
+\item{variable}{The name or number of the variable to plot. If is.na(variable), all columns of mcmc.log will be plotted except "iter" and "temperature"}
 
 \item{label}{Full variable name to be plotted}
 
 \item{col, bty, ...}{Other graphical parameters to parse to \code{\link[graphics]{par}}}
 
 \item{cex.est}{The magnification to be used for estimates display}
+
+\item{kp.burn}{Logical specifying whether the plot window should adjust to the pre-burnin values (only evaluated if "trace" %in% type)}
 }
 \description{
 This function plots the trace and/or density of each mcmc sample
@@ -44,6 +45,7 @@ logfile <- "my.jive_mcmc.log"
 res <- read.csv(logfile, header = TRUE, sep = "\\t")
 
 ## plot the results
+plot_mcmc_bite(res, burnin = 0.2, variable = NA, cex.est = .7)
 plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
 
 }

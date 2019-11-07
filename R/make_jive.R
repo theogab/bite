@@ -51,7 +51,7 @@
 #' @import ape stats
 #' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro and Simon Joly
 #' @return A list of functions and tuning parameters to parse into \code{\link{mcmc_bite}} function.
-#' @seealso \code{\link{xml_jive}}, \code{\link{mcmc_bite}} 
+#' @seealso \code{\link{xml_bite}}, \code{\link{mcmc_bite}} 
 #' @examples
 #' 
 #' ## Load test data

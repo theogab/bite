@@ -17,6 +17,7 @@
 #' 
 #' @author Theo Gaboriau
 #' @export
+#' @encoding UTF-8
 #' @examples
 #' ## Fake marginal likelihood data
 #' m.liks <- c(20 ,33, 56, 51, 55, 12)
@@ -33,7 +34,6 @@
 #' par(mar = c(6,5,1,2))
 #' plot_bf(m.liks, dir = "horizontal", srt.lab = -60, adj.lab = c(0,0.8))
 #' 
-#' @encoding UTF-8
 
 plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c("#d32f23","#2e86ab","#000000"),
                     col.thr = c("#a6e1fa"), ax.lab = "log(BF)", main = "", rank = T, dec = T,

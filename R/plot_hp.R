@@ -15,6 +15,7 @@
 #' @export
 #' @author Theo Gaboriau
 #' @return plot
+#' @encoding UTF-8
 #' @examples
 #'
 #' ## Load test data
@@ -27,19 +28,36 @@
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
 #' plot_hp(my.jive, cex.main = .8)
 #' 
-#' @encoding UTF-8
 
 
 plot_hp <- function(hpf, col = c("#bfdbf7", "#f49e4c"), border = c("#2e86ab", "#a31621"), bty = "n", ...){
   
   if("JIVE" %in% class(hpf)){
     n <- length(hpf$prior.mean$hprior)+length(hpf$prior.var$hprior)
-    par(mfrow = c(floor(sqrt(n)),ceiling(sqrt(n))))
+    nrow <- floor(sqrt(n))
+    ncol <- ceiling(sqrt(n))
+    ro <- 1
+    co <- 1
     for(i in 1:length(hpf$prior.mean$hprior)){
-      plot_hyper(hpf$prior.mean$hprior[[i]], col = col[1], border = border[1], xlab = paste("M-",names(hpf$prior.mean$hprior)[i]), bty = bty, ...)
+      par(fig = c((co-1)/ncol,co/ncol,ro/nrow,1-(ro-1)/nrow), new = ifelse(ro == 1 & co == 1, FALSE, TRUE))
+      plot_hyper(hpf$prior.mean$hprior[[i]], col = col[1], border = border[1], xlab = paste("M-",names(hpf$prior.mean$hprior)[i], sep = ""), bty = bty, ...)
+      if(co == ncol){
+        co <- 1
+        ro <- ro + 1
+      } else {
+        co <- co + 1
+      }
     }
     for(i in 1:length(hpf$prior.var$hprior)){
-      plot_hyper(hpf$prior.var$hprior[[i]], col = col[2], border = border[2], xlab = paste("V-", names(hpf$prior.var$hprior)[i]), bty = bty, ...)
+      par(fig = c((co-1)/ncol,co/ncol,1-ro/nrow,1-(ro-1)/nrow), new = TRUE)
+      plot_hyper(hpf$prior.var$hprior[[i]], col = col[2], border = border[2], xlab = paste("V-", names(hpf$prior.var$hprior)[i], sep = ""), bty = bty, ...)
+      if(co == ncol){
+        co <- 1
+        ro <- ro + 1
+      } else {
+        co <- co + 1
+      }
+      par(fig = c(0,1,0,1))
     }
   } else {
     plot_hyper(hpf, col = col[1], border = border[1], bty = bty, ...)

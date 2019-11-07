@@ -1,6 +1,9 @@
-#' @title Plot posterior probabilities of paramenter value under multiple regimes estimated with the beast implementation of JIVE, OU, BM and WN.
+#' @title Plot posterior probabilities from beast
 #' @description This function plots the phylogenetic tree along with mean posterior probabilities of the chosen parameter. 
-#' Options are included to plot node support and age bars
+#' The default plots paramenter value under multiple regimes estimated with the beast implementation of JIVE, OU, BM and WN.
+#' Options are included to plot node support and age bars.
+#' 
+#' @details leg = T changes the proportion of the plot.window taken by the plot. Use \code{par(fig = c(0,1,0,1))} to restore default parameters
 #'
 #' @param mcc A character containing the path to the Maximum credibility tree from the Beast analysis and extracted from treeAnnotator
 #' @param post A logical specifying whether the mean posterior value of a parameter should be plot along the tree
@@ -13,6 +16,7 @@
 #' @param leg A logical specifying whether a legend should be plotted (only evaluated if post == TRUE)
 #' @param leg.frac A vector giving the proportion of the plot window taken by the legend (only evaluated if post == TRUE)
 #' @param leg.lab Label of the legend (only evaluated if post == TRUE)
+#' @param leg.cex A numeric giving the size of the legend (only evaluated if post == TRUE)
 #' @param sup A logical specifying whether node support information should be displayed
 #' @param sup.var A character containing the name of the support variable (only evaluated if sup == TRUE)
 #' @param sup.cex A numeric giving the size of node support information (only evaluated if sup == TRUE)
@@ -31,8 +35,9 @@
 
 
 plot_post_beast <- function(mcc, post = T, post.var = "rate", post.cex = par("cex"), post.col = "#ee964b",
-                          post.alpha = 1, post.border = "#000000", post.lwd = par("lwd"), leg = T,
-                          leg.frac = c(.2,.5), leg.lab = "rate", sup = T, sup.var = "posterior", sup.cex = par("cex")/2,
+                          post.alpha = 1, post.border = "#000000", post.lwd = par("lwd"), 
+                          leg = T, leg.frac = c(.2,.5), leg.lab = "rate", leg.cex = par("cex")/2,
+                          sup = T, sup.var = "posterior", sup.cex = par("cex")/2,
                           bars = F, bar.var = "height_95%_HPD", bar.col = "#2e86ab", bar.alpha = 0.8,
                           bar.thc = par("cex")/10, bar.border = "#000000", bar.lwd = par("lwd"),  ...){
   
@@ -83,10 +88,12 @@ plot_post_beast <- function(mcc, post = T, post.var = "rate", post.cex = par("ce
   
   if(post){
     if(length(post.col) == 1) grad <- adjustcolor(colorRampPalette(c("#FFFFFF", post.col))(101), alpha.f = post.alpha)
-    else grad <- adjsutcolor(colorRampPalette(post.col)(101), alpha.f = post.alpha)
+    else grad <- adjustcolor(colorRampPalette(post.col)(101), alpha.f = post.alpha)
     val <- data[,post.var]
     sc.val <- round((val-min(val, na.rm = T))/(max(val, na.rm = T) - min(val, na.rm = T)) * 100, 0)
-    symbols(pp$xx, pp$yy, circles = rep(post.cex/diff(par("usr")[3:4])*10, length(pp$xx)), bg = grad[sc.val + 1], fg = post.border, inches = F, add = T)
+    for(i in 1:(tree$Nnode + n)){
+      symbols(pp$xx[i], pp$yy[i], circles = post.cex/diff(par("usr")[3:4])*10, bg = grad[sc.val[data$nodes == i] + 1], fg = post.border, inches = F, add = T)
+    }
   }
   
   if(sup){
@@ -105,21 +112,37 @@ plot_post_beast <- function(mcc, post = T, post.var = "rate", post.cex = par("ce
     if(pp$direction == "upwards") par(new = TRUE, fig = c(leg.frac[2],1,0,leg.frac[1]))
     if(pp$direction == "downwards") par(new = TRUE, fig = c(leg.frac[2],1,1-leg.frac[1],1))
     if(any(pp$direction %in% c("rightwards", "leftwards"))){
-      plot(rep(0,101),seq(min(val, na.rm = T), max(val, na.rm = T), length = 101), pch = 15,
-           col = grad, yaxt = "n", xaxt = "n", xlab = "", ylab = "")
-      co <- c(0,min(val, na.rm = T),0,max(val, na.rm = T)) + c(-par("cxy"),par("cxy"))*.5/2
+      plot(rep(0,101),seq(min(val, na.rm = T), max(val, na.rm = T), length = 101), type = "n",
+           yaxt = "n", xaxt = "n", xlab = "", ylab = "")
+      si <- par("cxy")*leg.cex
+      rect(rep(-si[1], 101), seq(min(val, na.rm = T), max(val, na.rm = T), length = 101)-si[2],
+           rep(si[1], 101), seq(min(val, na.rm = T), max(val, na.rm = T), length = 101)+si[2],
+           border = NA, col = grad)
+      co <- c(0,min(val, na.rm = T),0,max(val, na.rm = T)) + c(-si,si)
       rect(co[1],co[2],co[3],co[4])
       axis(4, pos = co[3])
       mtext(leg.lab, side = 3, at = 0, adj = 0)
     }
     if(any(pp$direction %in% c("upwards", "downwards"))){
       plot(seq(min(val, na.rm = T), max(val, na.rm = T), length = 101), rep(0,101), pch = 15, col = grad, yaxt = "n", xaxt = "n", xlab = "", ylab = "")
-      co <- c(min(val, na.rm = T),0,max(val, na.rm = T),0) + c(-par("cxy"),par("cxy"))*.5/2
+      si <- par("cxy")*leg.cex
+      rect(seq(min(val, na.rm = T), max(val, na.rm = T), length = 101)-si[1], rep(-si[2], 101), 
+           seq(min(val, na.rm = T), max(val, na.rm = T), length = 101)+si[1], rep(si[2], 101),
+           border = NA, col = grad)
+      co <- c(min(val, na.rm = T),0,max(val, na.rm = T),0) + c(-si,si)
       rect(co[1],co[2],co[3],co[4])
       axis(1, pos = co[2])
       mtext(leg.lab, side = 1, at = co[3], adj = 0)
     }
   }
+
+  if(post & leg){
+    if(pp$direction == "rightwards") par(new = TRUE, fig = c(leg.frac[1],1,0,1), bty = "n", xpd = NA)
+    if(pp$direction == "leftwards") par(new = TRUE, fig = c(0,1-leg.frac[1],0,1), bty = "n", xpd = NA)
+    if(pp$direction == "upwards") par(new = TRUE, fig = c(0,1,leg.frac[1],1), bty = "n", xpd = NA)
+    if(pp$direction == "downwards") par(new = TRUE, fig = c(0,1,0,1-leg.frac[1]), bty = "n", xpd = NA)
+    plot(tree, type = "phylogram", plot = FALSE, label.offset = label.offset, ...)
+    par(mar = mrg)
+  }
   
-  par(fig = c(0,1,0,1), mar = mrg)
 }

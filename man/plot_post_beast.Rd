@@ -2,13 +2,13 @@
 % Please edit documentation in R/plot_post_beast.R
 \name{plot_post_beast}
 \alias{plot_post_beast}
-\title{Plot posterior probabilities of paramenter value under multiple regimes estimated with the beast implementation of JIVE, OU, BM and WN.}
+\title{Plot posterior probabilities from beast}
 \usage{
 plot_post_beast(mcc, post = T, post.var = "rate",
   post.cex = par("cex"), post.col = "#ee964b", post.alpha = 1,
   post.border = "#000000", post.lwd = par("lwd"), leg = T,
-  leg.frac = c(0.2, 0.5), leg.lab = "rate", sup = T,
-  sup.var = "posterior", sup.cex = par("cex")/2, bars = F,
+  leg.frac = c(0.2, 0.5), leg.lab = "rate", leg.cex = par("cex")/2,
+  sup = T, sup.var = "posterior", sup.cex = par("cex")/2, bars = F,
   bar.var = "height_95\%_HPD", bar.col = "#2e86ab", bar.alpha = 0.8,
   bar.thc = par("cex")/10, bar.border = "#000000",
   bar.lwd = par("lwd"), ...)
@@ -35,6 +35,8 @@ plot_post_beast(mcc, post = T, post.var = "rate",
 \item{leg.frac}{A vector giving the proportion of the plot window taken by the legend (only evaluated if post == TRUE)}
 
 \item{leg.lab}{Label of the legend (only evaluated if post == TRUE)}
+
+\item{leg.cex}{A numeric giving the size of the legend (only evaluated if post == TRUE)}
 
 \item{sup}{A logical specifying whether node support information should be displayed}
 
@@ -63,7 +65,11 @@ plot
 }
 \description{
 This function plots the phylogenetic tree along with mean posterior probabilities of the chosen parameter. 
-Options are included to plot node support and age bars
+The default plots paramenter value under multiple regimes estimated with the beast implementation of JIVE, OU, BM and WN.
+Options are included to plot node support and age bars.
+}
+\details{
+leg = T changes the proportion of the plot.window taken by the plot. Use \code{par(fig = c(0,1,0,1))} to restore default parameters
 }
 \author{
 Theo Gaboriau
