@@ -62,7 +62,7 @@ prior_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
         xml_add_child(mod, "colors", id = sprintf("Jive%sEvolRate", vari), spec="parameter.RealParameter",
                       lower = jive$hprior$bm.sig.1(NA)[[2]][[2]][1],
                       upper = jive$hprior$bm.sig.1(NA)[[2]][[2]][2], 
-                      value=paste(jive$init$bm.sig ,collapse = " "))
+                      value = jive$init$bm.sig[1])
       } else {
         xml_add_child(mod, "colors", id = sprintf("Jive%sEvolRate", vari), spec="parameter.RealParameter", lower = "0.0", value=paste(jive$init$bm.sig ,collapse = " "))
       }

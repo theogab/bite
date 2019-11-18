@@ -38,21 +38,22 @@
 
 
 plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = T, show.models = T, direction = "rightwards",
-                      trait.lab = "x", trait.lim = NULL, srt.label = 0, c.reg = NULL, tip.color, ...){
+                      trait.lab = "x", trait.lim = NULL, srt.label = 0, c.reg = NULL, tip.color = "#000000", ...){
   
   tree <- jive$data$tree
   map <- jive$data$map
   traits <- jive$data$traits
   
   st <- max(do.call(cbind,map)[1,])
+  tree <- map_to_simmap(tree, map)
   if(is.null(col.map)){
     col.map <- palette()[1:st]
-    if(st > 1) names(col.map) <- my.jive$data$reg
     if (length(st) > 1) {
       cat("no colors provided. using the following legend:\n")
       print(col.map)
     }
   }
+  if(st > 1) names(col.map) <- colnames(tree$mapped.edge)
   
   if(show.models){
     mm <- strsplit(jive$prior.mean$name, " ")[[1]]
@@ -95,14 +96,7 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
   
     if(srt.label == 0) srt.label = 90
     
-    if("simmap" %in% class(tree)){
-      plotSimmap(tree, direction = "upwards", ftype = "off", ylim = ylim, mar = par()$mar, colors = col.map)
-    } else {
-      plot(tree, direction = "upwards", show.tip.label = F, y.lim = ylim, edge.col = col.map[unlist(sapply(tree$edge[,2], function(i){
-        x <- map[[i]]
-        x[1,which.max(x[3,]-x[1,])]
-      }))])
-    }
+    plotSimmap(tree, direction = "upwards", ftype = "off", ylim = ylim, mar = par()$mar, colors = col.map)
     
     if(st > 1 & !is.null(c.reg)){
       text(x = rep(0, st), y = c.reg - seq(0, max(branching.times(tree))/10,length.out = st), labels = paste(1:st,jive$data$reg, sep = ":"),
@@ -128,7 +122,9 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     
     par(fig=c(0,1,0,1), usr = init.usr, mar = init.mar)
     if(show.tip.label){
-      text(x = pp$xx[1:length(tree$tip.label)], y = 0.7*par()$usr[4], labels = gsub("_", " ", tree$tip.label), srt = srt.label, adj = 0, xpd = NA)
+      text(x = pp$xx[1:length(tree$tip.label)], y = 0.7*par()$usr[4],
+           labels = gsub("_", " ", tree$tip.label), srt = srt.label,
+           adj = 0, xpd = NA, col = tip.color)
     }
     
   } else if (direction == "rightwards"){
@@ -145,14 +141,7 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
       xlim = c(0, 2*root.len)
     }
     
-    if("simmap" %in% class(tree)){
-      plotSimmap(tree, direction = "rightwards", ftype = "off", xlim = xlim, mar = par()$mar, colors = col.map)
-    } else {
-      plot(tree, direction = "rightwards", show.tip.label = F, x.lim = xlim, edge.col = col.map[unlist(sapply(tree$edge[,2], function(i){
-        x <- map[[i]]
-        x[1,which.max(x[3,]-x[1,])]
-      }))])
-    }
+    plotSimmap(tree, direction = "rightwards", ftype = "off", xlim = xlim, mar = par()$mar, colors = col.map, fsize = par("cex"))
     
     if(st > 1 & !is.null(c.reg)){
       text(x = rep(0, st), y = c.reg - 0:(st-1), labels = paste(1:st,jive$data$reg, sep = ":"),

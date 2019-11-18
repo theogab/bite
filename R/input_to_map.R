@@ -10,14 +10,13 @@ input_to_map <- function(phy, simmap = NULL, ndlabels = NULL, map = NULL, nreg =
   } else {
     nodetime <- max(branching.times(phy)) - branching.times(phy)
     newmap <- list()
-    phy <- reorder(phy, "postorder")
     e1 <- phy$edge[, 1]
     e2 <- phy$edge[, 2]
     
     ## Map not provided
     if(is.null(simmap) & is.null(map) & is.null(ndlabels)){
       for(i in 1:nrow(phy$edge)){
-        newmap[[e2[i]]] <- matrix(c(1,nodetime[phy$edge[i,1]-n], ifelse(phy$edge[i,2] > n, nodetime[phy$edge[i,2]-n], max(branching.times(phy)))), ncol = 1)
+        newmap[[e2[i]]] <- matrix(c(1,nodetime[e1[i]-n], ifelse(e2[i] > n, nodetime[e2[i]-n], max(branching.times(phy)))), ncol = 1)
       }
     }
     
@@ -26,7 +25,7 @@ input_to_map <- function(phy, simmap = NULL, ndlabels = NULL, map = NULL, nreg =
       reg <- unique(do.call(c, sapply(simmap, names)))
       for(i in 1:nrow(phy$edge)){
         x <- simmap[[i]]
-        newmap[[e2[i]]] <- matrix(c(which(names(x)[1] == reg), nodetime[phy$edge[i,1]-n], nodetime[phy$edge[i,1]-n] + x[1]), ncol = 1)
+        newmap[[e2[i]]] <- matrix(c(which(names(x)[1] == reg), nodetime[e1[i]-n], nodetime[e2[i]-n] + x[1]), ncol = 1)
         if(length(x) > 1){
           for(j in 2:length(x)){
             newmap[[e2[i]]] <- cbind(newmap[[e2[i]]], c(which(names(x)[j] == reg), newmap[[e2[i]]][3,j-1], newmap[[e2[i]]][3,j-1] + x[j]))
@@ -62,3 +61,26 @@ input_to_map <- function(phy, simmap = NULL, ndlabels = NULL, map = NULL, nreg =
   
   return(newmap)
 }
+
+map_to_simmap<- function(phy, map){
+  n <- length(phy$tip.label)
+  st <- as.character(unique(do.call(cbind,map)[1,]))
+  
+  ## maps
+  phy$maps <- lapply(map, function(x){
+    out <- x[3,] - x[2,]
+    names(out) <- x[1,]
+    return(out)
+  })[phy$edge[,2]]
+  
+  ## mapped.edge
+  phy$mapped.edge <- t(sapply(phy$maps, function(x){
+    sapply(st, function(a){
+      sum(x[a], na.rm = T)
+    })
+  }))
+  rownames(phy$mapped.edge) <- sprintf("%s,%s", phy$edge[,1], phy$edge[,2])
+  class(phy) <- c("phylo", "simmap")
+  return(phy)
+}
+
