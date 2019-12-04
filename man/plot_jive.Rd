@@ -8,7 +8,7 @@
 plot_jive(jive, col.map = NULL, col = "lightgrey",
   show.tip.label = T, show.models = T, direction = "rightwards",
   trait.lab = "x", trait.lim = NULL, srt.label = 0, c.reg = NULL,
-  tip.color, ...)
+  tip.color = "#000000", ...)
 }
 \arguments{
 \item{jive}{a jive object built with the function \code{\link{make_jive}}}

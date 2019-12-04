@@ -5,18 +5,20 @@
 \alias{plot_pvo}
 \title{Plots estimates of species traits distribution}
 \usage{
-plot_pvo(phy, traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95,
-  stat = "median", trait.lab = "trait", col = NULL, border = NULL,
-  legend = F, lolipop = T)
+plot_pvo(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1,
+  conf = 0.95, stat = "median", trait.lab = "x", col = NULL,
+  lab = T, lolipop = c(0.4, 0.4), cex.tip = par("cex"), ...)
 }
 \arguments{
 \item{phy}{phylogenetic tree provided as either a simmap or a phylo object}
 
 \item{traits}{trait data used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}}
 
+\item{map}{map used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}}
+
 \item{mcmc.log}{the output file of a \code{\link{mcmc_bite}} run}
 
-\item{tip}{An integer giving the row corresponding to the species to be plotted}
+\item{tip}{An integer giving the row corresponding to the species to be plotted. If tip == NA, the posterior distribution of every tip is plotted along with the phylogenetic tree}
 
 \item{burnin}{The size of the burnin in number of iterations or the proportion of iteration you want to remove}
 
@@ -28,11 +30,13 @@ plot_pvo(phy, traits, mcmc.log, tip = 1, burnin = 0, conf = 0.95,
 
 \item{col}{color of the density filling. Must be of size two for estimates and HPD. If col and border are NULL, two random colors are assigned}
 
-\item{border}{color of denstiy contour. Could be of size one or two. If border = NULL, no borders are plotted}
-
-\item{legend}{A character giving the species name}
+\item{lab}{logical indicating whether to show species name in the plot. Only evaluated if tip =! NA}
 
 \item{lolipop}{a logical specifying wether the sample positions should be presented as lolipops}
+
+\item{cex.tip}{size of the tips}
+
+\item{border}{color of denstiy contour. Could be of size one or two. If border = NULL, no borders are plotted}
 }
 \description{
 Density plot representing estimated species trait distributions under a jive model.
@@ -51,7 +55,7 @@ mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100
 logfile <- "my.jive_mcmc.log"
 res <- read.csv(logfile, header = TRUE, sep = "\\t")
 
-plot_pvo(Anolis_tree, Anolis_traits, res, 5)
+plot_pvo(Anolis_tree, Anolis_traits, mcmc.log = res)
 
 }
 \author{

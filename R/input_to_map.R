@@ -22,10 +22,10 @@ input_to_map <- function(phy, simmap = NULL, ndlabels = NULL, map = NULL, nreg =
     
     ## Stochastic mapping from phytools provided
     if(!is.null(simmap)){
-      reg <- unique(do.call(c, sapply(simmap, names)))
+      reg <- unique(do.call(c, lapply(simmap, names)))
       for(i in 1:nrow(phy$edge)){
         x <- simmap[[i]]
-        newmap[[e2[i]]] <- matrix(c(which(names(x)[1] == reg), nodetime[e1[i]-n], nodetime[e2[i]-n] + x[1]), ncol = 1)
+        newmap[[e2[i]]] <- matrix(c(which(names(x)[1] == reg), nodetime[e1[i]-n], nodetime[e1[i]-n] + x[1]), ncol = 1)
         if(length(x) > 1){
           for(j in 2:length(x)){
             newmap[[e2[i]]] <- cbind(newmap[[e2[i]]], c(which(names(x)[j] == reg), newmap[[e2[i]]][3,j-1], newmap[[e2[i]]][3,j-1] + x[j]))
