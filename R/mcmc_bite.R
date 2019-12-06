@@ -1,13 +1,13 @@
 #' @title MCMC algorithm
 #' @description Implements Markov chain Monte Carlo sampling for trait evolution models
 #' 
-#' @details This function runs MCMC sampling on jive object \code{\link{make_jive}} or objects describing other models of the bite package.
+#' @details This function runs MCMC sampling on JIVE object \code{\link{make_jive}} or objects describing other models of the bite package.
 #' The jive object contains both the dataset and set of model to be used in MCMC. This function implements both a conventional MCMC
 #' and an MCMC with thermodynamic integration. The latter option is turned off by default and can be changed by
 #' setting ncat to values > 1. The recommended ncat for TI is 10. When setting ncat > 1, make sure to specify burning.
 #' As a rule of thumb set burning to 1/10 fraction of ngen. 
 #' 
-#' @param model an object of class "jive" or other objects from the bite package (see details)
+#' @param model an object of class "JIVE" or other objects from the bite package (see details)
 #' @param log.file name of the output file that will store the log of MCMC chain
 #' @param sampling.freq sampling frequency of the MCMC chain (how often chain will be saved into output file
 #' @param print.freq printing frequency of the MCMC chain (how often chain will be printed in the R console)					

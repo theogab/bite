@@ -41,7 +41,7 @@ norm_func <- function(model){
       the <- pars[["the"]]
       sig2 <- pars[["sig"]]
       alp <- pars[["alp"]]
-      cbind(the + (the - x) * exp(-alp * t), (sig2/(2*alp)) * (1 - exp(-2 * alp * t)))
+      cbind(the + (x - the) * exp(-alp * t), (sig2/(2*alp)) * (1 - exp(-2 * alp * t)))
     }
   }
   return(out)

@@ -1,5 +1,5 @@
-#' @title Control tuning parameters of the jive algorithm
-#' @description This function modifies a jive object to tune the jive mcmc algorithm. The output will be different regarding which level of the jive model the user wants to tune ($lik, $prior.mean, $prior.var). This function allows tuning of : initial window size for proposals, starting parameter value, proposal methods, Hyperpriors and update frequencies  
+#' @title Control tuning parameters of the JIVE algorithm
+#' @description This function modifies a JIVE object to tune the JIVE mcmc algorithm. The output will be different regarding which level of the jive model the user wants to tune ($lik, $prior.mean, $prior.var). This function allows tuning of : initial window size for proposals, starting parameter value, proposal methods, Hyperpriors and update frequencies  
 #' @details 
 #' If level == "lik" changes will be applied to the likelihood level of the algorithm
 #' window.size and initial.values must be entered as a matrix with 2 columns (respectively mean and variance) and a number of rows equal to the number of species. proposal must be a vector of size 2 (respectively mean and variance)
@@ -15,7 +15,7 @@
 #' Hyperprior
 #' list of hyperpriror functions (see \code{\link{hpfun}}). User must provide a list of size 2 for BM, BMM, WN and WNM (sigmas, theta0) and of size 3 for OU and OUM (alpha, sigma, thetas)
 #' 
-#' @param jive a jive object obtained from \code{\link{make_jive}}
+#' @param jive a JIVE object obtained from \code{\link{make_jive}}
 #' @param level character taken in c("lik", "prior.mean", "prior.var") to specify on which level of the jive model, the control will operate (see details)
 #' @param window.size initial window size for proposals during the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
 #' @param initial.values starting parameter values of the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)
@@ -24,7 +24,7 @@
 #' @param update.freq numeric giving the frequency at which parameters should be updated.
 #' @export
 #' @author Theo Gaboriau
-#' @return A jive object to parse into mcmc_jive function (see \code{\link{make_jive}})
+#' @return A JIVE object to parse into mcmc_jive function (see \code{\link{make_jive}})
 #' 
 #' @examples
 #' 

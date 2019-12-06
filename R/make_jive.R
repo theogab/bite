@@ -1,10 +1,10 @@
 #' @title Create a list that can be used as an input to mcmc_bite
-#' @description This function creates a jive object from a matrix of intraspecific observations
-#' and species phylogeny. The obtained jive object is a list that can than be used as an input to \code{\link{mcmc_bite}} function
+#' @description This function creates a JIVE object from a matrix of intraspecific observations
+#' and species phylogeny. The obtained JIVE object is a list that can than be used as an input to \code{\link{mcmc_bite}} function
 #' Intraspecific observations should be stored as matrix, where lines are vector of observations for each species,
 #' with NA for no data. Phylogenetic tree can be either a simmap object (\code{\link{make.simmap}}) or phylo object (\code{\link{as.phylo}})
 #' 
-#' @details This function creates a jive object needed for \code{\link{mcmc_bite}} function.  
+#' @details This function creates a JIVE object needed for \code{\link{mcmc_bite}} function.  
 #' Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data. Rownames are species names that should match exactly tip labels of the phylogenetic tree.
 #'
 #' Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map. If you keep the phy = NULL options the JIVE object can only be parsed to the \code{\link{xml_bite}} function.

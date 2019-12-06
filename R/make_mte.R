@@ -1,0 +1,235 @@
+#' @title Create a list that can be used as an input to mcmc_bite
+#' @description This function creates a MTE (Mean Trait Evolution) object from a matrix of intraspecific observations
+#' and species phylogeny. The obtained MTE object is a list that can than be used as an input to \code{\link{mcmc_bite}} function
+#' Intraspecific observations should be stored as matrix, where lines are vector of observations for each species,
+#' with NA for no data. Phylogenetic tree can be either a simmap object (\code{\link{make.simmap}}) or phylo object (\code{\link{as.phylo}})
+#' 
+#' @details This function creates a MTE object needed for \code{\link{mcmc_bite}} function.  
+#' Trait values must be stored as a matrix, where lines are vectors of observations for each species, with NA for no data. Rownames are species names that should match exactly tip labels of the phylogenetic tree.
+#'
+#' Phylogenetic tree must be provided as either simmap object or as a phylo object. If the phylogenetic tree is a phylo object but model specification indicates multiple regimes, user must provide a mapping of the regime in map. If you keep the phy = NULL options the mte object can only be parsed to the \code{\link{xml_bite}} function.
+#' 
+#' map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
+#' 
+#' variance and mean evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM), White Noise (WN) or Independant Ornstein-Uhlenbeck (IOU, Stabilizing selection without evolutionnary covariance) processes. Multiple regimes can be defined for both models and will apply on thetas: model.mean/var = c("OU", "theta"), sigmas: model.mean/var = c("OU", "sigma") or stationary variances: model.mean/var = c("OU", "sv") for OU and IOU and on sigmas only for WN: model.mean/var = c("WN", "sigma") and BM: model.mean/var = c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: model.mean/var = c("OU", "root") and relax several assumptions at the same tme model.mean/var = c("OU", "root", "theta") 
+#' Species-specific distributions are modeled as multivariate normal distributions
+#' 
+#' control is a list containig tuning parameters acting at different levels of the MCMC algorithm ($lik for likelihood level, $prior for mean prior level). Inside each level ($lik, $prior), the user can modify the default value of initial parameter value ($pv), initial window size ($ws), proposal methods ($prop) for $lik and priors for $priors. 
+#' The \code{\link{control_mte}} function provides an easy way to modify control parameters (see examples) 
+#' 
+#' parameters used in the different models:
+#' 
+#'  
+#' Brownian Motion model (BM):
+#' \itemize{
+#'  \item theta0: root value, abbreviated bm.the
+#'  \item sigma square: evolutionary rate, abbreviated bm.sig or bm.sig.1, bm.sig.2, ..., bm.sig.n for n regimes if "sigma" is specified in model.mean/var
+#' }
+#'
+#' Ornstein Uhlenbeck model (OU):
+#' \itemize{
+#'  \item theta0: root value, abbreviated ou.the.0. Only used if "root" is specified in model.mean/var
+#'  \item sigma square: evolutionary rate, abbreviated ou.sig or ou.sig.1, ou.sig.2, ..., ou.sig.n for n regimes if "sigma" is specified in model.mean/var
+#'  \item optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes if "theta" is specified in model.mean/var
+#'  \item stationary variance (alpha/2*sigma_sq with alpha being the strength of selection), abbreviated ou.sv or ou.sv.1
+#' }
+#' 
+#' White Noise model (WN):
+#' \itemize{
+#'  \item theta0: root value, abbreviated wn.the
+#'  \item sigma square: evolutionary rate, abbreviated wn.sig or wn.sig.1, wn.sig.2, ..., wn.sig.n for n regimes if "sigma" is specified in model.mean/var
+#' }
+#' 
+#' 
+#' @param phy phylogenetic tree provided as either a simmap or a phylo object
+#' @param traits matrix of traits value for every species of phy (see details)
+#' @param map matrix mapping regimes on every edge of phy (see details) 
+#' @param model model specification for trait mean evolution. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed (see details)				
+#' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
+#' @param control list to control tuning parameters of the MCMC algorithm (see details)
+#' @param nreg integer giving the number of regimes for a Beast analysis. Only evaluated if phy == NULL
+#' @export
+#' @import ape stats
+#' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro and Simon Joly
+#' @return A list of functions and tuning parameters to parse into \code{\link{mcmc_bite}} function.
+#' @seealso \code{\link{xml_bite}}, \code{\link{mcmc_bite}} 
+#' @examples
+#' 
+#' ## Load test data
+#' data(Anolis_traits)
+#' data(Anolis_tree)
+#' data(Anolis_map)
+#' 
+#' ## mte object to run mte with single regimes
+#' my.mte <- make_mte(phy = Anolis_tree, traits = Anolis_traits,
+#'  model="BM")
+#'
+#' ## mte object to run mte with multiple regimes
+#' my.mte <- make_mte(Anolis_tree, Anolis_traits, map = Anolis_map,
+#'   model=c("OU", "theta", "sv"))
+#' 
+#' ## mte object to run mte from an ancestral state reconstruction (stochastic mapping)
+#' # First generate simmap object
+#' library(phytools)
+#' n= length(Anolis_tree$tip.label)
+#' trait = rep(0,n)
+#' trait[c(4,3,14,16, 6,5)] = 1
+#' names(trait) =  Anolis_tree$tip.label
+#' 
+#' mapped_tree=make.simmap(Anolis_tree, trait, model='SYM')
+#' plotSimmap(mapped_tree)
+#' 
+#' my.mte <- make_mte(mapped_tree, Anolis_traits, model=c("OU"))
+#'  
+#' @encoding UTF-8
+
+make_mte <- function(phy = NULL, traits, map = NULL, model,
+                      scale = F, control = list(), nreg = NULL){
+  
+  ### dealing with the tree
+  is.phy <- !is.null(phy)
+  if(!is.phy){
+    phy <- list()
+    phy$tip.label <- unique(traits[,1])
+  } else {
+    if(!is.null(map)){
+      rownames(map) <- sprintf("%s,%s", phy$edge[,1], phy$edge[,2])
+    }
+    phy <- reorder(phy, "postorder")
+    if(!is.null(map)){
+      map <- map[sprintf("%s,%s", phy$edge[,1], phy$edge[,2]),]
+    }
+  }
+  
+  ### dealing with traits
+  traits <- sapply(phy$tip.label, function(sp){
+    if(any(traits[,1]  == sp)){
+      traits[traits[,1]  == sp,2]
+    } else {
+      NA  
+    }
+  }, USE.NAMES = T, simplify = F) 
+  
+  ### validity test ###
+  missing <- character(0)
+  for(i in 1:length(traits)){
+    if(all(is.na(traits[[i]]))){
+      missing <- c(missing, names(traits)[[i]])
+    } 
+  }
+  if(length(missing) > 0){
+    warning(sprintf("species: %s can not be found in traits. Check matching between species names in phy and traits", paste0(missing, collapse = ", ")))
+  }
+  
+  if(is.phy){
+    ### dealing with the map
+    if (is.null(map)) {
+      if (is.null(phy$maps)){ 
+        if (is.null(phy$nodelabels)){
+          map <- input_to_map(phy) # It is assumed there is only one regime
+          reg.names <- NA
+        } else {
+          map <- input_to_map(phy, ndlabels = phy$nodelabels)
+          reg.names <- unique(phy$nodelabels)
+        }
+      } else {
+        map <- input_to_map(phy, simmap = phy$maps)
+        reg.names <- colnames(phy$mapped.edge)
+      } 
+    } else {
+      reg.names <- colnames(map)
+      map <- input_to_map(phy, map = map)
+    }
+    
+    if (length(map) < length(phy$edge.length)) {
+      stop("map must provide mapping for every edge of phy")
+    }
+    
+    if (!all(abs(sapply(1:nrow(phy$edge), function(i) max(map[[phy$edge[i,2]]][3,])-min(map[[phy$edge[i,2]]][2,])) - phy$edge.length) < 1e-5)) {
+      stop("Mapping does not correspond to edge lengths")
+    }
+    
+    ### scale height ###
+    if(scale){
+      t.len <- max(branching.times(phy))
+      phy$edge.length <- phy$edge.length/t.len
+      map <- lapply(map, function(x){
+        out <- x
+        out[2:3,] <- out[2:3,]/t.len
+        return(out)
+      })
+    }
+    
+  } else {
+    map <- input_to_map(phy, nreg = nreg)
+    reg.names <- NA
+  }
+  
+  
+  mte <- list()
+  
+  ### Global variables ###
+  mte$data$traits          <- traits
+  mte$data$mean            <- sapply(traits, mean, na.rm = T)
+  mte$data$sd              <- sapply(traits, sd, na.rm = T)
+  mte$data$counts 				 <- sapply(mte$data$traits, function (x) {sum( !is.na(x) )})
+  mte$data$n               <- length(phy$tip.label)
+  mte$data$map             <- map
+  mte$data$reg             <- reg.names
+  mte$data$tree   				 <- phy
+  
+  if(is.phy){
+    mte$data$vcv             <- vcv(phy)
+    mte$data$scale    	      <- scale
+  }
+  
+  
+  dt <- default_tuning(model.mean = model, model.var = "WN", phy = mte$data$tree, traits = mte$data$traits, map = mte$data$map)
+  
+  
+  ### Likelihood parameters ###
+  mte$lik <- dt$prior.mean[-7]
+  
+  #### Models for means ####
+  mte$prior <- dt$prior.mean[[7]]
+  
+  if(is.phy){
+    done <- F
+    while(!done){
+      # Calculate expectation and var/covar matrices #
+      mte$lik$data <- try(lapply(dt$prior.mean$model(n = mte$data$n, n.p = 1:length(do.call(c,dt$prior.mean$init)),
+                                                             pars = do.call(c,dt$prior.mean$init), tree = mte$data$tree,
+                                                             map = dt$prior.mean$map, t.vcv = mte$data$vcv, nr = dt$prior.mean$nr),
+                                         function(x) if (x[[1]]) x[[2]]), silent = T)
+      
+      if(all(!grepl("Error", mte$lik$data))){
+        done <- T
+      } else {
+        # new initial conditions
+        dt <- default_tuning(model.mean = model.mean, model.var = "WN", phy = mte$data$tree, traits = mte$data$traits, map = mte$data$map)
+        mte$lik <- dt$prior.mean
+      }
+    }
+  }
+  
+  cat("model: ",model[1]," [",max(do.call(cbind,dt$prior.mean$map)[1,]),"]","\n",sep="")
+  
+  #### Prepare headers of log file ####
+  
+  mte$header <- c("iter", "posterior", "log.lik", paste("mean", rep(names(mte$lik$init), sapply(mte$lik$init, length)),
+                         unlist(sapply(names(mte$lik$init), function(x){  
+                           len <- length(mte$lik$init[[x]])
+                           if (len == 1) ""
+                           else if (grepl("the", x) & "root" %in% model) c("0", mte$data$reg[seq(1, len-1)])
+                           else mte$data$reg[seq(1, len)]
+                         })), sep ="."),
+                  "acc", "temperature")			
+  
+  class(mte) <- c("MTE", "list")
+  return(mte)
+  
+}
+
+
+
+
