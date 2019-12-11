@@ -36,7 +36,7 @@ plot_pvo(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1,
 
 \item{cex.tip}{size of the tips}
 
-\item{border}{color of denstiy contour. Could be of size one or two. If border = NULL, no borders are plotted}
+\item{...}{Additional parameters that can be parsed to plot}
 }
 \description{
 Density plot representing estimated species trait distributions under a jive model.

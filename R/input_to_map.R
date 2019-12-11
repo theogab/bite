@@ -79,6 +79,11 @@ map_to_simmap<- function(phy, map){
       sum(x[a], na.rm = T)
     })
   }))
+  
+  if(length(st) == 1){
+    phy$mapped.edge <- t(phy$mapped.edge)
+  }
+    
   rownames(phy$mapped.edge) <- sprintf("%s,%s", phy$edge[,1], phy$edge[,2])
   class(phy) <- c("phylo", "simmap")
   return(phy)

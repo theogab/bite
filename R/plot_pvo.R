@@ -11,10 +11,10 @@
 #' @param stat A character giving the function to be used to estimate species mean and variance from the posterior distributions. Must be one of be "mean" and "median"
 #' @param trait.lab a charachter specifying the axis label for the traits
 #' @param col color of the density filling. Must be of size two for estimates and HPD. If col and border are NULL, two random colors are assigned
-#' @param border color of denstiy contour. Could be of size one or two. If border = NULL, no borders are plotted
 #' @param lab logical indicating whether to show species name in the plot. Only evaluated if tip =! NA
 #' @param lolipop a logical specifying wether the sample positions should be presented as lolipops
 #' @param cex.tip size of the tips
+#' @param ... Additional parameters that can be parsed to plot
 #' 
 #' @author Theo Gaboriau
 #' @export
