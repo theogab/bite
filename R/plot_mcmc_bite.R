@@ -38,7 +38,7 @@ plot_mcmc_bite <- function(mcmc.log, type = c("trace", "density"), burnin = 0, v
   plot_func <- function(mcmc.log, type, burnin, variable, label, col, cex.est, bty, kp.burn,  ...){
     if(length(type) == 2){
       mrg <- par("mar")
-      plot.new()
+      #plot.new()
       par(fig=c(0,0.7,0,1), mar = c(mrg[1:3], 0.5))
     }
     
