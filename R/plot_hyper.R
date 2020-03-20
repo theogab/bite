@@ -16,7 +16,7 @@ plot_hyper <- function(hpf, col = "#2e86ab", border = "#000000", ...){
   }
   
   if(hpf(0)[[2]][[1]] == "Lognormal"){
-    minmax <- range(rlnorm(1e6, mean = hpf(0)[[2]][[2]][1], sd = hpf(0)[[2]][[2]][2]))
+    minmax <- range(rlnorm(1e6, meanlog = hpf(0)[[2]][[2]][1], sdlog = hpf(0)[[2]][[2]][2]))
     main <- substitute(Lognormal(mu == m, sigma^2 == v), list(m = round(hpf(0)[[2]][[2]][1],2), v = round(hpf(0)[[2]][[2]][2],2)))
   }
   

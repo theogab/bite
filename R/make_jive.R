@@ -86,8 +86,9 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
                       scale = F, control = list(), nreg = NULL){
   
   ### dealing with the tree
-  is.phy <- !is.null(phy)
-  if(!is.phy){
+  no.tree <- is.null(phy)
+  
+  if(no.tree){
     phy <- list()
     phy$tip.label <- unique(traits[,1])
   } else {
@@ -120,7 +121,7 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
     warning(sprintf("species: %s can not be found in traits. Check matching between species names in phy and traits", paste0(missing, collapse = ", ")))
   }
   
-  if(is.phy){
+  if(!no.tree){
     ### dealing with the map
     if (is.null(map)) {
       if (is.null(phy$maps)){ 
@@ -140,23 +141,11 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
       map <- input_to_map(phy, map = map)
     }
     
-    if (length(map) < length(phy$edge.length)) {
-      stop("map must provide mapping for every edge of phy")
-    }
-  
-    if (!all(abs(sapply(1:nrow(phy$edge), function(i) max(map[[phy$edge[i,2]]][3,])-min(map[[phy$edge[i,2]]][2,])) - phy$edge.length) < 1e-5)) {
-      stop("Mapping does not correspond to edge lengths")
-    }
-    
     ### scale height ###
     if(scale){
       t.len <- max(branching.times(phy))
       phy$edge.length <- phy$edge.length/t.len
-      map <- lapply(map, function(x){
-        out <- x
-        out[2:3,] <- out[2:3,]/t.len
-        return(out)
-      })
+      map$S <- map$S/t.len
     }
     
   } else {
@@ -175,8 +164,7 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
   jive$data$reg             <- reg.names
   jive$data$tree   					<- phy
   
-  if(is.phy){
-    jive$data$vcv             <- vcv(phy)
+  if(!no.tree){
     jive$data$scale    	      <- scale
   }
   
@@ -192,32 +180,29 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
   #### Models for variance ####
   jive$prior.var <- dt$prior.var
   
-  if(is.phy){
+  if(!no.tree){
     done <- F
     while(!done){
       # Calculate expectation and var/covar matrices #
-      jive$prior.mean$data <- try(lapply(dt$prior.mean$model(n = jive$data$n, n.p = 1:length(do.call(c,dt$prior.mean$init)),
-                                                             pars = do.call(c,dt$prior.mean$init), tree = jive$data$tree,
-                                                             map = dt$prior.mean$map, t.vcv = jive$data$vcv, nr = dt$prior.mean$nr),
-                                        function(x) if (x[[1]]) x[[2]]), silent = T)
+      jive$prior.mean$data <- try(dt$prior.mean$model(pars = dt$prior.mean$init, Pi = dt$prior.mean$Pi, map = dt$prior.mean$map), silent = T)
+
       # Calculate expectation and var/covar matrices #
-      jive$prior.var$data <- try(lapply(dt$prior.var$model(n = jive$data$n, n.p = 1:length(do.call(c,dt$prior.var$init)),
-                                                             pars = do.call(c,dt$prior.var$init), tree = jive$data$tree,
-                                                             map = dt$prior.var$map, t.vcv = jive$data$vcv, nr = dt$prior.var$nr),
-                                        function(x) if (x[[1]]) x[[2]]), silent = T)
+      jive$prior.var$data <- try(dt$prior.var$model(pars = dt$prior.var$init, Pi = dt$prior.var$Pi, map = dt$prior.var$map), silent = T)
+      
       if(all(!grepl("Error", jive$prior.mean$data)) & all(!grepl("Error", jive$prior.var$data))){
         done <- T
       } else {
         # new initial conditions
         dt <- default_tuning(model.mean = model.mean, model.var = model.var, phy = jive$data$tree, traits = jive$data$traits, map = jive$data$map)
+        
         jive$prior.mean <- dt$prior.mean
         jive$prior.var <- dt$prior.var
       }
     }
   }
   
-  cat("Mean prior model: ",model.mean[1]," [",max(do.call(cbind,dt$prior.mean$map)[1,]),"]","\n",sep="")
-  cat("Variance prior model: ",model.var[1]," [",max(do.call(cbind,dt$prior.var$map)[1,]),"]","\n",sep="")
+  cat("Mean prior model: ",model.mean[1]," [",ncol(dt$prior.mean$map$beta),"]","\n",sep="")
+  cat("Variance prior model: ",model.var[1]," [",ncol(dt$prior.var$map$beta),"]","\n",sep="")
   
   ## Checks
   check_tuning(jive)
@@ -225,20 +210,8 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
   #### Prepare headers of log file ####
   
   jive$header <- c("iter", "posterior", "log.lik", "prior.mean", "prior.var", 
-                   paste("mean", rep(names(jive$prior.mean$init), sapply(jive$prior.mean$init, length)),
-                         unlist(sapply(names(jive$prior.mean$init), function(x){  
-                           len <- length(jive$prior.mean$init[[x]])
-                           if (len == 1) ""
-                           else if (grepl("the", x) & "root" %in% model.mean) c("0", jive$data$reg[seq(1, len-1)])
-                           else jive$data$reg[seq(1, len)]
-                         })), sep ="."),
-                   paste("var", rep(names(jive$prior.var$init), sapply(jive$prior.var$init, length)),
-                         unlist(sapply(names(jive$prior.var$init), function(x){  
-                           len <- length(jive$prior.var$init[[x]])
-                           if (len == 1) ""
-                           else if ("root" %in% model.var) c("0", jive$data$reg[seq(1, len-1)])
-                           else jive$data$reg[seq(1, len)]
-                         })), sep ="."),
+                   paste("mean", names(jive$prior.mean$init), sep ="."),
+                   paste("var", names(jive$prior.var$init), sep ="."),
                    paste(names(jive$data$traits), "_m", sep=""),
                    paste(names(jive$data$traits), "_v", sep=""),
                    "acc", "temperature")			

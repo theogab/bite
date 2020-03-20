@@ -10,7 +10,7 @@ proposal <- function(prop, i=1, d=1, ...){
   }
   
 	if (prop == "slidingWin"){
-		prop_func <- function(i, d, u=0) {
+	  slidingWin <- function(i, d, u=0) {
 			# Sliding window proposal unconstrained at maximum 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
@@ -23,11 +23,13 @@ proposal <- function(prop, i=1, d=1, ...){
 			
 			ii <- i + (runif(length(i), 0, 1) - 0.5) * d #MrBayes trick
 			return(list(v=ii, lnHastingsRatio=0))
-		} 
+	  } 
+	  
+	  return(slidingWin)
 	}
 
 	if (prop == "slidingWinAbs"){
-		prop_func <- function(i, d, u=0) {
+	  slidingWinAbs <- function(i, d, u=0) {
 			# Sliding window proposal unconstrained at maximum 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
@@ -41,11 +43,13 @@ proposal <- function(prop, i=1, d=1, ...){
 			ii <- i + (runif(length(i), 0, 1) - 0.5) * d #MrBayes trick
 
 			return(list(v=abs(ii), lnHastingsRatio=0))
-		}
+	  }
+	  
+	  return(slidingWinAbs)
 	}	
 	
 	if (prop == "logSlidingWinAbs"){
-		prop_func <- function(i, d, u=0) {
+	  logSlidingWinAbs <- function(i, d, u=0) {
 			# Slidign window proporal unconstrained at maximum 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
@@ -60,12 +64,14 @@ proposal <- function(prop, i=1, d=1, ...){
 			ii <- i + (runif(length(i), 0, 1) - 0.5) * d #MrBayes trick
 
 			return(list(v=exp(ii), lnHastingsRatio=0))
-		}
+	  }
+	  
+	  return(logSlidingWinAbs)
 	}	
 	
 		 
 	if (prop == "multiplierProposal"){
-		prop_func <- function(i, d, u) {
+	  multiplierProposal <- function(i, d, u) {
 			# Multiplier proposal 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
@@ -83,12 +89,14 @@ proposal <- function(prop, i=1, d=1, ...){
 			ii <- i * m
 
 			return(list(v=ii, lnHastingsRatio=log(u)))
-		}
+	  }
+	  
+	  return(multiplierProposal)
 	}
 	
 	
 	if (prop == "multiplierProposalLakner"){
-		prop_func <- function(i, d, u) {
+	  multiplierProposalLakner <- function(i, d, u) {
 			# Multiplier proposal 
 			# For details of the method see http://people.sc.fsu.edu/~pbeerli/BSC-5936/10-12-05/Lecture_13.pdf
 			#
@@ -108,35 +116,37 @@ proposal <- function(prop, i=1, d=1, ...){
 
 			return(list(v=ii, lnHastingsRatio=log(m)))
 			
-		}
+	  }
+	  return(multiplierProposalLakner)
+	  
 	}
 	
 	
 	
 	if (prop == "logNormal"){
 		# i - current value, d - sigma (sd) of normal dist
-		prop_func <- function(i, d, u=0){
+	  logNormal <- function(i, d, u=0){
 			 
 			ii <- rnorm(1, mean = i, sd = d)
 
 			return(list(v=ii, lnHastingsRatio=0))
 		}
 		
+	  return(logNormal)
+	  
 	}
 	
 	if (prop == "absNormal"){
 		# i - current value, d - sigma (sd) of normal dist
-		prop_func <- function(i, d, u=0){
+	  absNormal <- function(i, d, u=0){
 			 
 			ii <- rnorm(1, mean = i, sd = d)
 
 			return(list(v=abs(ii), lnHastingsRatio=0))
 		
 		}
-		
+		return(absNormal)
 	}
-  
-	return(prop_func)
 
 }
 

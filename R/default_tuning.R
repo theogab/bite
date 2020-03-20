@@ -56,10 +56,10 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
     # White Noise #
     if ("WN" %in% model.evo){
       # model
-      model <- update_wn
+      model <- update_bm
       # map and nreg
       if("sigma" %in% model.evo){
-        nreg <- max(do.call(cbind,map)[1,])
+        nreg <- ncol(map$beta)
         newmap <- map
       } else {
         nreg <- 1
@@ -67,23 +67,29 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       }
       # name
       name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
-      nr <- c(nreg,1)
+      rname <- list("",sprintf("_%s",colnames(newmap$beta)))
+      
+      # indicator matrix for parameters
+      Pi <- matrix(0, 2, 1 + nreg)
+      Pi[1,1:nreg] <- 1
+      Pi[2,nreg + 1] <- 1
+      
       # window size
-      ws <- list()
-      ws$wn.sig <- rep(0.5, nreg)
-      ws$wn.the <- sd(x) # 2 in the previous version?
+      ws <- c(rep(2, nreg), sd(x))
+      
       # initial parameter values
-      init <- list()
-      init$wn.sig <- runif(nreg, 0.5, 3)
-      init$wn.the <- mean(x)
+      init <- c(runif(nreg, 0.5, 3), mean(x))
+      
       # proposals
       prop <- lapply(1:nreg, proposal, prop = "multiplierProposal") # sigma(s)
-      prop[[nreg+1]] <- proposal("slidingWin") # theta
+      prop[[nreg+1]] <- proposal("slidingWin") # root
+      
       # hyper priors
       hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
       bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
       hprior[[nreg+1]] <- hpfun("Uniform", bounds) # theta
-      names(hprior) <- c(if(nreg==1) "wn.sig" else sprintf("wn.sig.%s", 1:nreg), "wn.the")
+      names(hprior) <- names(ws) <- names(init) <- names(prop) <- c(sprintf("sigma^2%s", rname[[1+Pi[1,2]]]), "root")
+      
     } 
     
     # Brownian Motion #
@@ -92,7 +98,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       model <- update_bm
       # map and nreg
       if("sigma" %in% model.evo){
-        nreg <- max(do.call(cbind,map)[1,])
+        nreg <- ncol(map$beta)
         newmap <- map
       } else {
         nreg <- 1
@@ -100,23 +106,28 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       }
       # name
       name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
-      nr <- c(nreg,1)
+      rname <- list("",sprintf("_%s",colnames(newmap$beta)))
+      
+      # indicator matrix for parameters
+      Pi <- matrix(0, 2, 1 + nreg)
+      Pi[1,1:nreg] <- 1
+      Pi[2,nreg + 1] <- 1
+      
       # window size
-      ws <- list()
-      ws$bm.sig <- rep(2, nreg)
-      ws$bm.the <- sd(x)
+      ws <- c(rep(2, nreg), sd(x))
+      
       # initial parameter values
-      init <- list()
-      init$bm.sig <- runif(nreg, 0.5, 3)
-      init$bm.the <- mean(x)
+      init <- c(runif(nreg, 0.5, 3), mean(x))
+      
       # proposals
       prop <- lapply(1:nreg, proposal, prop = "multiplierProposal") # sigma(s)
-      prop[[nreg+1]] <- proposal("slidingWin") # theta
+      prop[[nreg+1]] <- proposal("slidingWin") # root
+      
       # hyper priors
       hprior <- lapply(1:nreg, hpfun, hpf = "Gamma", hp.pars = c(1.1,5)) # sigma(s)
       bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
       hprior[[nreg+1]] <- hpfun("Uniform", bounds) # theta
-      names(hprior) <- c(if(nreg==1) "bm.sig" else sprintf("bm.sig.%s", 1:nreg), "bm.the")
+      names(hprior) <- names(ws) <- names(init) <- names(prop) <- c(sprintf("sigma^2%s", rname[[1+Pi[1,2]]]), "root")
     }
     
     # Ornstein-Uhlenbeck #
@@ -125,7 +136,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       model <- update_ou
       # map and nreg
       if(any(c("sigma", "theta", "sv") %in% model.evo)){
-        nreg <-  max(do.call(cbind,map)[1,])
+        nreg <-  ncol(map$beta)
         newmap <- map
       } else {
         nreg <- 1
@@ -133,22 +144,27 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       }
       # name
       name <- paste(paste(model.evo, collapse = " + ")," [",nreg,"]", sep=" ")
+      rname <- list("",sprintf("_%s",colnames(newmap$beta)))
+      
       # number of regimes for each parameter
       rsv <- ifelse(any(c("sv", "sigma") %in% model.evo), nreg, 1)
       rsig <- ifelse("sigma" %in% model.evo, nreg, 1)
       rthe <- ifelse("theta" %in% model.evo, nreg, 1)
       rroot <- ifelse("root" %in% model.evo, 1, 0)
-      nr <- c(rsv, rsig, rroot, rthe)
+      
+      # indicator matrix for parameters
+      Pi <- matrix(0, 3+rroot, rsv + rsig + rthe + rroot)
+      Pi[1,1:rsv] <- 1
+      Pi[2,rsv + 1:rsig] <- 1
+      Pi[3, rsv + rsig + 1:rthe] <- 1
+      if(rroot == 1) Pi[4,ncol(Pi)] <- 1
+      
       # window size
-      ws <- list()
-      ws$ou.sv <- rep(0.5, rsv)
-      ws$ou.sig <- rep(2, rsig)
-      ws$ou.the <- rep(sd(x), rroot+rthe) # 2 in the previous version?
+      ws <- c(rep(0.5, rsv), rep(2, rsig), rep(sd(x), rroot+rthe)) # 2 in the previous version?
+      
       # initial parameter values
-      init <- list()
-      init$ou.sv <- runif(rsv, 0.1, 1)
-      init$ou.sig <- runif(rsig, 0.5, 3)
-      init$ou.the <- rep(mean(x), rroot+rthe)
+      init<-c(runif(rsv, 0.1, 1), runif(rsig, 0.5, 3), rep(mean(x), rroot+rthe))
+      
       # proposals
       prop <- list()
       i <- 1
@@ -158,23 +174,29 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
         else prop[[i]] <- proposal("slidingWin")
         i <- i + 1
       }
+      
       # hyper priors
       hprior <- list()
       i <- 1
       bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
-      while(i <= (rsv + rsig + rroot + rthe)){
+      while(i <= (rsv + rsig + rthe + rroot)){
         if (i <= rsv)  hprior[[i]] <- hpfun("Gamma", c(1.1,5))
         else if (i <= (rsv + rsig)) hprior[[i]]	<- hpfun("Gamma", c(1.1,5))
         else hprior[[i]]	<- hpfun("Uniform", bounds)
         i <- i + 1
       }
-      names(hprior) <- c(sprintf("ou.sv.%s", 1:rsv), sprintf("ou.sig.%s", 1:rsig), sprintf("ou.the.%s", if("root" %in% model.evo) 0:(rthe) else 1:rthe))
+      
+      names(hprior) <- names(ws) <- names(init) <- names(prop) <- c(sprintf("sv%s", rname[[1+Pi[1,2]]]), 
+                                                                    sprintf("sigma^2%s", rname[[1+Pi[2,rsv + 2]]]),
+                                                                    sprintf("theta%s", rname[[1+ifelse(sum(Pi[3,])>1,1,0)]]),
+                                                                    "root"[rroot])
     }
     
-    eval(parse(text = sprintf("%s <- list(name = name, model = model, ws = ws, init = init, prop = prop, map = newmap, hprior = hprior, nr = nr, update.freq = update.freq)", level)))
+    eval(parse(text = sprintf("%s <- list(name = name, model = model, Pi = Pi, ws = ws, init = init, prop = prop, map = newmap, hprior = hprior, update.freq = update.freq)", level)))
 
   }
   
-  return(list(lik = lik, prior.mean = prior.mean, prior.var = prior.var))
+  eval(parse(text = "out <- list(lik = lik, prior.mean = prior.mean, prior.var = prior.var)"))
+  return(out)
   
 }

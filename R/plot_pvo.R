@@ -19,20 +19,22 @@
 #' @author Theo Gaboriau
 #' @export
 #' @examples
-#' ## Load test data
-#' data(Anolis_traits)
-#' data(Anolis_tree)
+#' \dontrun{
+#'  ## Load test data
+#'  data(Anolis_traits)
+#'  data(Anolis_tree)
+#'  data(Anolis_map)
+#'  
+#'  # Run a simple MCMC chain
+#'  my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var=c("OU"), model.mean="BM")
+#'  mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=100, print.freq=100, ngen=50000) 
 #' 
-#' # Run a simple MCMC chain
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-#' mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
-#'
-#' ## import the results in R
-#' logfile <- "my.jive_mcmc.log"
-#' res <- read.csv(logfile, header = TRUE, sep = "\t")
-#' 
-#' plot_pvo(Anolis_tree, Anolis_traits, mcmc.log = res)
-#' 
+#'  ## import the results in R
+#'  logfile <- "my.jive_mcmc.log"
+#'  res <- read.csv(logfile, header = TRUE, sep = "\t")
+#'  
+#'  plot_pvo(Anolis_tree, Anolis_traits, mcmc.log = res)
+#' }
 #' @encoding UTF-8
 
 
@@ -40,7 +42,7 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
                      col = NULL, lab = T, lolipop = c(0.4, 0.4), cex.tip = par("cex"), ...){
   
   ### Main function
-  plot_func <- function(traits, rmid, rhpd, label, trait.lab, col, lolipop, lab, plot.tree, minmax = NA, cy = 0, nreg){
+  plot_func <- function(traits, rmid, rhpd, label, trait.lab, col, lolipop, lab, plot.tree, minmax = NA, cy = 0, nreg =1){
     if(!plot.tree){
       plot(c(rhpd[,"x"], rmid[,"x"]),c(rhpd[,"y"], rmid[,"y"]), type = "n", main = ifelse(lab, gsub("_", " ", label), ""), 
            ylab = "density", xlab = trait.lab)      
@@ -114,6 +116,9 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
       }
       plotSimmap(phy, ftype = "off", colors = col, mar = par("mar"))
     } else {
+      if(is.null(col)){
+        col <- "lightgrey"
+      }
       plot(phy, show.tip.label = F, ...)
       nreg <- 1
     }
@@ -132,7 +137,9 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
       } else {
         col.reg <- col
       }
-      plot_func(traits, dens[[label]]$rmid, dens[[label]]$rhpd, label, trait.lab, col.reg, lolipop, lab = T, plot.tree = T, minmax,cy, nreg)
+      plot_func(traits = traits, rmid = dens[[label]]$rmid, rhpd = dens[[label]]$rhpd, label = label,
+                trait.lab = trait.lab, col = col.reg,lolipop =  lolipop, lab = T, plot.tree = T, 
+                minmax = minmax,cy = cy, nreg = nreg)
       i <- i + 1
     }
     par(fig = c(0.7,1,0,1), mar = c(mrg[1],0,mrg[3:4]), new = TRUE)
@@ -154,8 +161,11 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
     else stop(sprintf("%s: unknown stat"))
     
     rmid <- density(rnorm(1e6, mid[1], sqrt(mid[2])))
+    rmid <- cbind(x = rmid$x, y = rmid$y)
     rhpd <- density(rhpd[rhpd >= hpd[1] & rhpd <= hpd[2]])
-    plot_func(traits, rmid, rhpd, tip, burnin, conf, stat, trait.lab, col, border, legend, lolipop, show.lab = T,1)
+    rhpd <- cbind(x = rhpd$x, y = rhpd$y)
+    plot_func(traits = traits, rmid = rmid, rhpd = rhpd, label = label, trait.lab = trait.lab,
+              col = col, lolipop =lolipop, lab = T, plot.tree = F)
   }
   
 }

@@ -19,28 +19,28 @@
 #' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
 #' @return none
 #' @examples
-#'
-#' ## Load test data
-#' data(Anolis_traits)
-#' data(Anolis_tree)
-#' data(Anolis_map)
-#' 
-#' ## Run a simple MCMC chain
-#' set.seed(300)
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
-#'  model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
-#' mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
-#'  sampling.freq=10, print.freq=100, ngen=5000) 
-#'
+#' \dontrun{
+#'  ## Load test data
+#'  data(Anolis_traits)
+#'  data(Anolis_tree)
+#'  data(Anolis_map)
+#'  
+#'  ## Run a simple MCMC chain
+#'  set.seed(300)
 #'  my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
-#'   model.var=c("OU", "root", "theta"), model.mean="BM")
-#' mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
+#'  model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
+#'  mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
 #'  sampling.freq=10, print.freq=100, ngen=5000) 
-#'
-#' ## Run an MCMC chain with thermodynamic integration
-#' mcmc_bite(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
-#' sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
 #' 
+#'  my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
+#'  model.var=c("OU", "root", "theta"), model.mean="BM")
+#'  mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
+#'   sampling.freq=10, print.freq=100, ngen=5000) 
+#'   
+#'  ## Run an MCMC chain with thermodynamic integration
+#'  mcmc_bite(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
+#'   sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
+#' }
 #' @encoding UTF-8
 
 
@@ -74,12 +74,12 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
   lik0 <- model$lik$model(m.sp0, v.sp0, model$data$traits, model$data$counts)
   
   # prior mean level
-  pars.m0 <- do.call(c, model$prior.mean$init)
+  pars.m0 <- model$prior.mean$init
   prior.mean0 <- calc_prior(n = model$data$n, mat = model$prior.mean$data, x = m.sp0)
   hprior.mean0 <- unlist(mapply(do.call, model$prior.mean$hprior, lapply(pars.m0, list))[1,])
   
   # prior var level
-  pars.v0 <- do.call(c, model$prior.var$init)
+  pars.v0 <- model$prior.var$init
   prior.var0 <- calc_prior(n = model$data$n, mat = model$prior.var$data, x = log(v.sp0))
   hprior.var0 <- unlist(mapply(do.call, model$prior.var$hprior, lapply(pars.v0, list))[1,])
   
@@ -138,17 +138,16 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
       pars.m1 <- pars.m0 # ancient parameter values are kept
       prior.mean1 <- prior.mean0 # ancient prior_mean value is kept
       hprior.mean1 <- hprior.mean0 # ancient hprior_mean value is kept
-      tmp <- model$prior.mean$prop[[par.n]](i = pars.m0[par.n], d = do.call(c,model$prior.mean$ws)[par.n], u) #update with proposal function
+      tmp <- model$prior.mean$prop[[par.n]](i = pars.m0[par.n], d = model$prior.mean$ws[par.n], u) #update with proposal function
       pars.m0[par.n] <- tmp$v
+      
       # calculate new var/covar and expectation
       mat.mean1 <- model$prior.mean$data
-      mat.mean0 <- try(model$prior.mean$model(n = model$data$n, n.p = par.n,
-                                           pars = pars.m0, tree = model$data$tree,
-                                           map = model$prior.mean$map, t.vcv = model$data$vcv, nr = model$prior.mean$nr), silent = T)
+      mat.mean0 <- try(model$prior.mean$model(pars = pars.m0, Pi = model$prior.mean$Pi, map = model$prior.mean$map), silent = T)
       if(any(grepl("Error", mat.mean0))){
         prior.mean0 <- Inf
       } else {
-        model$prior.mean$data <- lapply(1:3, function(k) if(mat.mean0[[k]][[1]]) mat.mean0[[k]][[2]] else mat.mean1[[k]]) # keep only updated ones
+        model$prior.mean$data <- mat.mean0
         # calculate prior and hprior
         prior.mean0 <- calc_prior(n = model$data$n, mat = model$prior.mean$data, x = m.sp0)
         hprior.mean0 <- unlist(mapply(do.call, model$prior.mean$hprior, lapply(pars.m0, list))[1,])
@@ -163,17 +162,16 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
       pars.v1 <- pars.v0 # ancient parameter values are kept
       prior.var1 <- prior.var0 # ancient prior_var value is kept
       hprior.var1 <- hprior.var0 # ancient hprior_var value is kept
-      tmp <- model$prior.var$prop[[par.n]](i = pars.v0[par.n], d = do.call(c, model$prior.var$ws)[par.n], u) #update with proposal function
+      tmp <- model$prior.var$prop[[par.n]](i = pars.v0[par.n], d = model$prior.var$ws[par.n], u) #update with proposal function
       pars.v0[par.n] <- tmp$v 
       # calculate new var/covar and expectation
       mat.var1 <- model$prior.var$data
-      mat.var0 <- try(model$prior.var$model(n = model$data$n, n.p = par.n,
-                                       pars = pars.v0, tree = model$data$tree,
-                                       map = model$prior.var$map, t.vcv = model$data$vcv, nr = model$prior.var$nr), silent = T)
+      mat.var0 <- try(model$prior.var$model(pars = pars.v0, Pi = model$prior.var$Pi, map = model$prior.var$map), silent = T)
+      
       if(any(grepl("Error", mat.var0))){
         prior.var0 <- Inf
       } else {
-        model$prior.var$data <- lapply(1:3, function(k) if(mat.var0[[k]][[1]]) mat.var0[[k]][[2]] else mat.var1[[k]]) # keep only updated ones
+        model$prior.var$data <- mat.var0
         # calculate prior and hprior
         prior.var0 <- calc_prior(n = model$data$n, mat = model$prior.var$data, x = log(v.sp0))
         hprior.var0 <- unlist(mapply(do.call, model$prior.var$hprior, lapply(pars.v0, list))[1,])

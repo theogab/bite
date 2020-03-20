@@ -2,72 +2,31 @@
 
 # input: n - number of species, n.p - which parameter has been updated, pars - c(sig1, ..., sigN, the0), tree and map
 # does: calculate log-likelihood; 
-update_wn <-function(n, n.p, pars, tree, map, ...){
+update_wn <- function(pars, Pi, map){
   
-  mat <- list(e = list(F),
-              det = list(F),
-              inv = list(F))
-  sig <- pars[-length(pars)] # sigma(s)
+  sigma <- pars[Pi[1,]==1]
+  root <- pars[Pi[2,]==1]
   
-  ## calculate matricies
+  S <- map$S ##Mapping of the start and end of each epoch nepochs x 2
+  gamma <- map$gamma ##Indicator mapping of the epochs lived by each species nepochs x n
+  beta <- map$beta ##Indicator mapping of the regimes on each epoch nepochs x nreg
   
-  # theta has been updated: change e
-  if (any(length(pars) %in% n.p)) {
-    e  <- matrix(1, n, 1)
-    e[,] <- pars[length(pars)] # ancestral mean
-    mat$e[[1]] <- T
-    mat$e[[2]] <- e
-  }
+  ## Expectation
+  E  <- matrix(1, ncol(gamma), 1)
+  E[,] <- root # ancestral mean
+  rownames(E) <- colnames(gamma)
   
-  # sigma(s) have been updated: change v
-  if (any(1:(length(pars)-1) %in% n.p))
-  {
-    V <- v_wn(tree, map, n, sig)[tree$tip.label,tree$tip.label]
-    # determinant
-    det <- as.numeric(determinant(V)$modulus)
-    mat$det[[1]] <- T
-    mat$det[[2]] <- det
-    # inverse
-    inv <- solve(V)
-    mat$inv[[1]] <- T
-    mat$inv[[2]] <- inv
-  }
+  var.reg <- sigma * t((S[,2]-S[,1]) * beta)
+  # Variance Matrix (SIGMA)
+  V <-  matrix(0, ncol(gamma), ncol(gamma))
+  diag.elts <- 1 + 0:(ncol(gamma) - 1) * (ncol(gamma) + 1)
+  V[diag.elts] <- colSums(var.reg) %*% gamma
   
-  return(mat)
+  # determinant
+  det <- as.numeric(determinant(V)$modulus)
+  # inverse
+  inv <- solve(V)
   
-}
-
-
-# input: tree, map, n, T.len, alp
-# does: calculates the vcv matrix according to the different regimes
-v_wn <- function(tree, map, n, sig){
-  
-  if (is.null(tree$edge.length)){
-    stop("the tree has no branch lengths")
-  }
-  
-  pp <- prop.part(tree)
-  tree <- reorder(tree, "postorder")
-  e1 <- tree$edge[, 1]
-  e2 <- tree$edge[, 2]
-  nreg <- max(do.call(cbind,map)[1,])
-  xx <- numeric(n + tree$Nnode)
-  vcv <- matrix(0, n, n)
-  
-  # for each edge, calculate the variance accumulated from the root
-  for(i in length(e1):1) { #loop ascending from the root to the first tip
-    var.cur.node <- xx[e1[i]]
-    reg.dur <- sapply(1:nreg, function(r){
-      sum(map[[e2[i]]][3,map[[e2[i]]][1,] == r] - map[[e2[i]]][2,map[[e2[i]]][1,] == r])
-    })
-    xx[e2[i]] <- var.cur.node + sum(reg.dur * sig) # branch length under each regime * sig[regime]
-  }
-  
-  # compute the diagonal
-  diag.elts <- 1 + 0:(n - 1) * (n + 1)
-  vcv[diag.elts] <- xx[1:n]
-  dimnames(vcv)[1:2] <- list(tree$tip.label)
-  
-  return(vcv)
+  return(list(E = E, det = det, inv = inv))
   
 }

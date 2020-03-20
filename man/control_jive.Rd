@@ -59,13 +59,13 @@ new.init <- cbind(rep(40,16), rep(20, 16))
 my.jive <- control_jive(my.jive, level = "lik", initial.values = new.init)
 my.jive$lik$init #mean initial values changed
 
-
-## change hyperpriors for prior.mean
-plot_hp(my.jive) #default values
-new.hprior <- list(hpfun("Gamma", hp.pars = c(2,6)), hpfun("Uniform", c(20,80)))
-my.jive <- control_jive(my.jive, level = "prior.mean", hyperprior = new.hprior)
-plot_hp(my.jive) #mean initial values changed
-
+\dontrun{
+ ## change hyperpriors for prior.mean
+ plot_hp(my.jive) #default values
+ new.hprior <- list(hpfun("Gamma", hp.pars = c(2,6)), hpfun("Uniform", c(20,80)))
+ my.jive <- control_jive(my.jive, level = "prior.mean", hyperprior = new.hprior)
+ plot_hp(my.jive) #mean initial values changed
+}
 }
 \author{
 Theo Gaboriau

@@ -62,7 +62,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
   #log normal
   if (hpf == "Lognormal"){
     my.f <- function(x, ...){
-      hp <- sum(dlnorm(x, mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
+      hp <- sum(dlnorm(x, meanlog=hp.pars[1], sdlog=hp.pars[2], log=TRUE))
       return(list(hp, list(hpf, hp.pars)))
     }
   }	
