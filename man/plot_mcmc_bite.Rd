@@ -31,23 +31,24 @@ This function plots the trace and/or density of each mcmc sample.
 }
 \examples{
 
-## Load test data
-data(Anolis_traits)
-data(Anolis_tree)
-data(Anolis_map)
+\dontrun{
+ ## Load test data
+ data(Anolis_traits)
+ data(Anolis_tree)
+ data(Anolis_map)
+ 
+ ## Run a simple MCMC chain
+ my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
+ mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 
-## Run a simple MCMC chain
-my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
-
-## import the results in R
-logfile <- "my.jive_mcmc.log"
-res <- read.csv(logfile, header = TRUE, sep = "\\t")
-
-## plot the results
-plot_mcmc_bite(res, burnin = 0.2, variable = NA, cex.est = .7)
-plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
-
+ ## import the results in R
+ logfile <- "my.jive_mcmc.log"
+ res <- read.csv(logfile, header = TRUE, sep = "\\t")
+ 
+ ## plot the results
+ plot_mcmc_bite(res, burnin = 0.2, variable = NA, cex.est = .7)
+ plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
+}
 }
 \author{
 Theo Gaboriau

@@ -6,7 +6,7 @@
 \title{Plots estimates of species traits distribution}
 \usage{
 plot_pvo(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1,
-  conf = 0.95, stat = "median", trait.lab = "x", col = NULL,
+  conf = 0.95, stat = "median", trait.lab = "x", col = "lightgrey",
   lab = T, lolipop = c(0.4, 0.4), cex.tip = par("cex"), ...)
 }
 \arguments{
@@ -43,20 +43,21 @@ Density plot representing estimated species trait distributions under a jive mod
 This function plots the mean or median density distribution and the HPD distributions assuming that the trait is normally distributed
 }
 \examples{
-## Load test data
-data(Anolis_traits)
-data(Anolis_tree)
+\dontrun{
+ ## Load test data
+ data(Anolis_traits)
+ data(Anolis_tree)
+ 
+ # Run a simple MCMC chain
+ my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
+ mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 
-# Run a simple MCMC chain
-my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
-
-## import the results in R
-logfile <- "my.jive_mcmc.log"
-res <- read.csv(logfile, header = TRUE, sep = "\\t")
-
-plot_pvo(Anolis_tree, Anolis_traits, mcmc.log = res)
-
+ ## import the results in R
+ logfile <- "my.jive_mcmc.log"
+ res <- read.csv(logfile, header = TRUE, sep = "\\t")
+ 
+ plot_pvo(Anolis_tree, Anolis_traits, mcmc.log = res)
+}
 }
 \author{
 Theo Gaboriau

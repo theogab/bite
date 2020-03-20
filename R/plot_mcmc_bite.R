@@ -14,23 +14,24 @@
 #' @encoding UTF-8
 #' @examples
 #' 
-#' ## Load test data
-#' data(Anolis_traits)
-#' data(Anolis_tree)
-#' data(Anolis_map)
+#' \dontrun{
+#'  ## Load test data
+#'  data(Anolis_traits)
+#'  data(Anolis_tree)
+#'  data(Anolis_map)
+#'  
+#'  ## Run a simple MCMC chain
+#'  my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
+#'  mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
 #' 
-#' ## Run a simple MCMC chain
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-#' mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
-#'
-#' ## import the results in R
-#' logfile <- "my.jive_mcmc.log"
-#' res <- read.csv(logfile, header = TRUE, sep = "\t")
-#' 
-#' ## plot the results
-#' plot_mcmc_bite(res, burnin = 0.2, variable = NA, cex.est = .7)
-#' plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
-#' 
+#'  ## import the results in R
+#'  logfile <- "my.jive_mcmc.log"
+#'  res <- read.csv(logfile, header = TRUE, sep = "\t")
+#'  
+#'  ## plot the results
+#'  plot_mcmc_bite(res, burnin = 0.2, variable = NA, cex.est = .7)
+#'  plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
+#' }
 
 plot_mcmc_bite <- function(mcmc.log, type = c("trace", "density"), burnin = 0, variable = NA,
                            label = NA, col = "#000000", cex.est = 1, bty = "n", kp.burn = FALSE,  ...){

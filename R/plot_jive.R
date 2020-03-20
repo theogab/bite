@@ -44,7 +44,7 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
   map <- jive$data$map
   traits <- jive$data$traits
   
-  st <- max(do.call(cbind,map)[1,])
+  st <- ncol(map$beta)
   tree <- map_to_simmap(tree, map)
   if(is.null(col.map)){
     col.map <- palette()[1:st]
@@ -59,24 +59,18 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     mm <- strsplit(jive$prior.mean$name, " ")[[1]]
     mv <- strsplit(jive$prior.var$name, " ")[[1]]
     ## Convert pars name into expressions to plot mathematical notations
-    pars.m <- sapply(strsplit(names(jive$prior.mean$hprior), "[.]"), function(pr){
-      if(pr[2] == "sig") out <- ifelse("sigma" %in% mm, sprintf("sigma[m%s]^2", pr[3]), "sigma[m]^2")
-      if(pr[2] == "sv") out <- ifelse("sv" %in% mm, sprintf("alpha[m%1$s]", pr[3]), "alpha[m]")
-      if(pr[2] == "the"){
-        if(any(c("BM", "WN") %in% mm)) out <- "theta[m0]"
-        else if(pr[3] == 0) out <- "theta[m0]"
-        else out <- ifelse("theta" %in% mm, sprintf("theta[m%s]", pr[3]), "theta[m]")
-      } 
+    pars.m <- sapply(strsplit(names(jive$prior.mean$hprior), "[_]"), function(pr){
+      if(pr[1] == "sigma^2") out <- ifelse("sigma" %in% mm, sprintf("sigma[m%s]^2", pr[2]), "sigma[m]^2")
+      if(pr[1] == "sv") out <- ifelse("sv" %in% mm, sprintf("alpha[m%1$s]", pr[2]), "alpha[m]")
+      if(pr[1] == "theta") out <- ifelse("theta" %in% mm, sprintf("theta[m%s]", pr[2]), "theta[m]")
+      if(pr[1] == "root") out <- "theta[m0]"
       return(out)
     })
-    pars.v <- sapply(strsplit(names(jive$prior.var$hprior), "[.]"), function(pr){
-      if(pr[2] == "sig") out <- ifelse("sigma" %in% mv, sprintf("sigma[v%s]^2", pr[3]), "sigma[v]^2")
-      if(pr[2] == "sv") out <- ifelse("sv" %in% mv, sprintf("alpha[v%1$s]", pr[3]), "alpha[v]")
-      if(pr[2] == "the"){
-        if(any(c("BM", "WN") %in% mv)) out <- "theta[v0]"
-        else if(pr[3] == 0) out <- "theta[v0]"
-        else out <- ifelse("theta" %in% mv, sprintf("theta[v%s]", pr[3]), "theta[v]")
-      } 
+    pars.v <- sapply(strsplit(names(jive$prior.var$hprior), "[_]"), function(pr){
+      if(pr[1] == "sigma^2") out <- ifelse("sigma" %in% mv, sprintf("sigma[v%s]^2", pr[2]), "sigma[v]^2")
+      if(pr[1] == "sv") out <- ifelse("sv" %in% mv, sprintf("alpha[v%1$s]", pr[2]), "alpha[v]")
+      if(pr[1] == "theta") out <- ifelse("theta" %in% mv, sprintf("theta[v%s]", pr[2]), "theta[v]")
+      if(pr[1] == "root") out <- "theta[v0]"
       return(out)
     })
   }
@@ -96,12 +90,16 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
   
     if(srt.label == 0) srt.label = 90
     
-    plotSimmap(tree, direction = "upwards", ftype = "off", ylim = ylim, mar = par()$mar, colors = col.map)
-    
-    if(st > 1 & !is.null(c.reg)){
-      text(x = rep(0, st), y = c.reg - seq(0, max(branching.times(tree))/10,length.out = st), labels = paste(1:st,jive$data$reg, sep = ":"),
-           col = col.map, xpd = NA, cex = 1, adj = 0)
+    if(st > 1){
+      plotSimmap(tree, direction = "upwards", ftype = "off", ylim = ylim, mar = par()$mar, colors = col.map, fsize = par("cex"))
+      if(!is.null(c.reg)){
+        text(x = rep(0, st), y = c.reg - seq(0, max(branching.times(tree))/10,length.out = st), labels = paste(1:st,jive$data$reg, sep = ":"),
+             col = col.map, xpd = NA, cex = 1, adj = 0)
+      }
+    } else {
+      plot(tree, direction = "upwards", y.lim = ylim, mar = par()$mar, edge.color = col.map, show.tip.label = F)
     }
+    
     
     if(show.models){
       mtext(eval(parse(text = paste("substitute(a~~group('{', list(", paste(pars.m, collapse = ","),"), '}'), list(a=sprintf('Mean prior model: %s' , mm[1])))"))), side = 1, line = 0, at = 0, adj = 0, cex = 0.6)
@@ -141,11 +139,16 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
       xlim = c(0, 2*root.len)
     }
     
-    plotSimmap(tree, direction = "rightwards", ftype = "off", xlim = xlim, mar = par()$mar, colors = col.map, fsize = par("cex"))
     
-    if(st > 1 & !is.null(c.reg)){
-      text(x = rep(0, st), y = c.reg - 0:(st-1), labels = paste(1:st,jive$data$reg, sep = ":"),
-           col = col.map, xpd = NA, cex = 1, adj = 0)
+    
+    if(st > 1){
+      plotSimmap(tree, direction = "rightwards", ftype = "off", xlim = xlim, mar = par()$mar, colors = col.map, fsize = par("cex"))
+      if(!is.null(c.reg)){
+        text(x = rep(0, st), y = c.reg - 0:(st-1), labels = paste(1:st,jive$data$reg, sep = ":"),
+             col = col.map, xpd = NA, cex = 1, adj = 0)
+      }
+    } else {
+      plot(tree, direction = "rightwards", x.lim = xlim, mar = par()$mar, edge.color = col.map, show.tip.label = F)
     }
     
     if(show.models){

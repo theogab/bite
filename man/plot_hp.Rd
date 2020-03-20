@@ -33,16 +33,17 @@ must be a vector of two values and cannot be left empty.
 }
 \examples{
 
-## Load test data
-data(Anolis_traits)
-data(Anolis_tree)
-  
-my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
-plot_hp(my.hp)
-
-my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
-plot_hp(my.jive, cex.main = .8)
-
+\dontrun{
+ ## Load test data
+ data(Anolis_traits)
+ data(Anolis_tree)
+   
+ my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
+ plot_hp(my.hp)
+ 
+ my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
+ plot_hp(my.jive, cex.main = .8)
+}
 }
 \author{
 Theo Gaboriau

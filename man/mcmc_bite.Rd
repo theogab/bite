@@ -40,28 +40,28 @@ setting ncat to values > 1. The recommended ncat for TI is 10. When setting ncat
 As a rule of thumb set burning to 1/10 fraction of ngen.
 }
 \examples{
-
-## Load test data
-data(Anolis_traits)
-data(Anolis_tree)
-data(Anolis_map)
-
-## Run a simple MCMC chain
-set.seed(300)
-my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
+\dontrun{
+ ## Load test data
+ data(Anolis_traits)
+ data(Anolis_tree)
+ data(Anolis_map)
+ 
+ ## Run a simple MCMC chain
+ set.seed(300)
+ my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
  model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
-mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
+ mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
  sampling.freq=10, print.freq=100, ngen=5000) 
 
  my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
-  model.var=c("OU", "root", "theta"), model.mean="BM")
-mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
- sampling.freq=10, print.freq=100, ngen=5000) 
-
-## Run an MCMC chain with thermodynamic integration
-mcmc_bite(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
-sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
-
+ model.var=c("OU", "root", "theta"), model.mean="BM")
+ mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
+  sampling.freq=10, print.freq=100, ngen=5000) 
+  
+ ## Run an MCMC chain with thermodynamic integration
+ mcmc_bite(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
+  sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
+}
 }
 \author{
 Theo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly

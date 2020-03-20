@@ -6,7 +6,7 @@
 #' @export
 #' @author Theo Gaboriau and Simon Joly 
 #' @examples 
-#'
+#' \dontrun{
 #' ## Load test data
 #' data(Anolis_traits)
 #' data(Anolis_tree)
@@ -27,7 +27,7 @@
 #' 
 #' mlikSS <- marginal_lik(res, burnin = 0.1, method = "SS")
 #' mlikSS
-#' 
+#' }
 #' @encoding UTF-8
 
 

@@ -2,11 +2,12 @@
 # does: calculate log-likelihood; 
 calc_prior <- function(n, mat, x){
  
-  e <- mat[[1]]
-  det <- mat[[2]]
-  inv <- mat[[3]]
+  E <- mat$E
+  det <- mat$det
+  inv <- mat$inv
   
-  loglik <- try((-n/2 * log(2 * pi) - 1/2 * det - 1/2 * (t(x - e)%*%inv%*%(x - e))), silent=T)
+  #loglik <- try((-n/2 * log(2 * pi) - 1/2 * det - 1/2 * (t(x - E)%*%inv%*%(x - E))), silent=T)
+  loglik <- (-n/2 * log(2 * pi) - 1/2 * det - 1/2 * (t(x - E)%*%inv%*%(x - E)))
   
   if (is.na(loglik) | (class(loglik) == "try-error" )) {
     return(-Inf)

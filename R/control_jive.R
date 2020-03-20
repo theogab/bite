@@ -40,13 +40,13 @@
 #' my.jive <- control_jive(my.jive, level = "lik", initial.values = new.init)
 #' my.jive$lik$init #mean initial values changed
 #' 
-#' 
-#' ## change hyperpriors for prior.mean
-#' plot_hp(my.jive) #default values
-#' new.hprior <- list(hpfun("Gamma", hp.pars = c(2,6)), hpfun("Uniform", c(20,80)))
-#' my.jive <- control_jive(my.jive, level = "prior.mean", hyperprior = new.hprior)
-#' plot_hp(my.jive) #mean initial values changed
-#' 
+#' \dontrun{
+#'  ## change hyperpriors for prior.mean
+#'  plot_hp(my.jive) #default values
+#'  new.hprior <- list(hpfun("Gamma", hp.pars = c(2,6)), hpfun("Uniform", c(20,80)))
+#'  my.jive <- control_jive(my.jive, level = "prior.mean", hyperprior = new.hprior)
+#'  plot_hp(my.jive) #mean initial values changed
+#' }
 #' @encoding UTF-8
 
 control_jive <- function(jive, level = c("lik", "prior.mean", "prior.var"), window.size = NULL,
@@ -80,68 +80,51 @@ control_jive <- function(jive, level = c("lik", "prior.mean", "prior.var"), wind
   }
   
   ### Prior level ###
-  if (level == "prior.mean"){
+  if (grepl("prior", level)){
+    # window size
+    if(!is.null(window.size)){
+      jive[[level]]$ws <- window.size
+    }
+    
+    # initial parameter values
+    if(!is.null(initial.values)){
+      jive[[level]]$init <- initial.values
+    }
+    
     # Ornstein-Uhlenbeck #
-    if (grepl("OU", jive$prior.mean$name)){
-      
-      # window size
-      if(!is.null(window.size)){
-        jive$prior.mean$ws[[1]] <- window.size[1:jive$prior.mean$nr[1]]
-        jive$prior.mean$ws[[2]] <- window.size[jive$prior.mean$nr[1] + 1:jive$prior.mean$nr[2]]
-        jive$prior.mean$ws[[3]] <- window.size[jive$prior.mean$nr[2] + 1:jive$prior.mean$nr[3]]
-      }
-      
-      # initial parameter values
-      if(!is.null(initial.values)){
-        jive$prior.mean$init[[1]] <- initial.values[1:jive$prior.mean$nr[1]]
-        jive$prior.mean$init[[2]] <- initial.values[jive$prior.mean$nr[1] + 1:jive$prior.mean$nr[2]]
-        jive$prior.mean$init[[3]] <- initial.values[jive$prior.mean$nr[2] + 1:jive$prior.mean$nr[3]]
-      }
-      
+    if (grepl("OU", jive[[level]]$name)){
       # proposals
       if (!is.null(proposals)){
         i <- 1
-        while(i <= sum(jive$prior.mean$nr)){
-          if (i <= jive$prior.mean$nr[1]) jive$prior.mean$prop[[i]] <- proposal(proposals[1])
-          else if (i <= sum(jive$prior.mean$nr[1:2])) jive$prior.mean$prop[[i]] <- proposal(proposals[2])
-          else jive$prior.mean$prop[[i]] <- proposal(proposals[3])
+        while(i <= sum(jive[[level]]$Pi)){
+          if (i <= max(which(jive[[level]]$Pi[1,]==1))) jive[[level]]$prop[[i]] <- proposal(proposals[1])
+          else if (i <= max(which(jive[[level]]$Pi[2,]==1))) jive[[level]]$prop[[i]] <- proposal(proposals[2])
+          else jive[[level]]$prop[[i]] <- proposal(proposals[3])
           i <- i + 1
         }
       }
       # hyper priors
       if (!is.null(hyperprior)){
         i <- 1
-        while(i <= sum(jive$prior.mean$nr)){
-          if (i <= jive$prior.mean$nr[1]) jive$prior.mean$hprior[[i]] <- hyperprior[[1]]
-          else if (i <= sum(jive$prior.mean$nr[1:2])) jive$prior.mean$hprior[[i]] <- hyperprior[[2]]
-          else jive$prior.mean$hprior[[i]] <- hyperprior[[3]]
+        while(i <= sum(jive[[level]]$Pi)){
+          if (i <= max(which(jive[[level]]$Pi[1,]==1))) jive[[level]]$hprior[[i]] <- hyperprior[[1]]
+          else if (i <= max(which(jive[[level]]$Pi[2,]==1))) jive[[level]]$hprior[[i]] <- hyperprior[[2]]
+          else jive[[level]]$hprior[[i]] <- hyperprior[[3]]
           i <- i + 1
         }
       }
     } else {
       
-      # window size
-      if(!is.null(window.size)){
-        jive$prior.mean$ws[[1]] <- window.size[1:jive$prior.mean$nr[1]]
-        jive$prior.mean$ws[[2]] <- window.size[jive$prior.mean$nr[1]+1]
-      }
-      
-      # initial parameter values
-      if(!is.null(initial.values)){
-        jive$prior.mean$init[[1]] <- initial.values[1:jive$prior.mean$nr[1]]
-        jive$prior.mean$init[[2]] <- initial.values[jive$prior.mean$nr[1]]
-      }
-      
       # proposals
       if (!is.null(proposals)){
-        jive$prior.mean$prop <- lapply(1:jive$prior.mean$nr[1], proposal, prop = proposals[1]) # sigma(s)
-        jive$prior.mean$prop[[jive$prior.mean$nr[1]+1]]	<- proposal(proposals[2]) # theta
+        jive[[level]]$prop <- lapply(which(jive[[level]]$Pi[1,]==1), proposal, prop = proposals[1]) # sigma(s)
+        jive[[level]]$prop[[which(jive[[level]]$Pi[2,]==1)]]	<- proposal(proposals[2]) # theta
       }
       
       # hyper priors
       if (!is.null(hyperprior)){
-        jive$prior.mean$hprior <- lapply(1:jive$prior.mean$nr[1], function(x) hyperprior[[1]]) # sigma(s)
-        jive$prior.mean$hprior[[jive$prior.mean$nr[1]+1]] <- hyperprior[[2]] # theta
+        jive[[level]]$hprior <- lapply(which(jive[[level]]$Pi[1,]==1), function(x) hyperprior[[1]]) # sigma(s)
+        jive[[level]]$hprior[[which(jive[[level]]$Pi[2,]==1)]] <- hyperprior[[2]] # theta
       }
       
       
@@ -149,79 +132,7 @@ control_jive <- function(jive, level = c("lik", "prior.mean", "prior.var"), wind
     
     # update frequency
     if (!is.null(update.freq)){
-      jive$prior.mean$update.freq <- update.freq
-    }
-  }
-  if (level == "prior.var"){
-    # Ornstein-Uhlenbeck #
-    if (grepl("OU", jive$prior.var$name)){
-      
-      # window size
-      if(!is.null(window.size)){
-        jive$prior.var$ws[[1]] <- window.size[1:jive$prior.var$nr[1]]
-        jive$prior.var$ws[[2]] <- window.size[jive$prior.var$nr[1] + 1:jive$prior.var$nr[2]]
-        jive$prior.var$ws[[3]] <- window.size[jive$prior.var$nr[2] + 1:jive$prior.var$nr[3]]
-      }
-      
-      # initial parameter values
-      if(!is.null(initial.values)){
-        jive$prior.var$init[[1]] <- initial.values[1:jive$prior.var$nr[1]]
-        jive$prior.var$init[[2]] <- initial.values[jive$prior.var$nr[1] + 1:jive$prior.var$nr[2]]
-        jive$prior.var$init[[3]] <- initial.values[jive$prior.var$nr[2] + 1:jive$prior.var$nr[3]]
-      }
-      
-      # proposals
-      if (!is.null(proposals)){
-        i <- 1
-        while(i <= sum(jive$prior.var$nr)){
-          if (i <= jive$prior.var$nr[1]) jive$prior.var$prop[[i]] <- proposal(proposals[1])
-          else if (i <= sum(jive$prior.var$nr[1:2])) jive$prior.var$prop[[i]] <- proposal(proposals[2])
-          else jive$prior.var$prop[[i]] <- proposal(proposals[3])
-          i <- i + 1
-        }
-      }
-      # hyper priors
-      if (!is.null(hyperprior)){
-        i <- 1
-        while(i <= sum(jive$prior.var$nr)){
-          if (i <= jive$prior.var$nr[1]) jive$prior.var$hprior[[i]] <- hyperprior[[1]]
-          else if (i <= sum(jive$prior.var$nr[1:2])) jive$prior.var$hprior[[i]] <- hyperprior[[2]]
-          else jive$prior.var$hprior[[i]] <- hyperprior[[3]]
-          i <- i + 1
-        }
-      }
-    } else {
-      
-      # window size
-      if(!is.null(window.size)){
-        jive$prior.var$ws[[1]] <- window.size[1:jive$prior.var$nr[1]]
-        jive$prior.var$ws[[2]] <- window.size[jive$prior.var$nr[1]+1]
-      }
-      
-      # initial parameter values
-      if(!is.null(initial.values)){
-        jive$prior.var$init[[1]] <- initial.values[1:jive$prior.var$nr[1]]
-        jive$prior.var$init[[2]] <- initial.values[jive$prior.var$nr[1]]
-      }
-      
-      # proposals
-      if (!is.null(proposals)){
-        jive$prior.var$prop <- lapply(1:jive$prior.var$nr[1], proposal, prop = proposals[1]) # sigma(s)
-        jive$prior.var$prop[[jive$prior.var$nr[1]+1]]	<- proposal(proposals[2]) # theta
-      }
-      
-      # hyper priors
-      if (!is.null(hyperprior)){
-        jive$prior.var$hprior <- lapply(1:jive$prior.var$nr[1], function(x) hyperprior[[1]]) # sigma(s)
-        jive$prior.var$hprior[[jive$prior.var$nr[1]+1]] <- hyperprior[[2]] # theta
-      }
-      
-      
-    }
-    
-    # update frequency
-    if (!is.null(update.freq)){
-      jive$prior.var$update.freq <- update.freq
+      jive[[level]]$update.freq <- update.freq
     }
   }
   
