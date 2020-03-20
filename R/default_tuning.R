@@ -196,7 +196,5 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
 
   }
   
-  
   return(eval(parse(text = "list(lik = lik, prior.mean = prior.mean, prior.var = prior.var)")))
-  
 }
