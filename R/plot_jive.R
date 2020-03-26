@@ -61,14 +61,14 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
     ## Convert pars name into expressions to plot mathematical notations
     pars.m <- sapply(strsplit(names(jive$prior.mean$hprior), "[_]"), function(pr){
       if(pr[1] == "sigma^2") out <- ifelse("sigma" %in% mm, sprintf("sigma[m%s]^2", pr[2]), "sigma[m]^2")
-      if(pr[1] == "sv") out <- ifelse("sv" %in% mm, sprintf("alpha[m%1$s]", pr[2]), "alpha[m]")
+      if(pr[1] == "alpha") out <- ifelse("alpha" %in% mm, sprintf("alpha[m%1$s]", pr[2]), "alpha[m]")
       if(pr[1] == "theta") out <- ifelse("theta" %in% mm, sprintf("theta[m%s]", pr[2]), "theta[m]")
       if(pr[1] == "root") out <- "theta[m0]"
       return(out)
     })
     pars.v <- sapply(strsplit(names(jive$prior.var$hprior), "[_]"), function(pr){
       if(pr[1] == "sigma^2") out <- ifelse("sigma" %in% mv, sprintf("sigma[v%s]^2", pr[2]), "sigma[v]^2")
-      if(pr[1] == "sv") out <- ifelse("sv" %in% mv, sprintf("alpha[v%1$s]", pr[2]), "alpha[v]")
+      if(pr[1] == "alpha") out <- ifelse("alpha" %in% mv, sprintf("alpha[v%1$s]", pr[2]), "alpha[v]")
       if(pr[1] == "theta") out <- ifelse("theta" %in% mv, sprintf("theta[v%s]", pr[2]), "theta[v]")
       if(pr[1] == "root") out <- "theta[v0]"
       return(out)

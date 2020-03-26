@@ -57,7 +57,7 @@
 
 sim_jive <- function(phy, map = NULL, model.mean="BM", model.var="OU",
                     m.pars = list(the0 = 0, sig = 0.1), v.pars = list(the0 = 2, the = 1, sig = 0.1, alp = 1),
-                     sampling = c(1, 7), m.bounds = c(-Inf, Inf), v.bounds = c(-Inf, Inf)){
+                     sampling = c(1, 7), m.bounds = c(-Inf, Inf), v.bounds = c(0, Inf)){
   
   ntips <- length(phy$tip.label)
   
@@ -72,10 +72,11 @@ sim_jive <- function(phy, map = NULL, model.mean="BM", model.var="OU",
   var <- sim_pet(phy, map.var, model.var, v.pars, ntips, v.bounds)
   
   mv <- cbind(mean, var)
-  colnames(mv) <- c("Mean", "Logvariance")
+  colnames(mv) <- c("Mean", "variance")
   ## sample individuals in each species
   sp <- data.frame(do.call(rbind,lapply(rownames(mv)[1:ntips], function(x){
-    ind <- rnorm(sample(seq(sampling[1], sampling[2]),1), mv[x,1], sqrt(exp(mv[x,2])))
+    if(sampling[1] != sampling[2]) sampling <- seq(sampling[1], sampling[2])
+    ind <- rnorm(sample(sampling,1), mv[x,1], sqrt(mv[x,2]))
     cbind(sp = rep(x, length(ind)), ind)
   })))
 

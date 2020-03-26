@@ -29,7 +29,7 @@
 #'  set.seed(300)
 #'  my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
 #'  model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
-#'  mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
+#'  mcmc_bite(model = my.jive, log.file="my.jive_MCMC.log",
 #'  sampling.freq=10, print.freq=100, ngen=5000) 
 #' 
 #'  my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
@@ -75,12 +75,12 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
   
   # prior mean level
   pars.m0 <- model$prior.mean$init
-  prior.mean0 <- calc_prior(n = model$data$n, mat = model$prior.mean$data, x = m.sp0)
+  prior.mean0 <- model$prior.mean$value
   hprior.mean0 <- unlist(mapply(do.call, model$prior.mean$hprior, lapply(pars.m0, list))[1,])
   
   # prior var level
   pars.v0 <- model$prior.var$init
-  prior.var0 <- calc_prior(n = model$data$n, mat = model$prior.var$data, x = log(v.sp0))
+  prior.var0 <- model$prior.mean$value
   hprior.var0 <- unlist(mapply(do.call, model$prior.var$hprior, lapply(pars.v0, list))[1,])
   
   # mcmc parameters
@@ -143,13 +143,16 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
       
       # calculate new var/covar and expectation
       mat.mean1 <- model$prior.mean$data
-      mat.mean0 <- try(model$prior.mean$model(pars = pars.m0, Pi = model$prior.mean$Pi, map = model$prior.mean$map), silent = T)
+      mat.mean0 <- try(model$prior.mean$model(x = m.sp0, n = model$data$n, pars = pars.m0,
+                                              Pi = model$prior.mean$Pi, par.n = par.n, 
+                                              data = model$prior.mean$data,
+                                              map = model$prior.mean$map), silent = T)
       if(any(grepl("Error", mat.mean0))){
         prior.mean0 <- Inf
       } else {
-        model$prior.mean$data <- mat.mean0
+        model$prior.mean$data <- mat.mean0$data
         # calculate prior and hprior
-        prior.mean0 <- calc_prior(n = model$data$n, mat = model$prior.mean$data, x = m.sp0)
+        prior.mean0 <- mat.mean0$loglik
         hprior.mean0 <- unlist(mapply(do.call, model$prior.mean$hprior, lapply(pars.m0, list))[1,])
       }
       hasting.ratio <- tmp$lnHastingsRatio
@@ -166,14 +169,17 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
       pars.v0[par.n] <- tmp$v 
       # calculate new var/covar and expectation
       mat.var1 <- model$prior.var$data
-      mat.var0 <- try(model$prior.var$model(pars = pars.v0, Pi = model$prior.var$Pi, map = model$prior.var$map), silent = T)
+      mat.var0 <- try(model$prior.var$model(x = log(v.sp0), n = model$data$n, pars = pars.v0,
+                                             Pi = model$prior.var$Pi, par.n = par.n, 
+                                             data = model$prior.var$data,
+                                             map = model$prior.var$map), silent = T)
       
       if(any(grepl("Error", mat.var0))){
         prior.var0 <- Inf
       } else {
-        model$prior.var$data <- mat.var0
+        model$prior.var$data <- mat.var0$data
         # calculate prior and hprior
-        prior.var0 <- calc_prior(n = model$data$n, mat = model$prior.var$data, x = log(v.sp0))
+        prior.var0 <- mat.var0$loglik
         hprior.var0 <- unlist(mapply(do.call, model$prior.var$hprior, lapply(pars.v0, list))[1,])
       }
       hasting.ratio <- tmp$lnHastingsRatio

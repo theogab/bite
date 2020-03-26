@@ -6,7 +6,7 @@
 \title{Plots estimates of species traits distribution}
 \usage{
 plot_pvo(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1,
-  conf = 0.95, stat = "median", trait.lab = "x", col = "lightgrey",
+  conf = 0.95, stat = "median", trait.lab = "x", col = NULL,
   lab = T, lolipop = c(0.4, 0.4), cex.tip = par("cex"), ...)
 }
 \arguments{
@@ -47,10 +47,11 @@ This function plots the mean or median density distribution and the HPD distribu
  ## Load test data
  data(Anolis_traits)
  data(Anolis_tree)
+ data(Anolis_map)
  
  # Run a simple MCMC chain
- my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
- mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
+ my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var=c("OU"), model.mean="BM")
+ mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=100, print.freq=100, ngen=50000) 
 
  ## import the results in R
  logfile <- "my.jive_mcmc.log"

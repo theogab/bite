@@ -21,22 +21,22 @@
 #' 
 #' White Noise model (WN):
 #' \itemize{
-#'  \item theta0: root value, abbreviated wn.the
-#'  \item sigma square: evolutionary rate, abbreviated wn.sig or wn.sig.1, wn.sig.2, ..., wn.sig.n for n regimes if "sigma" is specified in model.mean/var
+#'  \item root: root value
+#'  \item sigma^2: evolutionary rate,n regimes if "sigma" is specified in model.mean/var
 #' }
 #'  
 #' Brownian Motion model (BM):
 #' \itemize{
-#'  \item theta0: root value, abbreviated bm.the
-#'  \item sigma square: evolutionary rate, abbreviated bm.sig or bm.sig.1, bm.sig.2, ..., bm.sig.n for n regimes if "sigma" is specified in model.mean/var
+#'  \item root: root value
+#'  \item sigma^2: evolutionary rate,n regimes if "sigma" is specified in model.mean/var
 #' }
 #'
 #' Ornstein Uhlenbeck model (OU):
 #' \itemize{
-#'  \item theta0: root value, abbreviated ou.the.0. Only used if "root" is specified in model.mean/var
-#'  \item sigma square: evolutionary rate, abbreviated ou.sig or ou.sig.1, ou.sig.2, ..., ou.sig.n for n regimes if "sigma" is specified in model.mean/var
-#'  \item optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes if "theta" is specified in model.mean/var
-#'  \item stationary variance (alpha/2*sigma_sq with alpha being the strength of selection), abbreviated ou.sv or ou.sv.1
+#'  \item root: root value. Only used if "root" is specified in model.mean/var
+#'  \item sigma^2: evolutionary rate, n regimes if "sigma" is specified in model.mean/var
+#'  \item theta: optimal value, n regimes if "theta" is specified in model.mean/var
+#'  \item alpha: strength of selection, n regimes if "alpha" is specified in model.mean/var
 #' }
 #' 
 #' @param phy phylogenetic tree provided as either a simmap or a phylo object
@@ -65,7 +65,7 @@
 #'
 #' ## JIVE object to run jive with multiple regimes
 #' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
-#'  model.mean="BM", model.var=c("OU", "theta", "sv"))
+#'  model.mean="BM", model.var=c("OU", "theta", "alpha"))
 #' 
 #' ## JIVE object to run jive from an ancestral state reconstruction (stochastic mapping)
 #' # First generate simmap object
@@ -184,13 +184,23 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
     done <- F
     while(!done){
       # Calculate expectation and var/covar matrices #
-      jive$prior.mean$data <- try(dt$prior.mean$model(pars = dt$prior.mean$init, Pi = dt$prior.mean$Pi, map = dt$prior.mean$map), silent = T)
+      mat.mean <- try(jive$prior.mean$model(x = jive$lik$init$m.sp, n = jive$data$n, pars = jive$prior.mean$init,
+                                                        Pi = jive$prior.mean$Pi, par.n = 1:ncol(jive$prior.mean$Pi), 
+                                                        data = list(), map = jive$prior.mean$map), silent = T)
 
       # Calculate expectation and var/covar matrices #
-      jive$prior.var$data <- try(dt$prior.var$model(pars = dt$prior.var$init, Pi = dt$prior.var$Pi, map = dt$prior.var$map), silent = T)
+      mat.var <- try(jive$prior.var$model(x = log(jive$lik$init$v.sp), n = jive$data$n, pars = jive$prior.var$init,
+                                                        Pi = jive$prior.var$Pi, par.n = 1:ncol(jive$prior.var$Pi), 
+                                                        data = list(), map = jive$prior.var$map), silent = T)
       
-      if(all(!grepl("Error", jive$prior.mean$data)) & all(!grepl("Error", jive$prior.var$data))){
+      if(all(!grepl("Error", mat.mean)) & all(!grepl("Error", mat.var))){
+        
+        jive$prior.mean$data <- mat.mean$data
+        jive$prior.mean$value <- mat.mean$loglik
+        jive$prior.var$data <- mat.var$data
+        jive$prior.var$value <- mat.var$loglik
         done <- T
+        
       } else {
         # new initial conditions
         dt <- default_tuning(model.mean = model.mean, model.var = model.var, phy = jive$data$tree, traits = jive$data$traits, map = jive$data$map)

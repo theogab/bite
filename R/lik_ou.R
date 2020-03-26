@@ -1,14 +1,15 @@
 #' @import ape
 
-# input: pars - c(sv1, sv2, ..., sig1, sig2,...,the1...theN, root), map, vcv and vector of size 4 giving the number of regime every parameter is undergoing for nr 
+# input: pars - c(alp1, alp2, ..., sig1, sig2,...,the1...theN, root), map, vcv and vector of size 4 giving the number of regime every parameter is undergoing for nr 
 # does: calculate log-likelihood; see Butler and King 2004, appendix eq. A8 and A9 and Beaulieu et al. 2012
-update_ou <- function(pars, Pi, map){
+update_ou <- function(x, n, pars, Pi, par.n, data, map){
   
   
-  alpha <- pars[Pi[2,]==1]/(2*pars[Pi[1,]==1])
+  alpha <- pars[Pi[1,]==1]
   sigma <- pars[Pi[2,]==1]
   theta <- pars[Pi[3,]==1]
   if(nrow(Pi) == 4) theta <- c(pars[Pi[4,]==1], theta)
+  upd <- apply(Pi, 2,function(x) which(x == 1))[par.n]
   
   S <- map$S ##Mapping of the start and end of each epoch nepochs x 2
   gamma <- map$gamma ##Indicator mapping of the epochs lived by each species nepochs x n
@@ -23,12 +24,24 @@ update_ou <- function(pars, Pi, map){
     W <- W/colSums(W)
   }
   
-  E <- t(theta %*% W)
+  ## Expectation
+  if(any(upd %in% c(3,4))){
+    data$E <- t(theta %*% W)
+  }
   
   ## Variance Covariance Matrix (SIGMA)
-  V <- exp(t(matrix(0, ncol(gamma), ncol(gamma)) + colSums(var.reg)) + colSums(var.reg)) * (t(gamma)%*%(colSums((sigma/(2*alpha)*t(beta))*(exp(2*alpha*t(S[,2]*beta))-exp(2*alpha*t(S[,1]*beta))))*gamma))
-  inv <- solve(V)
-  det <- as.numeric(determinant(V)$modulus)
+  if(any(upd %in% c(1,2))){
+    V <- exp(t(matrix(0, ncol(gamma), ncol(gamma)) + colSums(var.reg)) + colSums(var.reg)) * (t(gamma)%*%(colSums((sigma/(2*alpha)*t(beta))*(exp(2*alpha*t(S[,2]*beta))-exp(2*alpha*t(S[,1]*beta))))*gamma))
+    data$inv <- solve(V)
+    data$det <- as.numeric(determinant(V)$modulus)
+  }
   
-  return(list(E = E, det = det, inv = inv))
+  ## Log likelihood (multinormal)
+  loglik <- (-n/2 * log(2 * pi) - 1/2 * data$det - 1/2 * (t(x - data$E)%*%data$inv%*%(x - data$E)))
+  
+  if (is.na(loglik) | (class(loglik) == "try-error" )) {
+    return(list(loglik = -Inf, data = data))
+  } else {
+    return(list(loglik = loglik, data = data))
+  }
 }

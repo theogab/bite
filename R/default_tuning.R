@@ -135,7 +135,7 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       # model
       model <- update_ou
       # map and nreg
-      if(any(c("sigma", "theta", "sv") %in% model.evo)){
+      if(any(c("sigma", "theta", "aplha") %in% model.evo)){
         nreg <-  ncol(map$beta)
         newmap <- map
       } else {
@@ -147,30 +147,30 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       rname <- list("",sprintf("_%s",colnames(newmap$beta)))
       
       # number of regimes for each parameter
-      rsv <- ifelse(any(c("sv", "sigma") %in% model.evo), nreg, 1)
+      ralp <- ifelse(any(c("alpha", "sigma") %in% model.evo), nreg, 1)
       rsig <- ifelse("sigma" %in% model.evo, nreg, 1)
       rthe <- ifelse("theta" %in% model.evo, nreg, 1)
       rroot <- ifelse("root" %in% model.evo, 1, 0)
       
       # indicator matrix for parameters
-      Pi <- matrix(0, 3+rroot, rsv + rsig + rthe + rroot)
-      Pi[1,1:rsv] <- 1
-      Pi[2,rsv + 1:rsig] <- 1
-      Pi[3, rsv + rsig + 1:rthe] <- 1
+      Pi <- matrix(0, 3+rroot, ralp + rsig + rthe + rroot)
+      Pi[1,1:ralp] <- 1
+      Pi[2,ralp + 1:rsig] <- 1
+      Pi[3, ralp + rsig + 1:rthe] <- 1
       if(rroot == 1) Pi[4,ncol(Pi)] <- 1
       
       # window size
-      ws <- c(rep(0.5, rsv), rep(2, rsig), rep(sd(x), rroot+rthe)) # 2 in the previous version?
+      ws <- c(rep(0.5, ralp), rep(2, rsig), rep(sd(x), rroot+rthe)) # 2 in the previous version?
       
       # initial parameter values
-      init<-c(runif(rsv, 0.1, 1), runif(rsig, 0.5, 3), rep(mean(x), rroot+rthe))
+      init<-c(runif(ralp, 0.1, 1), runif(rsig, 0.5, 3), rep(mean(x), rroot+rthe))
       
       # proposals
       prop <- list()
       i <- 1
-      while(i <= (rsv + rsig + rroot + rthe)){
-        if (i <= rsv) prop[[i]] <- proposal("multiplierProposal")
-        else if (i <= (rsv + rsig)) prop[[i]] <- proposal("multiplierProposal")
+      while(i <= (ralp + rsig + rroot + rthe)){
+        if (i <= ralp) prop[[i]] <- proposal("multiplierProposal")
+        else if (i <= (ralp + rsig)) prop[[i]] <- proposal("multiplierProposal")
         else prop[[i]] <- proposal("slidingWin")
         i <- i + 1
       }
@@ -179,15 +179,15 @@ default_tuning <- function(model.mean = c("BM", "OU", "WN"),
       hprior <- list()
       i <- 1
       bounds <- c(min(x) - abs(min(x)),max(x) + abs(max(x)))
-      while(i <= (rsv + rsig + rthe + rroot)){
-        if (i <= rsv)  hprior[[i]] <- hpfun("Gamma", c(1.1,5))
-        else if (i <= (rsv + rsig)) hprior[[i]]	<- hpfun("Gamma", c(1.1,5))
+      while(i <= (ralp + rsig + rthe + rroot)){
+        if (i <= ralp)  hprior[[i]] <- hpfun("Gamma", c(1.1,5))
+        else if (i <= (ralp + rsig)) hprior[[i]]	<- hpfun("Gamma", c(1.1,5))
         else hprior[[i]]	<- hpfun("Uniform", bounds)
         i <- i + 1
       }
       
-      names(hprior) <- names(ws) <- names(init) <- names(prop) <- c(sprintf("sv%s", rname[[1+Pi[1,2]]]), 
-                                                                    sprintf("sigma^2%s", rname[[1+Pi[2,rsv + 2]]]),
+      names(hprior) <- names(ws) <- names(init) <- names(prop) <- c(sprintf("alpha%s", rname[[1+Pi[1,2]]]), 
+                                                                    sprintf("sigma^2%s", rname[[1+Pi[2,ralp + 2]]]),
                                                                     sprintf("theta%s", rname[[1+ifelse(sum(Pi[3,])>1,1,0)]]),
                                                                     "root"[rroot])
     }
