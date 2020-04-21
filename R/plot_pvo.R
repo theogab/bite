@@ -5,41 +5,38 @@
 #' @param traits trait data used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}
 #' @param map map used to perform the jive analysis. This has to be of the same form as the one used in \code{\link{make_jive}}
 #' @param mcmc.log the output file of a \code{\link{mcmc_bite}} run
-#' @param tip An integer giving the row corresponding to the species to be plotted. If tip == NA, the posterior distribution of every tip is plotted along with the phylogenetic tree
+#' @param tip A string giving the species to be plotted. If tip == NA, the posterior distribution of every tip is plotted along with the phylogenetic tree
 #' @param burnin The size of the burnin in number of iterations or the proportion of iteration you want to remove
 #' @param conf A number of [0,1] giving the confidence level desired.
 #' @param stat A character giving the function to be used to estimate species mean and variance from the posterior distributions. Must be one of be "mean" and "median"
 #' @param trait.lab a charachter specifying the axis label for the traits
 #' @param col color of the density filling. Must be of size two for estimates and HPD. If col and border are NULL, two random colors are assigned
 #' @param lab logical indicating whether to show species name in the plot. Only evaluated if tip =! NA
-#' @param lolipop a logical specifying wether the sample positions should be presented as lolipops
+#' @param lolipop size and width of the lolipops representing samples
 #' @param cex.tip size of the tips
+#' @param var.f alternative distribution used to model intraspecific variation of the form function(n, pars). The function must return n samples from the given distribution.
 #' @param ... Additional parameters that can be parsed to plot
-#' 
 #' @author Theo Gaboriau
 #' @export
 #' @examples
-#' \dontrun{
-#'  ## Load test data
-#'  data(Anolis_traits)
-#'  data(Anolis_tree)
-#'  data(Anolis_map)
-#'  
-#'  # Run a simple MCMC chain
-#'  my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var=c("OU"), model.mean="BM")
-#'  mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=100, print.freq=100, ngen=50000) 
-#' 
-#'  ## import the results in R
-#'  logfile <- "my.jive_mcmc.log"
-#'  res <- read.csv(logfile, header = TRUE, sep = "\t")
-#'  
-#'  plot_pvo(Anolis_tree, Anolis_traits, mcmc.log = res)
-#' }
+#' ## Load test data
+#' data(Anolis_traits)
+#' data(Anolis_tree)
+#' data(Anolis_map)
+#' # Run a simple MCMC chain
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3],  model.priors=list(mean="BM", logvar = "OU"))
+#' bite_ex <- tempdir()
+#' logfile <- sprintf("%s/my.jive_mcmc.log", bite_ex)
+#' mcmc_bite(my.jive, log.file=logfile, sampling.freq=1, print.freq=1, ngen=500) 
+#' # import the results in R
+#' res <- read.csv(logfile, header = TRUE, sep = "\t")
+#'  plot_pvo(phy = Anolis_tree, traits = Anolis_traits, tip = NA, mcmc.log = res)
+#'
 #' @encoding UTF-8
 
 
 plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, conf = 0.95, stat = "median", trait.lab = "x",
-                     col = NULL, lab = T, lolipop = c(0.4, 0.4), cex.tip = par("cex"), ...){
+                     col = NULL, lab = TRUE, lolipop = c(0.4, 0.4), cex.tip = par("cex"), var.f = NULL, ...){
   
   ### Main function
   plot_func <- function(traits, rmid, rhpd, label, trait.lab, col, lolipop, lab, plot.tree, minmax = NA, cy = 0, nreg =1){
@@ -65,7 +62,7 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
     } else {
       NA  
     }
-  }, USE.NAMES = T, simplify = F)
+  }, USE.NAMES = TRUE, simplify = FALSE)
   
   if(burnin < 1) burnin <- burnin * nrow(mcmc.log)
   
@@ -83,20 +80,25 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
       phy <- map_to_simmap(phy, map)
     }
     
+    if(is.null(var.f)){
+      var.f <- function(n, pars){
+        rnorm(n, pars[,1], sqrt(exp(pars[,2])))
+      }
+    }
     
     ## get densities
     dens <- lapply(phy$tip.label, function(label){
       
-      chain <- as.mcmc(mcmc.log[(burnin+1):nrow(mcmc.log),sprintf(c("%s_m", "%s_v"), label)])
+      chain <- as.mcmc(mcmc.log[(burnin+1):nrow(mcmc.log),grepl(label, colnames(mcmc.log))])
       
-      sam <- sample(1:nrow(chain), 1e6, replace = T)
-      rhpd <- rnorm(1e6, chain[sam,1], sqrt(chain[sam,2]))
+      sam <- sample(1:nrow(chain), 1e4, replace = TRUE)
+      rhpd <- var.f(1e4, chain[sam,])
       hpd <- HPDinterval(as.mcmc(rhpd), prob = conf)
-      if(stat == "median") mid <- apply(chain,2,median)
-      else if(stat == "mean") mid <- apply(chain,2,mean)
+      if(stat == "median") mid <- matrix(apply(chain,2,median), ncol = 2)
+      else if(stat == "mean") mid <- matrix(apply(chain,2,mean), ncol = 2)
       else stop(sprintf("%s: unknown stat"))
       
-      rmid <- density(rnorm(1e6, mid[1], sqrt(mid[2])))
+      rmid <- density(var.f(1e4, mid))
       rhpd <- density(rhpd[rhpd >= hpd[1] & rhpd <= hpd[2]])
       return(list(rmid = cbind(x = rmid$x, y = rmid$y), rhpd = cbind(x = rhpd$x, y = rhpd$y)))
     })
@@ -105,6 +107,8 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
     minmax <- apply(do.call(rbind, do.call(rbind, dens)), 2, range)
     n <- length(phy$tip.label)
     
+    oldpar <- par(no.readonly = T)
+    on.exit(par(oldpar))
     mrg <- par("mar")
     par(fig = c(0, 0.4, 0, 1), mar = c(mrg[1:3],0))
     if("simmap" %in% class(phy)){
@@ -119,7 +123,7 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
       if(is.null(col)){
         col <- "lightgrey"
       }
-      plot(phy, show.tip.label = F, ...)
+      plot(phy, show.tip.label = FALSE, ...)
       nreg <- 1
     }
     pp <- get("last_plot.phylo", envir = .PlotPhyloEnv)
@@ -138,7 +142,7 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
         col.reg <- col
       }
       plot_func(traits = traits, rmid = dens[[label]]$rmid, rhpd = dens[[label]]$rhpd, label = label,
-                trait.lab = trait.lab, col = col.reg,lolipop =  lolipop, lab = T, plot.tree = T, 
+                trait.lab = trait.lab, col = col.reg,lolipop =  lolipop, lab = TRUE, plot.tree = TRUE, 
                 minmax = minmax,cy = cy, nreg = nreg)
       i <- i + 1
     }
@@ -148,24 +152,26 @@ plot_pvo <- function(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1, 
     par(mar = mrg, fig = c(0,1,0,1))
   } else {
     
-    if(is.numeric(tip)) label <- names(traits)[tip]
-    else label <- tip
+    label <- tip
     
-    chain <- as.mcmc(mcmc.log[(burnin+1):nrow(mcmc.log),sprintf(c("%s_m", "%s_v"), label)])
+    chain <- as.mcmc(mcmc.log[(burnin+1):nrow(mcmc.log),grepl(label, colnames(mcmc.log))])
     
-    sam <- sample(1:nrow(chain), 5e6, replace = T)
-    rhpd <- rnorm(1e6, chain[sam,1], sqrt(chain[sam,2]))
+    sam <- sample(1:nrow(chain), 1e4, replace = TRUE)
+    rhpd <- rnorm(1e4, chain[sam,1], sqrt(chain[sam,2]))
     hpd <- HPDinterval(as.mcmc(rhpd), prob = conf)
     if(stat == "median") mid <- apply(chain,2,median)
     else if(stat == "mean") mid <- apply(chain,2,mean)
     else stop(sprintf("%s: unknown stat"))
     
-    rmid <- density(rnorm(1e6, mid[1], sqrt(mid[2])))
+    rmid <- density(rnorm(1e4, mid[1], sqrt(mid[2])))
     rmid <- cbind(x = rmid$x, y = rmid$y)
     rhpd <- density(rhpd[rhpd >= hpd[1] & rhpd <= hpd[2]])
     rhpd <- cbind(x = rhpd$x, y = rhpd$y)
+    if(is.null(col)){
+      col <- "lightgrey"
+    }
     plot_func(traits = traits, rmid = rmid, rhpd = rhpd, label = label, trait.lab = trait.lab,
-              col = col, lolipop =lolipop, lab = T, plot.tree = F)
+              col = col, lolipop =lolipop, lab = TRUE, plot.tree = FALSE)
   }
   
 }

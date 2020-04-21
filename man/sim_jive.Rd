@@ -5,60 +5,57 @@
 \alias{sim_jive}
 \title{Simulate JIVE process}
 \usage{
-sim_jive(phy, map = NULL, model.mean = "BM", model.var = "OU",
-  m.pars = list(the0 = 0, sig = 0.1), v.pars = list(the0 = 2, the = 1,
-  sig = 0.1, alp = 1), sampling = c(1, 7), m.bounds = c(-Inf, Inf),
-  v.bounds = c(-Inf, Inf))
+sim_jive(phy, map = NULL, models = list(mean = c("BM"), logvar =
+  c("OU")), pars = list(mean = c(root = 0, sigma_sq = 0.1), logvar =
+  c(root = 2, theta = 1, sigma_sq = 0.1, alpha = 1)), sampling = c(1, 7),
+  bounds = list(c(-Inf, Inf), c(-Inf, Inf)), var.f = NULL)
 }
 \arguments{
 \item{phy}{Phylogenetic tree}
 
-\item{map}{list containing the mapping of regimes over each edge (see details).}
+\item{map}{list containing the mapping of regimes over each edge (see details)}
 
-\item{model.mean}{model specification for the simulation of trait mean evolution. Supported models are c("OU", "BM", "WN")}
+\item{models}{list giving model specification for the simulation of trait evolution. Supported models are c("OU", "BM", "WN"). The user can also specify if the assumptions of the model should be relaxed (see details)}
 
-\item{model.var}{model specification for the simulation of trait variance evolution. Supported models are c("OU", "BM", "WN")}
-
-\item{m.pars}{parameters used for the simulation of trait mean evolution (see details).}
-
-\item{v.pars}{parameters used for the simulation of trait log(variance) evolution (see details).}
+\item{pars}{list giving parameters used for the simulation of trait evolution (see details). Name of parameters must be explecitly entered (see details)}
 
 \item{sampling}{vector of size 2 giving the min and max number of individual per species}
 
-\item{m.bounds}{vector of size 2 giving the bounds of the mean}
+\item{bounds}{list giving traits bounds}
 
-\item{v.bounds}{vector of size 2 giving the bounds of the Log(variance)}
+\item{var.f}{alternative function to model intraspecific variation of the form: function(n, pars) with n, number of individuals and pars, parameters of the model}
 }
 \value{
-returns the simulated mean and variance of the trait for each tip
+A list of length two containing a numeric matrix named "evo_traits" giving simulated traits representing intraspecific variation and a data.frame called "obs" containing species name in the fisrt column and individual observation of the trait in the second.
 }
 \description{
 Generate random values of trait mean and variance simulated under a JIVE process along a phylogenetic tree
 }
 \details{
 map : the list must be ordered in the same order than phy$edge. Each element represents an edge and contains a vector indicating the time spent under each regime in the branch. The name of the regimes must appear on the map
+models : trait evolution can be simulated using Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas: c("OU", "theta"), sigmas: c("OU", "sigma") or alphas: c("OU", "alpha") for OU and on sigmas only for WN: c("WN", "sigma") and BM: c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: c("OU", "root") and relax several assumptions at the same time c("OU", "root", "theta") 
 pars : list containing parameters depending on the chosen model. Elements of that lists must be vectors of size 1 or n, with n = number of regimes in the map.
 Each element of pars must be named with the corresponding parameter abbreviation.
 Parameters used in the different models:
 
 White Noise model (WN):
 \itemize{
- \item theta0: root value, abbreviated the0 (always length 1)
- \item sigma square: evolutionary rate, abbreviated sig
+ \item root: root value
+ \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in models
 }
-
+ 
 Brownian Motion model (BM):
 \itemize{
- \item theta0: root value, abbreviated the0 (always length 1)
- \item sigma square: evolutionary rate, abbreviated sig
+ \item root: root value
+ \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in models
 }
 
 Ornstein Uhlenbeck model (OU):
 \itemize{
- \item theta0: root value, abbreviated the0 (always length 1)
- \item sigma square: evolutionary rate, abbreviated sig
- \item theta: optimal value, abbreviated the
- \item alpha: strength of selection), abbreviated alp
+ \item root: root value. Only used if "root" is specified in models
+ \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in models
+ \item theta: optimal value, n regimes if "theta" is specified in models
+ \item alpha: strength of selection, n regimes if "alpha" is specified in models
 }
 }
 \examples{
@@ -68,11 +65,26 @@ phy <- pbtree(n = 50)
 Q <- cbind(c(-.002, .002), c(.002, -.002))
 phy <- sim.history(phy, Q = Q)
 # MBM and VOU
-jive_phy <- sim_jive(phy, phy$maps)
+jive_phy <- sim_jive(phy = phy, map = phy$maps)
 
 # MWN + sigma and VOU + theta + root + alpha
-jive_phy <- sim_jive(phy, phy$maps, "WN", "OU",  v.pars = list(the0 = 10, the = c(5,10), 
-sig = 0.1, alp = c(0.2, 0.8)), m.pars = list(the0 = 0, sig = c(0.1, 0.5)))
+jive_phy <- sim_jive(phy = phy, map = phy$maps, 
+   models = list(mean= c("WN", "sigma"), logvar = c("OU")),
+   pars = list(mean = c(root = 0, sigma_sq1 = 0.1, sigma_sq2 = 0.5), 
+              logvar = c(root = 10, theta1 = 5, theta2 = 10,
+                         sigma_sq = 0.1, alpha1 = 0.2, alpha2 = 0.8))
+ )
+
+
+# With a different model of intraspecific variation:
+unif.f <- function(n, pars){
+ runif(n, pars[1] - exp(pars[2])/2, pars[1] + exp(pars[2])/2)
+}
+
+unif_phy <- sim_jive(phy = phy, map = phy$maps, models = list(mid=c("BM"), logrange=c("OU")),
+ pars = list(mid = c(root = 0, sigma_sq = 0.1),
+             logrange = c(root = 2, theta = 1, sigma_sq = 0.1, alpha = 1)),
+ var.f = unif.f)
 
 }
 \author{

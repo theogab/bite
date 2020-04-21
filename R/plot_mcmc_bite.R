@@ -14,24 +14,23 @@
 #' @encoding UTF-8
 #' @examples
 #' 
-#' \dontrun{
 #'  ## Load test data
 #'  data(Anolis_traits)
 #'  data(Anolis_tree)
 #'  data(Anolis_map)
 #'  
 #'  ## Run a simple MCMC chain
-#'  my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-#'  mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
+#'  my.jive <- make_jive(Anolis_tree, Anolis_traits[-3],  model.priors = list(mean="BM", logvar="OU"))
+#'  bite_ex <- tempdir()
+#'  logfile <- sprintf("%s/my.jive_mcmc.log", bite_ex)
+#'  mcmc_bite(my.jive, log.file=logfile, sampling.freq=10, print.freq=10, ngen=1000) 
 #' 
 #'  ## import the results in R
-#'  logfile <- "my.jive_mcmc.log"
 #'  res <- read.csv(logfile, header = TRUE, sep = "\t")
 #'  
 #'  ## plot the results
 #'  plot_mcmc_bite(res, burnin = 0.2, variable = NA, cex.est = .7)
 #'  plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
-#' }
 
 plot_mcmc_bite <- function(mcmc.log, type = c("trace", "density"), burnin = 0, variable = NA,
                            label = NA, col = "#000000", cex.est = 1, bty = "n", kp.burn = FALSE,  ...){
@@ -54,7 +53,7 @@ plot_mcmc_bite <- function(mcmc.log, type = c("trace", "density"), burnin = 0, v
       }
       burn <- unlist(lapply(1:length(temp), function(t) mcmc.log[mcmc.log$temperature == temp[t],"iter"] <= burnin[t]))
     } else {
-      burn <- rep(F, nrow(mcmc.log))
+      burn <- rep(FALSE, nrow(mcmc.log))
     }
     
     x <- as.mcmc(mcmc.log[!burn,])
@@ -91,7 +90,9 @@ plot_mcmc_bite <- function(mcmc.log, type = c("trace", "density"), burnin = 0, v
   }
   
   if(!"temperature" %in% colnames(mcmc.log)) mcmc.log <- cbind(mcmc.log, temperature = rep(1, nrow(mcmc.log)))
-  
+
+  oldpar <- par(no.readonly = T)
+  on.exit(par(oldpar))  
   if(is.na(variable)){
     for(i in 1:ncol(mcmc.log)){
       var <- colnames(mcmc.log)[i]

@@ -15,7 +15,7 @@ hpfun(hpf = "Uniform", hp.pars = c(1, 2), ...)
 \item{...}{additional parameters that can be passed to a density function}
 }
 \value{
-A hyper-prior density function (function)
+A hyper-prior density function (of class "function")
 }
 \description{
 This function creates a hyper-prior density function. 

@@ -1,10 +1,10 @@
 ### Anolis data processing
-lib <- c("ape", "phytools", "phyloch","jive", "devtools")
+lib <- c("ape", "phytools", "phyloch","bite", "devtools")
 sapply(lib, library, character.only = T)
 
-tree <- read.nexus("data-raw/Anolis_tree.nex")
+tree <- read.nexus("data/data-raw/Anolis_tree.nex")
 tree$tip.label <- sprintf("A._%s", tree$tip.label)
-data <- read.table("data-raw/Anolis.txt", header = T, sep = "\t", stringsAsFactors = F)
+data <- read.table("data/data-raw/Anolis.txt", header = T, sep = "\t", stringsAsFactors = F)
 data[,1] <- gsub("A.", "A._", data[,1])
 
 Anolis_tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% unique(data[,1])])
@@ -16,7 +16,7 @@ for(i in 1:nrow(Anolis_tree$edge)){
 }
 Anolis_map <- Anolis_map * Anolis_tree$edge.length
 
-Anolis_traits <- data[,c(1,7)]
+Anolis_traits <- data[,c(1,7,6)]
 
 use_data(Anolis_tree, Anolis_map, Anolis_traits, overwrite = T)
 

@@ -1,21 +1,18 @@
-citHeader("To cite package 'jive' in publications use:")
+citHeader("To cite package 'bite' in publications use:")
 
-year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date, perl = TRUE)
-vers <- paste("R package version", meta$Version)
+year <- "in prep"
 
-citEntry(entry="Manual",
-         title = "jive: Linear and Nonlinear Mixed Effects Models",
-         author = personList(as.person("Jose Pinheiro"),
-                             as.person("Douglas Bates"),
-                             as.person("Saikat DebRoy"),
-                             as.person("Deepayan Sarkar"),
-                             person("R Core Team")),
+citEntry(entry="article",
+         title = "A multi-platform package for the analysis of intra- and interspecific trait evolution",
+         author = personList(as.person("Theo Gaboriau"),
+                             as.person("Fabio K. Mendes"),
+                             as.person("Simon Joly"),
+                             as.person("Daniele Silvestro"),
+                             as.person("Nicolas Salamin")),
          year = year,
-         note = vers,
-
+         journal = "Methods in Ecology and Evolution",
          textVersion =
-         paste("Jose Pinheiro, Douglas Bates, Saikat DebRoy,",
-               "Deepayan Sarkar and the R Core Team (",
+         paste("Theo Gaboriau, Fabio K. Mendes, Simon Joly, Daniele Silvestro, Nicolas Salamin (",
                year,
-               "). jive: Linear and Nonlinear Mixed Effects Models. ",
-               vers, ".", sep=""))
+               "). A multi-platform package for the analysis of intra- and interspecific trait evolution. ",
+               ".", sep=""))

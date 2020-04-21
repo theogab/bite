@@ -3,7 +3,7 @@ sim_pet <- function(phy, map, model, pars, ntips, bounds){
   # initialization
   norm_pars <- norm_func(model)
   x.val <- numeric(phy$Nnode + ntips)
-  x.val[ntips+1] <- pars[["the0"]]
+  x.val[ntips+1] <- pars["root"]
   names(x.val) <- c(phy$tip.label, as.character(ntips + 1:phy$Nnode))
   
   for(i in order(phy$edge[,1])){
@@ -31,16 +31,16 @@ sim_pet <- function(phy, map, model, pars, ntips, bounds){
 norm_func <- function(model){
   if(any(c("BM", "WN") %in% model)){
     out <- function(x, pars, t){
-      sig2 <- pars[["sig"]]
+      sig2 <- pars[grepl("sigma_sq", names(pars))]
       cbind(x, sig2*t)
     }
   }
   
   if("OU" %in% model){
     out <- function(x, pars, t){
-      the <- pars[["the"]]
-      sig2 <- pars[["sig"]]
-      alp <- pars[["alp"]]
+      the <- pars[grepl("theta", names(pars))]
+      sig2 <- pars[grepl("sigma_sq", names(pars))]
+      alp <- pars[grepl("alpha", names(pars))]
       cbind(the + (the - x) * exp(-alp * t), (sig2/(2*alp)) * (1 - exp(-2 * alp * t)))
     }
   }

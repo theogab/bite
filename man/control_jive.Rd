@@ -5,14 +5,18 @@
 \alias{control_jive}
 \title{Control tuning parameters of the jive algorithm}
 \usage{
-control_jive(jive, level = c("lik", "prior.mean", "prior.var"),
-  window.size = NULL, initial.values = NULL, proposals = NULL,
-  hyperprior = NULL, update.freq = NULL)
+control_jive(jive, level = c("lik", "prior"), intvar = NULL,
+  pars = NULL, window.size = NULL, initial.values = NULL,
+  proposals = NULL, hyperprior = NULL, update.freq = NULL)
 }
 \arguments{
 \item{jive}{a jive object obtained from \code{\link{make_jive}}}
 
-\item{level}{character taken in c("lik", "prior.mean", "prior.var") to specify on which level of the jive model, the control will operate (see details)}
+\item{level}{character taken in c("lik", "prior") to specify on which level of the jive model, the control will operate (see details)}
+
+\item{intvar}{character taken in names(jive$priors) giving the variable to be edited (see details)}
+
+\item{pars}{vector of character taken in names(jive$priors[[intvar]]$init) giving the names of the hyper parameter to be edited}
 
 \item{window.size}{initial window size for proposals during the mcmc algorithm. matrix or vector depending on the value of level and nreg (see details)}
 
@@ -25,17 +29,17 @@ control_jive(jive, level = c("lik", "prior.mean", "prior.var"),
 \item{update.freq}{numeric giving the frequency at which parameters should be updated.}
 }
 \value{
-A jive object to parse into mcmc_jive function (see \code{\link{make_jive}})
+A JIVE (of class "JIVE" and "list") object to parse into mcmc_bite function (see \code{\link{make_jive}})
 }
 \description{
-This function modifies a jive object to tune the jive mcmc algorithm. The output will be different regarding which level of the jive model the user wants to tune ($lik, $prior.mean, $prior.var). This function allows tuning of : initial window size for proposals, starting parameter value, proposal methods, Hyperpriors and update frequencies
+This function modifies a jive object to tune the jive mcmc algorithm. The output will be different regarding which level of the jive model the user wants to tune ($lik, $priors). This function allows tuning of : initial window size for proposals, starting parameter value, proposal methods, Hyperpriors and update frequencies
 }
 \details{
-If level == "lik" changes will be applied to the likelihood level of the algorithm
-window.size and initial.values must be entered as a matrix with 2 columns (respectively mean and variance) and a number of rows equal to the number of species. proposal must be a vector of size 2 (respectively mean and variance)
+If level == "lik" changes will be applied to the likelihood level of the algorithm. intvar is giving the variable on whic the changes will be operated
+window.size and initial.values must be entered as a vector of length equal to the number of species. proposal must be a character
 
-If level == "prior.mean" or "prior.var" changes will be applied to the prior level of the algorithm
-window.size and initial.values must be entered as a vector of variable size depending on the chosen evolutionary model. for OU, the window size and parameter values must be entered in the following order c(sv, sigma, theta0, theta1, ..., thetaN). for BM, BMM, WN and WNM, the window size and parameter values must be entered in the following order c(sigma1, ..., sigmaN, theta0), proposal must be a vector of size three for OU c(sv, sigma, thetas) and of size two for BM, BMM, WN and WNM c(sigmas, theta)
+If level == "prior" changes will be applied to the prior level of the algorithm. intvar is giving the variable on which te change will be operated.
+window.size and initial.values must be entered as a vector of size equal to the number of parameters or equal to the length of pars. 
 
 Note that if you want to change the tuning at the three levels of the algorithm, you will have to use the control_jive function three times
 
@@ -43,7 +47,7 @@ proposals
 Has to be one the following : "slidingWin" for Sliding window proposal unconstrained at maximum, "multiplierProposal", for multiplier proposal
 
 Hyperprior
-list of hyperpriror functions (see \code{\link{hpfun}}). User must provide a list of size 2 for BM, BMM, WN and WNM (sigmas, theta0) and of size 3 for OU and OUM (alpha, sigma, thetas)
+list of hyperpriror functions (see \code{\link{hpfun}}). User must provide a list of size equal to the number of parameters or equal to the length of pars
 }
 \examples{
 
@@ -51,21 +55,20 @@ data(Anolis_traits)
 data(Anolis_tree)
  
 ## Create a jive object
-my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
+my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3],
+model.priors = list(mean = "BM", logvar= c("OU", "root")))
 
-## change starting values for the species mean and variances
+## change starting values for the species means
 my.jive$lik$init #default values
-new.init <- cbind(rep(40,16), rep(20, 16)) 
-my.jive <- control_jive(my.jive, level = "lik", initial.values = new.init)
+new.init <- rep(40,16)
+my.jive <- control_jive(my.jive, level = "lik", intvar = "mean", initial.values = new.init)
 my.jive$lik$init #mean initial values changed
 
-\dontrun{
  ## change hyperpriors for prior.mean
  plot_hp(my.jive) #default values
  new.hprior <- list(hpfun("Gamma", hp.pars = c(2,6)), hpfun("Uniform", c(20,80)))
- my.jive <- control_jive(my.jive, level = "prior.mean", hyperprior = new.hprior)
+ my.jive <- control_jive(my.jive, level = "prior", intvar = "mean", hyperprior = new.hprior)
  plot_hp(my.jive) #mean initial values changed
-}
 }
 \author{
 Theo Gaboriau

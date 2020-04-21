@@ -8,35 +8,27 @@
 #' 
 #' White Noise model (WN):
 #' \itemize{
-#'  \item theta0: root value, abbreviated the0 (always length 1)
-#'  \item sigma square: evolutionary rate, abbreviated sig
+#'  \item root: root value
+#'  \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in models
 #' }
-#' 
+#'  
 #' Brownian Motion model (BM):
 #' \itemize{
-#'  \item theta0: root value, abbreviated the0 (always length 1)
-#'  \item sigma square: evolutionary rate, abbreviated sig
+#'  \item root: root value
+#'  \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in models
 #' }
 #' 
 #' Ornstein Uhlenbeck model (OU):
 #' \itemize{
-#'  \item theta0: root value, abbreviated the0 (always length 1)
-#'  \item sigma square: evolutionary rate, abbreviated sig
-#'  \item theta: optimal value, abbreviated the
-#'  \item alpha: strength of selection), abbreviated alp
-#' }
-#' 
-#' Independant Ornstein Uhlenbeck model (IOU):
-#' \itemize{
-#'  \item theta0: root value, abbreviated ou.the.0. Only used if "root" is specified in model.mean/var
-#'  \item sigma square: evolutionary rate, abbreviated ou.sig or ou.sig.1, ou.sig.2, ..., ou.sig.n for n regimes if "sigma" is specified in model.mean/var
-#'  \item optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes if "theta" is specified in model.mean/var
-#'  \item stationary variance (alpha/2*sigma_sq with alpha being the strength of selection), abbreviated ou.sv or ou.sv.1
+#'  \item root: root value. Only used if "root" is specified in models
+#'  \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in models
+#'  \item theta: optimal value, n regimes if "theta" is specified in models
+#'  \item alpha: strength of selection, n regimes if "alpha" is specified in models
 #' }
 #' 
 #' @param phy Phylogenetic tree 
 #' @param map list containing the mapping of regimes over each edge (see details). 
-#' @param model model specification for the simulation of trait mean evolution. Supported models are c("OU", "BM", "WN", "IOU")
+#' @param model model specification for the simulation of trait mean evolution. Supported models are c("OU", "BM", "WN")
 #' @param pars parameters used for the simulation of trait mean evolution (see details).
 #' @param sampling vector of size 2 giving the min and max number of individual per species
 #' @param bounds vector of size 2 giving the bounds of the mean
@@ -44,7 +36,7 @@
 #' @import ape
 #' @export
 #' @author Theo Gaboriau
-#' @return returns the simulated mean and variance of the trait for each tip
+#' @return returns a numeric vector giving the simulated mean value of the trait for each species of the tree.
 #' @examples
 #'
 #' library(phytools)
@@ -56,7 +48,7 @@
 #' 
 #' @encoding UTF-8
 
-sim_mte <- function(phy, map = NULL, model = "OU", pars = list(the0 = 2, the = 1, sig = 0.1, alp = 1),
+sim_mte <- function(phy, map = NULL, model = "OU", pars = c(root = 2, theta = 1, sigma_sq = 0.1, alpha = 1),
                      sampling = c(1, 7), bounds = c(-Inf, Inf)){
   
   ntips <- length(phy$tip.label)

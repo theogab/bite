@@ -6,9 +6,9 @@
 \title{plot input data from a jive object}
 \usage{
 plot_jive(jive, col.map = NULL, col = "lightgrey",
-  show.tip.label = T, show.models = T, direction = "rightwards",
-  trait.lab = "x", trait.lim = NULL, srt.label = 0, c.reg = NULL,
-  tip.color = "#000000", ...)
+  show.tip.label = TRUE, show.models = TRUE,
+  direction = "rightwards", trait.lab = "x", trait.lim = NULL,
+  srt.label = 0, c.reg = NULL, tip.color = "#000000", ...)
 }
 \arguments{
 \item{jive}{a jive object built with the function \code{\link{make_jive}}}
@@ -35,9 +35,6 @@ plot_jive(jive, col.map = NULL, col = "lightgrey",
 
 \item{...}{additional parameters that can be passed to \code{\link{vioplot}}}
 }
-\value{
-plot
-}
 \description{
 This function plots the phylogenetic tree, the trait data and the map used as an input for a jive analysis
 }
@@ -47,13 +44,14 @@ data(Anolis_tree)
 data(Anolis_map)
 
 colnames(Anolis_map) <- c("Hispaniola", "Cuba")
-my.jive <- make_jive(Anolis_tree, Anolis_traits, 
- model.var="OU", model.mean="BM")
+my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3], 
+ model.priors = list(m="BM", v = "OU"))
 par(cex.lab = .8, cex.axis = .8, las = 1, mgp = c(2,0.5,0))
 plot_jive(jive = my.jive, show.tip.label = TRUE, 
 trait.lab = "Snout to vent length (cm)", srt.label = 0, c.reg = 2)
-my.jive <- make_jive(Anolis_tree, Anolis_traits, Anolis_map,
- model.var=c("OU", "theta"), model.mean="BM")
+
+my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3], Anolis_map,
+ model.priors = list(m = "BM", v = c("OU", "theta")))
 par(cex.lab = .8, cex.axis = .8, las = 1, mgp = c(2,0.5,0))
 plot_jive(jive = my.jive, show.tip.label = TRUE, c.reg = 2,
  trait.lab = "Snout to vent length (cm)", srt.label = 70, direction = "upwards")

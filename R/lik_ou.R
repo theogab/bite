@@ -2,7 +2,7 @@
 
 # input: pars - c(alp1, alp2, ..., sig1, sig2,...,the1...theN, root), map, vcv and vector of size 4 giving the number of regime every parameter is undergoing for nr 
 # does: calculate log-likelihood; see Butler and King 2004, appendix eq. A8 and A9 and Beaulieu et al. 2012
-update_ou <- function(x, n, pars, Pi, par.n, data, map){
+lik_ou <- function(x, n, pars, Pi, par.n, data, map){
   
   
   alpha <- pars[Pi[1,]==1]
@@ -16,7 +16,7 @@ update_ou <- function(x, n, pars, Pi, par.n, data, map){
   beta <- map$beta ##Indicator mapping of the regimes on each epoch nepochs x nreg
   
   ## Weight matrix
-  var.reg <- -alpha * t((S[,2]-S[,1]) * beta) %*% gamma
+  var.reg <- -alpha * crossprod((S[,2]-S[,1]) * beta, gamma)
   W <- exp(var.reg) * (exp(alpha*t(S[,2]*beta))-exp(alpha*t(S[,1]*beta)))%*%gamma
   
   if(nrow(Pi) == 4){
@@ -31,15 +31,15 @@ update_ou <- function(x, n, pars, Pi, par.n, data, map){
   
   ## Variance Covariance Matrix (SIGMA)
   if(any(upd %in% c(1,2))){
-    V <- exp(t(matrix(0, ncol(gamma), ncol(gamma)) + colSums(var.reg)) + colSums(var.reg)) * (t(gamma)%*%(colSums((sigma/(2*alpha)*t(beta))*(exp(2*alpha*t(S[,2]*beta))-exp(2*alpha*t(S[,1]*beta))))*gamma))
+    V <- exp(t(matrix(0, ncol(gamma), ncol(gamma)) + colSums(var.reg)) + colSums(var.reg)) * crossprod(gamma,colSums((sigma/(2*alpha)*t(beta))*(exp(2*alpha*t(S[,2]*beta))-exp(2*alpha*t(S[,1]*beta))))*gamma)
     data$inv <- solve(V)
     data$det <- as.numeric(determinant(V)$modulus)
   }
   
   ## Log likelihood (multinormal)
-  loglik <- (-n/2 * log(2 * pi) - 1/2 * data$det - 1/2 * (t(x - data$E)%*%data$inv%*%(x - data$E)))
+  loglik <- -n/2 * log(2 * pi) - 1/2 * data$det - 1/2 * crossprod(x - data$E, data$inv)%*%(x - data$E)
   
-  if (is.na(loglik) | (class(loglik) == "try-error" )) {
+  if (is.na(loglik)) {
     return(list(loglik = -Inf, data = data))
   } else {
     return(list(loglik = loglik, data = data))

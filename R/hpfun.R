@@ -14,7 +14,7 @@
 #' @import stats
 #' @export
 #' @author Anna Kostikova and Daniele Silvestro
-#' @return A hyper-prior density function (function)
+#' @return A hyper-prior density function (of class "function")
 #' @examples
 #' my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
 #' 
@@ -38,7 +38,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
   #uniform
 	if (hpf == "Uniform"){
 		my.f <- function(x, ...){
-			hp <- sum(dunif(x, min=hp.pars[1], max=hp.pars[2], log=TRUE))
+			hp <- dunif(x, min=hp.pars[1], max=hp.pars[2], log=TRUE)
 			return(list(hp, list(hpf, hp.pars)))
 		}
 	}
@@ -46,7 +46,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
   #gamma
 	if (hpf == "Gamma"){
 		my.f <- function(x, ...){
-			hp <- sum(dgamma(x, shape=hp.pars[1], scale=hp.pars[2], log=TRUE))
+			hp <- dgamma(x, shape=hp.pars[1], scale=hp.pars[2], log=TRUE)
 			return(list(hp, list(hpf, hp.pars)))
 		}
 	}
@@ -54,7 +54,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
   #normal
 	if (hpf == "Normal"){
 		my.f <- function(x, ...){
-			hp <- sum(dnorm(x, mean=hp.pars[1], sd=hp.pars[2], log=TRUE))
+			hp <- dnorm(x, mean=hp.pars[1], sd=hp.pars[2], log=TRUE)
 			return(list(hp, list(hpf, hp.pars)))
 		}
 	}	
@@ -62,7 +62,7 @@ hpfun <-function(hpf="Uniform", hp.pars = c(1,2), ...){
   #log normal
   if (hpf == "Lognormal"){
     my.f <- function(x, ...){
-      hp <- sum(dlnorm(x, meanlog=hp.pars[1], sdlog=hp.pars[2], log=TRUE))
+      hp <- dlnorm(x, meanlog=hp.pars[1], sdlog=hp.pars[2], log=TRUE)
       return(list(hp, list(hpf, hp.pars)))
     }
   }	

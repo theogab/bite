@@ -14,7 +14,6 @@
 #' @param space only evaluated if group.pattern != NULL, numeric(2) indicating the space between groups and the space between members of the same groups
 #' @param mod.lab name of the models. If mod.lab = NULL the names of m.liks are used
 #' @param srt.lab,adj.lab rotation and justification of model names, see srt and adj in \code{\link[graphics]{par}}
-#' 
 #' @author Theo Gaboriau
 #' @export
 #' @encoding UTF-8
@@ -24,6 +23,7 @@
 #' names(m.liks) <- c("MBM-VBM", "MBM-VWN", "MBM-VOU", "MOU-VBM", "MOU-VWN", "MOU-VOU")
 #' 
 #' #Does not go well with default margin sizes
+#' oldmar <- par()$mar
 #' par(mar = c(5,1,4,6))
 #' plot_bf(m.liks)
 #' plot_bf(m.liks, thr = c(2,6), col.thr = c("#a2c5ac", "#ade1e5"),
@@ -33,13 +33,13 @@
 #' plot_bf(m.liks, group.pattern = c("VWN", "VOU", "VBM"), rank = TRUE)
 #' par(mar = c(6,5,1,2))
 #' plot_bf(m.liks, dir = "horizontal", srt.lab = -60, adj.lab = c(0,0.8))
-#' 
+#' par(mar = oldmar)
 
 plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c("#d32f23","#2e86ab","#000000"),
-                    col.thr = c("#a6e1fa"), ax.lab = "log(BF)", main = "", rank = T, dec = T,
+                    col.thr = c("#a6e1fa"), ax.lab = "log(BF)", main = "", rank = TRUE, dec = TRUE,
                     group.pattern = NULL, cex = c(1.2,1,1), mod.lab = NULL, srt.lab = 0, adj.lab = 0, space = c(1.2,0.8)){
   
-  BF <- 2*(max(m.liks, na.rm = T) - m.liks)
+  BF <- 2*(max(m.liks, na.rm = TRUE) - m.liks)
   
   if(dir[1] == "vertical"){
     plot(0, ylim = c(0,length(BF)), xlim = c(0,max(BF)*(11/10)), xaxt = "n", yaxt = "n", bty = "n", xlab = ax.lab, ylab = "", col = "#000000", main = main, type = "n")
@@ -48,7 +48,7 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
       polygon(c(low,low,thr[i],thr[i]), c(-length(BF)/10, length(BF)+1, length(BF)+1, -length(BF)/10), border = NA, col = col.thr[i])
     }
     
-    a <- axis(1, labels = F, tick = F)
+    a <- axis(1, labels = FALSE, tick = FALSE)
     for(k in a){
       lines(c(k,k),c(-length(BF)/10,length(BF)+1), col = ifelse(k == 0, "#000000", "#cecece"), lty = ifelse(k == 0, 2,1), lwd = par()$lwd*ifelse(k == 0, 2,1))
     }
@@ -68,7 +68,7 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
     }
     
     if(rank){
-      it <- unlist(lapply(groups, function(x) x[order(BF[x], decreasing = T)]))
+      it <- unlist(lapply(groups, function(x) x[order(BF[x], decreasing = TRUE)]))
       if(!dec){
         y <- rev(y)
       }
@@ -91,7 +91,7 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
       ## Plot legend
       if(is.null(mod.lab)) lab.k <- names(BF)[it[i]]
       else lab.k <- mod.lab[it[i]]
-      text(x = par()$usr[2] + max(BF)*1/100, y = y[i], labels = lab.k, las = 1, cex = cex.k, col = col.k, xpd = T, pos = 4, srt = srt.lab)
+      text(x = par()$usr[2] + max(BF)*1/100, y = y[i], labels = lab.k, las = 1, cex = cex.k, col = col.k, xpd = TRUE, pos = 4, srt = srt.lab)
     }
   } else if(dir[1] == "horizontal") {
     
@@ -101,7 +101,7 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
       polygon(c(-length(BF)/10, length(BF)+1, length(BF)+1, -length(BF)/10), c(low,low,-thr[i],-thr[i]), border = NA, col = col.thr[i])
     }
 
-    a <- axis(2, labels = F, tick = F)
+    a <- axis(2, labels = FALSE, tick = FALSE)
     for(k in a){
       lines(c(-length(BF)/10,length(BF)+1),c(k,k), col = ifelse(k == 0, "#000000", "#cecece"), lty = ifelse(k == 0, 2,1), lwd = par()$lwd*ifelse(k == 0, 2,1))
     }
@@ -121,7 +121,7 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
     }
     
     if(rank){
-      it <- unlist(lapply(groups, function(x) x[order(BF[x], decreasing = T)]))
+      it <- unlist(lapply(groups, function(x) x[order(BF[x], decreasing = TRUE)]))
       if(dec){
         x <- rev(x)
       }
@@ -144,7 +144,7 @@ plot_bf <- function(m.liks, thr = 2, dir = c("vertical", "horizontal"), col = c(
       ## Plot legend
       if(is.null(mod.lab)) lab.k <- names(BF)[it[i]]
       else lab.k <- mod.lab[it[i]]
-      text(x = x[i], y = par()$usr[3] - max(BF)/100, labels = lab.k, cex = cex.k, col = col.k, xpd = T, srt = srt.lab, adj = adj.lab)
+      text(x = x[i], y = par()$usr[3] - max(BF)/100, labels = lab.k, cex = cex.k, col = col.k, xpd = TRUE, srt = srt.lab, adj = adj.lab)
     }
   } else {stop(sprintf("The direction '%s' is not supported", dir[1]))}
   

@@ -15,7 +15,6 @@
 #' @export
 #' @import phytools ape vioplot sm
 #' @author Theo Gaboriau
-#' @return plot 
 #' @encoding UTF-8
 #' @examples
 #' data(Anolis_traits)
@@ -23,13 +22,14 @@
 #' data(Anolis_map)
 #' 
 #' colnames(Anolis_map) <- c("Hispaniola", "Cuba")
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, 
-#'  model.var="OU", model.mean="BM")
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3], 
+#'  model.priors = list(m="BM", v = "OU"))
 #' par(cex.lab = .8, cex.axis = .8, las = 1, mgp = c(2,0.5,0))
 #' plot_jive(jive = my.jive, show.tip.label = TRUE, 
 #' trait.lab = "Snout to vent length (cm)", srt.label = 0, c.reg = 2)
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, Anolis_map,
-#'  model.var=c("OU", "theta"), model.mean="BM")
+#'
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3], Anolis_map,
+#'  model.priors = list(m = "BM", v = c("OU", "theta")))
 #' par(cex.lab = .8, cex.axis = .8, las = 1, mgp = c(2,0.5,0))
 #' plot_jive(jive = my.jive, show.tip.label = TRUE, c.reg = 2,
 #'  trait.lab = "Snout to vent length (cm)", srt.label = 70, direction = "upwards")
@@ -37,13 +37,15 @@
 
 
 
-plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = T, show.models = T, direction = "rightwards",
+plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = TRUE, show.models = TRUE, direction = "rightwards",
                       trait.lab = "x", trait.lim = NULL, srt.label = 0, c.reg = NULL, tip.color = "#000000", ...){
   
   tree <- jive$data$tree
   map <- jive$data$map
   traits <- jive$data$traits
-  
+  oldpar <- par(no.readonly = T)
+  on.exit(par(oldpar))
+
   st <- ncol(map$beta)
   tree <- map_to_simmap(tree, map)
   if(is.null(col.map)){
@@ -56,23 +58,19 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
   if(st > 1) names(col.map) <- colnames(tree$mapped.edge)
   
   if(show.models){
-    mm <- strsplit(jive$prior.mean$name, " ")[[1]]
-    mv <- strsplit(jive$prior.var$name, " ")[[1]]
-    ## Convert pars name into expressions to plot mathematical notations
-    pars.m <- sapply(strsplit(names(jive$prior.mean$hprior), "[_]"), function(pr){
-      if(pr[1] == "sigma^2") out <- ifelse("sigma" %in% mm, sprintf("sigma[m%s]^2", pr[2]), "sigma[m]^2")
-      if(pr[1] == "alpha") out <- ifelse("alpha" %in% mm, sprintf("alpha[m%1$s]", pr[2]), "alpha[m]")
-      if(pr[1] == "theta") out <- ifelse("theta" %in% mm, sprintf("theta[m%s]", pr[2]), "theta[m]")
-      if(pr[1] == "root") out <- "theta[m0]"
-      return(out)
-    })
-    pars.v <- sapply(strsplit(names(jive$prior.var$hprior), "[_]"), function(pr){
-      if(pr[1] == "sigma^2") out <- ifelse("sigma" %in% mv, sprintf("sigma[v%s]^2", pr[2]), "sigma[v]^2")
-      if(pr[1] == "alpha") out <- ifelse("alpha" %in% mv, sprintf("alpha[v%1$s]", pr[2]), "alpha[v]")
-      if(pr[1] == "theta") out <- ifelse("theta" %in% mv, sprintf("theta[v%s]", pr[2]), "theta[v]")
-      if(pr[1] == "root") out <- "theta[v0]"
-      return(out)
-    })
+    pars <- list()
+    for(p in 1:length(jive$priors)){
+      name <- strsplit(jive$priors[[p]]$name, " ")[[1]]
+      ## Convert pars name into expressions to plot mathematical notations
+      pars[[p]] <- sapply(strsplit(names(jive$priors[[p]]$hprior), "[_]"), function(pr){
+        if(pr[1] == "sigma") out <- ifelse("sigma" %in% name, sprintf("sigma[%s%s]^2", names(jive$priors)[p], pr[3]), sprintf("sigma[%s]^2", names(jive$priors)[p]))
+        if(pr[1] == "alpha") out <- ifelse("alpha" %in% name, sprintf("alpha[%s%1$s]", names(jive$priors)[p], pr[2]), sprintf("alpha[%s]", names(jive$priors)[p]))
+        if(pr[1] == "theta") out <- ifelse("theta" %in% name, sprintf("theta[%s%s]", names(jive$priors)[p], pr[2]), sprintf("theta[%s]", names(jive$priors)[p]))
+        if(pr[1] == "root") out <- sprintf("theta[%s0]", names(jive$priors)[p])
+        return(out)
+      })
+    }
+    names(pars) <- names(jive$priors)
   }
 
   if(direction == "upwards"){
@@ -97,25 +95,26 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
              col = col.map, xpd = NA, cex = 1, adj = 0)
       }
     } else {
-      plot(tree, direction = "upwards", y.lim = ylim, mar = par()$mar, edge.color = col.map, show.tip.label = F)
+      plot(tree, direction = "upwards", y.lim = ylim, mar = par()$mar, edge.color = col.map, show.tip.label = FALSE)
     }
     
     
     if(show.models){
-      mtext(eval(parse(text = paste("substitute(a~~group('{', list(", paste(pars.m, collapse = ","),"), '}'), list(a=sprintf('Mean prior model: %s' , mm[1])))"))), side = 1, line = 0, at = 0, adj = 0, cex = 0.6)
-      mtext(eval(parse(text = paste("substitute(a~~group('{', list(", paste(pars.v, collapse = ","),"), '}'), list(a=sprintf('LogVariance prior model: %s' , mv[1])))"))), side = 1, line = 1, at = 0, adj = 0, cex = 0.6)
+      for(p in 1:length(jive$priors)){
+        mtext(eval(parse(text = paste("substitute(a~~group('{', list(", paste(pars[[p]], collapse = ","),"), '}'), list(a=sprintf('%s prior model: %s' ,names(jive$priors)[p], jive$priors[[p]]$name)))"))), side = 1, line = p - 1, at = 0, adj = 0, cex = 0.6)  
+      }
     }
     
     init.usr <- par()$usr
     init.mar <- par()$mar
     par(new = TRUE, fig = c(0,1,ifelse(rep(show.tip.label,2),c(0.35,0.7),c(0.5,1))), bty = "n", xpd = NA)
-    plot(c(1,length(tree$tip.label)), range(unlist(traits), na.rm = T), type = "n", xaxt = "n", ylab = trait.lab,
-         xlab = "", ylim = ifelse(rep(!is.null(trait.lim),2), trait.lim, range(unlist(traits),na.rm = T)))
+    plot(c(1,length(tree$tip.label)), range(unlist(traits), na.rm = TRUE), type = "n", xaxt = "n", ylab = trait.lab,
+         xlab = "", ylim = ifelse(rep(!is.null(trait.lim),2), trait.lim, range(unlist(traits),na.rm = TRUE)))
     pp <- get("last_plot.phylo", envir = .PlotPhyloEnv)
     
     for(i in 1:length(tree$tip.label)){
       sp <- tree$tip.label[i]
-      vioplot(traits[[sp]][!is.na(traits[[sp]])], add = T, at = pp$xx[i], col = col, ...)
+      vioplot(traits[[sp]][!is.na(traits[[sp]])], add = TRUE, at = pp$xx[i], col = col, ...)
     } 
     
     par(fig=c(0,1,0,1), usr = init.usr, mar = init.mar)
@@ -148,28 +147,29 @@ plot_jive <- function(jive, col.map = NULL, col = "lightgrey", show.tip.label = 
              col = col.map, xpd = NA, cex = 1, adj = 0)
       }
     } else {
-      plot(tree, direction = "rightwards", x.lim = xlim, mar = par()$mar, edge.color = col.map, show.tip.label = F)
+      plot(tree, direction = "rightwards", x.lim = xlim, mar = par()$mar, edge.color = col.map, show.tip.label = FALSE)
     }
     
     if(show.models){
-      mtext(eval(parse(text = paste("substitute(a~~group('{', list(", paste(pars.m, collapse = ","),"), '}'), list(a=sprintf('Mean prior model: %s' , mm[1])))"))), line = 2, at = 0, adj = 0, cex = 0.6)
-      mtext(eval(parse(text = paste("substitute(a~~group('{', list(", paste(pars.v, collapse = ","),"), '}'), list(a=sprintf('LogVariance prior model: %s' , mv[1])))"))), line = 1, at = 0, adj = 0, cex = 0.6)
+      for(p in 1:length(jive$priors)){
+        mtext(eval(parse(text = paste("substitute(a~~group('{', list(", paste(pars[[p]], collapse = ","),"), '}'), list(a=sprintf('%s prior model: %s' ,names(jive$priors)[p], jive$priors[[p]]$name)))"))), line = p, at = 0, adj = 0, cex = 0.6)  
+      }
     }
     
     init.usr <- par()$usr
     init.mar <- par()$mar
     par(new = TRUE, fig = c(ifelse(rep(show.tip.label,2),c(0.35,0.7),c(0.5,1)),0,1), bty = "n", xpd = NA)
-    plot(range(unlist(traits), na.rm = T), c(1,length(tree$tip.label)), type = "n", yaxt = "n", xlab = trait.lab,
-         ylab = "", xlim = ifelse(rep(!is.null(trait.lim),2), trait.lim, range(unlist(traits),na.rm = T)))
+    plot(range(unlist(traits), na.rm = TRUE), c(1,length(tree$tip.label)), type = "n", yaxt = "n", xlab = trait.lab,
+         ylab = "", xlim = ifelse(rep(!is.null(trait.lim),2), trait.lim, range(unlist(traits),na.rm = TRUE)))
     
     pp <- get("last_plot.phylo", envir = .PlotPhyloEnv)
     
     for(i in 1:length(tree$tip.label)){
       sp <- tree$tip.label[i]
-      vioplot(traits[[sp]][!is.na(traits[[sp]])], add = T, at = pp$yy[i], horizontal = T, col = col, ...)
+      vioplot(traits[[sp]][!is.na(traits[[sp]])], add = TRUE, at = pp$yy[i], horizontal = TRUE, col = col, ...)
     } 
     
-    par(new = T, fig=c(0,1,0,1), usr = init.usr, mar = init.mar)
+    par(new = TRUE, fig=c(0,1,0,1), usr = init.usr, mar = init.mar)
     if(show.tip.label){
       text(y = pp$yy[1:length(tree$tip.label)], x = 0.7*par()$usr[2], labels = gsub("_", " ", tree$tip.label), srt = srt.label, adj = 0, xpd = NA)
     }

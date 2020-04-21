@@ -31,24 +31,23 @@ This function plots the trace and/or density of each mcmc sample.
 }
 \examples{
 
-\dontrun{
  ## Load test data
  data(Anolis_traits)
  data(Anolis_tree)
  data(Anolis_map)
  
  ## Run a simple MCMC chain
- my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
- mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=10, print.freq=100, ngen=50000) 
+ my.jive <- make_jive(Anolis_tree, Anolis_traits[-3],  model.priors = list(mean="BM", logvar="OU"))
+ bite_ex <- tempdir()
+ logfile <- sprintf("\%s/my.jive_mcmc.log", bite_ex)
+ mcmc_bite(my.jive, log.file=logfile, sampling.freq=10, print.freq=10, ngen=1000) 
 
  ## import the results in R
- logfile <- "my.jive_mcmc.log"
  res <- read.csv(logfile, header = TRUE, sep = "\\t")
  
  ## plot the results
  plot_mcmc_bite(res, burnin = 0.2, variable = NA, cex.est = .7)
  plot_mcmc_bite(res, burnin = 0.2, variable = "prior.mean", cex.est = .7)
-}
 }
 \author{
 Theo Gaboriau

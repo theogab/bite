@@ -17,9 +17,6 @@ plot_hp(hpf, col = c("#bfdbf7", "#f49e4c"), border = c("#2e86ab",
 
 \item{bty, ...}{additional parameters that can be passed to a density function and  \code{\link[graphics]{par}}}
 }
-\value{
-plot
-}
 \description{
 This function plots a hyper-prior density function. 
 Currently supported density function are Uniform, Gamma, Normal, Loggamma and Lognormal. 
@@ -33,7 +30,6 @@ must be a vector of two values and cannot be left empty.
 }
 \examples{
 
-\dontrun{
  ## Load test data
  data(Anolis_traits)
  data(Anolis_tree)
@@ -41,9 +37,8 @@ must be a vector of two values and cannot be left empty.
  my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
  plot_hp(my.hp)
  
- my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
+ my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3], model.priors = list(mean="BM", logvar="OU"))
  plot_hp(my.jive, cex.main = .8)
-}
 }
 \author{
 Theo Gaboriau

@@ -16,7 +16,7 @@ mcmc_bite(model, log.file = "bite_mcmc.log", sampling.freq = 1000,
 
 \item{sampling.freq}{sampling frequency of the MCMC chain (how often chain will be saved into output file}
 
-\item{print.freq}{printing frequency of the MCMC chain (how often chain will be printed in the R console)}
+\item{print.freq}{printing frequency of the MCMC chain (how often chain will be printed in the R console). Setting it to 0 will suppress every printed message}
 
 \item{ncat}{number of classes for thermodynamic integration (see details)}
 
@@ -27,7 +27,7 @@ mcmc_bite(model, log.file = "bite_mcmc.log", sampling.freq = 1000,
 \item{burnin}{a burning phase of MCMC chain (has to be specified for thermodynamic integration)}
 }
 \value{
-none
+Generates a log file in the users filespace at the path defined by log.file
 }
 \description{
 Implements Markov chain Monte Carlo sampling for trait evolution models
@@ -40,7 +40,6 @@ setting ncat to values > 1. The recommended ncat for TI is 10. When setting ncat
 As a rule of thumb set burning to 1/10 fraction of ngen.
 }
 \examples{
-\dontrun{
  ## Load test data
  data(Anolis_traits)
  data(Anolis_tree)
@@ -48,20 +47,17 @@ As a rule of thumb set burning to 1/10 fraction of ngen.
  
  ## Run a simple MCMC chain
  set.seed(300)
- my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
- model.var=c("OU", "root", "theta", "alpha"), model.mean="BM")
- mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
- sampling.freq=10, print.freq=100, ngen=5000) 
-
- my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
- model.var=c("OU", "root", "theta"), model.mean="BM")
- mcmc_bite(my.jive, log.file="my.jive_MCMC.log",
-  sampling.freq=10, print.freq=100, ngen=5000) 
+ my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits[,-3],
+  model.priors = list(mean = "BM", logvar= c("OU", "root")))
+ bite_ex <- tempdir()
+ logfile <- sprintf("\%s/my.jive_mcmc.log", bite_ex)
+ mcmc_bite(model = my.jive, log.file=logfile,
+ sampling.freq=10, print.freq=0, ngen=1000) 
   
  ## Run an MCMC chain with thermodynamic integration
- mcmc_bite(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, 
-  sampling.freq=10, print.freq=100, ngen=5000, burnin=500) 
-}
+ logfile <- sprintf("\%s/my.jive_mcmc_TI.log", bite_ex)
+ mcmc_bite(my.jive, log.file=logfile, ncat=10, 
+  sampling.freq=10, print.freq=100, ngen=1000, burnin=10) 
 }
 \author{
 Theo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly

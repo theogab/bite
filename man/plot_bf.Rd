@@ -7,7 +7,7 @@
 \usage{
 plot_bf(m.liks, thr = 2, dir = c("vertical", "horizontal"),
   col = c("#d32f23", "#2e86ab", "#000000"), col.thr = c("#a6e1fa"),
-  ax.lab = "log(BF)", main = "", rank = T, dec = T,
+  ax.lab = "log(BF)", main = "", rank = TRUE, dec = TRUE,
   group.pattern = NULL, cex = c(1.2, 1, 1), mod.lab = NULL,
   srt.lab = 0, adj.lab = 0, space = c(1.2, 0.8))
 }
@@ -49,6 +49,7 @@ m.liks <- c(20 ,33, 56, 51, 55, 12)
 names(m.liks) <- c("MBM-VBM", "MBM-VWN", "MBM-VOU", "MOU-VBM", "MOU-VWN", "MOU-VOU")
 
 #Does not go well with default margin sizes
+oldmar <- par()$mar
 par(mar = c(5,1,4,6))
 plot_bf(m.liks)
 plot_bf(m.liks, thr = c(2,6), col.thr = c("#a2c5ac", "#ade1e5"),
@@ -58,7 +59,7 @@ plot_bf(m.liks, group.pattern = "MOU", rank = TRUE)
 plot_bf(m.liks, group.pattern = c("VWN", "VOU", "VBM"), rank = TRUE)
 par(mar = c(6,5,1,2))
 plot_bf(m.liks, dir = "horizontal", srt.lab = -60, adj.lab = c(0,0.8))
-
+par(mar = oldmar)
 }
 \author{
 Theo Gaboriau

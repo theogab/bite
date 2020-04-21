@@ -4,13 +4,13 @@
 \alias{plot_post_beast}
 \title{Plot posterior probabilities from beast}
 \usage{
-plot_post_beast(mcc, post = T, post.var = "rate",
+plot_post_beast(mcc, post = TRUE, post.var = "rate",
   post.cex = par("cex"), post.col = "#ee964b", post.alpha = 1,
-  post.border = "#000000", post.lwd = par("lwd"), leg = T,
+  post.border = "#000000", post.lwd = par("lwd"), leg = TRUE,
   leg.frac = c(0.2, 0.5), leg.lab = "rate", leg.cex = par("cex")/2,
-  sup = T, sup.var = "posterior", sup.cex = par("cex")/2, bars = F,
-  bar.var = "height_95\%_HPD", bar.col = "#2e86ab", bar.alpha = 0.8,
-  bar.thc = par("cex")/10, bar.border = "#000000",
+  sup = TRUE, sup.var = "posterior", sup.cex = par("cex")/2,
+  bars = FALSE, bar.var = "height_95\%_HPD", bar.col = "#2e86ab",
+  bar.alpha = 0.8, bar.thc = par("cex")/10, bar.border = "#000000",
   bar.lwd = par("lwd"), ...)
 }
 \arguments{
@@ -69,7 +69,7 @@ The default plots paramenter value under multiple regimes estimated with the bea
 Options are included to plot node support and age bars.
 }
 \details{
-leg = T changes the proportion of the plot.window taken by the plot. Use \code{par(fig = c(0,1,0,1))} to restore default parameters
+leg = TRUE changes the proportion of the plot.window taken by the plot. Use \code{par(fig = c(0,1,0,1))} to restore default parameters
 }
 \author{
 Theo Gaboriau

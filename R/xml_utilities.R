@@ -30,7 +30,7 @@ prior_xml <- function(x, jive ,vari = c("Mean", "LogVar"), treeid, spnames){
   ## Find where to put Jive priors
   dist <- xml_find_first(x, "//distribution[@id='prior' and @spec='util.CompoundDistribution']")
   model <- jive$name
-  nreg <- as.numeric(gsub(".*?\\[(.*?)\\].*", "\\1", model, perl = T))
+  nreg <- as.numeric(gsub(".*?\\[(.*?)\\].*", "\\1", model, perl = TRUE))
 
   ## prior node
   if(grepl("WN", model)){

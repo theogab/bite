@@ -1,12 +1,12 @@
 #' Anolis snout to vent length
 #' 
 #' @details This data has been extracted from the study of Munoz et al., 2014
-#' It contains individual observations of Anolis lizards' snout to vent length (mm) from Hispaniola and Cuba islands
+#' It contains individual observations of Anolis lizards' snout to vent length (mm) and elevation (m) from Hispaniola and Cuba islands in a three columns data.frame with species names (species) and snout to vent length (svl) and elevation of individual observations.
 #'
 #' @name Anolis_traits
 #' @docType data
 #' @usage data(Anolis_traits)
-#' @format A two columns data.frame with species names (species) and snout to vent length (svl) of individual observations
+#' @format A three columns data.frame with species names (species) and snout to vent length (svl) and elevation of individual observations
 #' @author Martha Munoz, Johanna Wegener and Adam Algar.
 #' @references Munoz, M. M., Wegener, J. E., and Algar, A. C. (2014).
 #'  Untangling intra- and interspecific effects on body size clines reveals divergent processes structuring convergent patterns in Anolis lizards.

@@ -11,46 +11,43 @@
 #' 
 #' map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
 #' 
-#' variance and mean evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas: model.mean/var = c("OU", "theta"), sigmas: model.mean/var = c("OU", "sigma") or stationary variances: model.mean/var = c("OU", "sv") for OU and on sigmas only for WN: model.mean/var = c("WN", "sigma") and BM: model.mean/var = c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: model.mean/var = c("OU", "root") and relax several assumptions at the same tme model.mean/var = c("OU", "root", "theta") 
-#' Species-specific distributions are modeled as multivariate normal distributions
+#' trait evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas: c("OU", "theta"), sigmas: c("OU", "sigma") or alphas: c("OU", "alpha") for OU and on sigmas only for WN: c("WN", "sigma") and BM: c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: c("OU", "root") and relax several assumptions at the same time c("OU", "root", "theta") 
+#' Species-specific distributions are modeled as multivariate normal distributions. User defined functions of trait evolution can be used in model.priors. The function should be of the form: function(tree, x, pars) and return a loglikelihood value with "tree" being the phylogenetic tree, x being a vector of trait value of size equal to the number of species and ordered as tree$tip.label and pars should be a vector of model parameters (see examples)
 #' 
-#' control is a list containig tuning parameters acting at different levels of the MCMC algorithm ($lik for likelihood level, $prior.mean for mean prior level and $prior.var for variance prior level). Inside each level ($lik, $prior.mean, $prior.var), the user can modify the default value of initial parameter value ($pv), initial window size ($ws), proposal methods ($prop) for $lik, $prior.mean and $prior.var and hyperpriors ($hprior) for $prior.mean and $prior.var. 
-#' The \code{\link{control_jive}} function provides an easy way to modify control parameters (see examples) 
-#' 
-#' parameters used in the different models:
+#' parameters used in the different pre-defined models:
 #' 
 #' White Noise model (WN):
 #' \itemize{
 #'  \item root: root value
-#'  \item sigma^2: evolutionary rate,n regimes if "sigma" is specified in model.mean/var
+#'  \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in model.priors
 #' }
 #'  
 #' Brownian Motion model (BM):
 #' \itemize{
 #'  \item root: root value
-#'  \item sigma^2: evolutionary rate,n regimes if "sigma" is specified in model.mean/var
+#'  \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in model.priors
 #' }
 #'
 #' Ornstein Uhlenbeck model (OU):
 #' \itemize{
-#'  \item root: root value. Only used if "root" is specified in model.mean/var
-#'  \item sigma^2: evolutionary rate, n regimes if "sigma" is specified in model.mean/var
-#'  \item theta: optimal value, n regimes if "theta" is specified in model.mean/var
-#'  \item alpha: strength of selection, n regimes if "alpha" is specified in model.mean/var
+#'  \item root: root value. Only used if "root" is specified in model.priors
+#'  \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in model.priors
+#'  \item theta: optimal value, n regimes if "theta" is specified in model.priors
+#'  \item alpha: strength of selection, n regimes if "alpha" is specified in model.priors
 #' }
 #' 
 #' @param phy phylogenetic tree provided as either a simmap or a phylo object
 #' @param traits matrix of traits value for every species of phy (see details)
 #' @param map matrix mapping regimes on every edge of phy (see details) 
-#' @param model.mean model specification for trait mean evolution. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed (see details)				
-#' @param model.var model specification for trait variance evolution. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed (see details)
+#' @param model.priors list giving model specification for trait evolution preferably given along with variable names. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed and can also enter a function (see details)				
 #' @param scale boolean indicating whether the tree should be scaled to unit length for the model fitting
-#' @param control list to control tuning parameters of the MCMC algorithm (see details)
 #' @param nreg integer giving the number of regimes for a Beast analysis. Only evaluated if phy == NULL
+#' @param lik.f alternative likelihood function of the form function(pars.lik, traits, counts) to model intraspecific variation (see details)
+#' @param init matrix giving initial values for parameters with the variables in rows and the species in columns (see examples)
 #' @export
 #' @import ape stats
 #' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro and Simon Joly
-#' @return A list of functions and tuning parameters to parse into \code{\link{mcmc_bite}} function.
+#' @return A list of functions and tuning parameters (of class "JIVE" and "list") representing the plan of the hierarchical model to parse into \code{\link{mcmc_bite}}.
 #' @seealso \code{\link{xml_bite}}, \code{\link{mcmc_bite}} 
 #' @examples
 #' 
@@ -60,12 +57,12 @@
 #' data(Anolis_map)
 #' 
 #' ## JIVE object to run jive with single regimes
-#' my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits,
-#'  model.mean="BM", model.var= c("OU", "root"))
+#' my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits[,-3],
+#'  model.priors = list(mean = "BM", logvar= c("OU", "root")))
 #'
 #' ## JIVE object to run jive with multiple regimes
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
-#'  model.mean="BM", model.var=c("OU", "theta", "alpha"))
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3], map = Anolis_map,
+#'  model.priors =list(mean = "BM", logvar = c("OU", "theta", "alpha")))
 #' 
 #' ## JIVE object to run jive from an ancestral state reconstruction (stochastic mapping)
 #' # First generate simmap object
@@ -78,12 +75,64 @@
 #' mapped_tree=make.simmap(Anolis_tree, trait, model='SYM')
 #' plotSimmap(mapped_tree)
 #' 
-#' my.jive <- make_jive(mapped_tree, Anolis_traits, model.mean=c("OU"), model.var=c("OU", "theta"))
+#' my.jive <- make_jive(mapped_tree, Anolis_traits[,-3]
+#' , model.priors = list(mean = "OU" , logvar = c("OU", "theta")))
+#'  
+#'  ## Jive object using another model of trait evolution (EB from mvMORPH)
+#'  library(mvMORPH)
+#'  early_burst <- function(tree, x, pars){
+#'   suppressMessages(mvEB(tree, x, method = "inverse", optimization = "fixed", 
+#'    echo = FALSE)$llik(pars, root.mle = FALSE))
+#'  }
+#'  
+#'  my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits[,-3]
+#' , model.priors = list(mean = early_burst , logvar = c("OU", "root")))
+#'  initial.values <- c(0.1, 1, 50)
+#'  window.size <- c(0.1, 0.2, 1)
+#'  proposals <- list("slidingWin", "slidingWin", "slidingWin")
+#'  hyperprior <- list(hpfun("Gamma", hp.pars = c(1.1, 5)), hpfun("Gamma", hp.pars = c(3, 5)),
+#'                      hpfun("Uniform", hp.pars = c(30, 80)))
+#'  names(initial.values) <- names(window.size) <- c("sigma_sq", "beta", "root")
+#'  names(proposals) <- names(hyperprior) <- c("sigma_sq", "beta", "root")
+#'  my.jive <- control_jive(jive = my.jive, level = "prior", intvar = "mean",
+#'   pars = names(initial.values), window.size = window.size,
+#'   initial.values = initial.values, proposals = proposals, hyperprior = hyperprior)
+#'  
+#'  ## Jive object using another model of intraspecific variation (uniform model)
+#'  lik_unif <- function(pars.lik, traits, counts){
+#'    if(!"mid" %in% names(pars.lik)) stop("'mid' parameter cannot be found in model.priors")
+#'    if(!"logrange" %in% names(pars.lik)){
+#'     stop("'logrange' parameter cannot be found in model.priors")
+#'    }
+#'
+#'    min.sp <- pars.lik$mid - 1/2*exp(pars.lik$logrange)
+#'    max.sp <- pars.lik$mid + 1/2*exp(pars.lik$logrange)
+#'    
+#'    log.lik.U <- sapply(1:length(traits), function(i){
+#'    sum(dunif(traits[[i]], min.sp[i], max.sp[i], log = TRUE))
+#'    })
+#'    
+#'    if (is.na(sum(log.lik.U))) {
+#'      return(-Inf)
+#'    } else {
+#'      return(log.lik.U)
+#'    }
+#'  }
+#'  
+#'  init_unif <- sapply(Anolis_tree$tip.label, function(sp){
+#'   logrange <- log(diff(range(Anolis_traits[Anolis_traits[,1] == sp, 3])) + 2)
+#'   mid <- mean(range(Anolis_traits[Anolis_traits[,1] == sp, 3]))
+#'   c(mid = mid, logrange = logrange)
+#'  })
+#'  
+#'  my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits[,-2],  
+#'  model.priors = list(mid = "BM" , logrange = c("OU", "root")),
+#'  lik.f = lik_unif, init = init_unif)
 #'  
 #' @encoding UTF-8
 
-make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.var=c("OU"),
-                      scale = F, control = list(), nreg = NULL){
+make_jive <- function(phy = NULL, traits, map = NULL, model.priors = list(mean = "BM", logvar = "OU"), scale = FALSE,
+                      nreg = NULL, lik.f = NULL, init = NULL){
   
   ### dealing with the tree
   no.tree <- is.null(phy)
@@ -108,7 +157,7 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
     } else {
       NA  
     }
-  }, USE.NAMES = T, simplify = F) 
+  }, USE.NAMES = TRUE, simplify = FALSE) 
   
   ### validity test ###
   missing <- character(0)
@@ -118,7 +167,26 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
     } 
   }
   if(length(missing) > 0){
-    warning(sprintf("species: %s can not be found in traits. Check matching between species names in phy and traits", paste0(missing, collapse = ", ")))
+    warning(sprintf("species: %s can not be found in traits. Check matching between species names in phy and traits\nIgnore if you have no data for %s", paste0(missing, collapse = ", ")))
+  }
+  
+  if(is.null(names(model.priors))) names(model.priors) <- sprintf("Prior.mod%s", 1:length(model.priors))
+  
+  if(!is.null(lik.f)){
+    if(is.null(init)){
+      warning("Alternative likelihood function: You must add initial values for the likelihood function in init \nRandom initial values set")
+      init <- sapply(traits, function(x) rnorm(length(model.priors)))
+      rownames(init) <- names(model.priors)
+    }
+    
+  } else {
+    if(is.null(init)){
+      var.sp <- sapply(traits, var, na.rm = TRUE)
+      var.sp[is.na(var.sp)] <- var(var.sp, na.rm = TRUE)
+      mean.sp <- sapply(traits, mean, na.rm = TRUE)
+      mean.sp[is.na(mean.sp)] <- mean(mean.sp, na.rm = TRUE)
+      init <- rbind(mean = mean.sp, logvar = log(var.sp))
+    }
   }
   
   if(!no.tree){
@@ -153,7 +221,6 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
     reg.names <- NA
   }
   
-  
   jive <- list()
   
   ### Global variables ###
@@ -168,63 +235,48 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.mean=c("BM"), model.
     jive$data$scale    	      <- scale
   }
   
-  
-  dt <- default_tuning(model.mean = model.mean, model.var = model.var, phy = jive$data$tree, traits = jive$data$traits, map = jive$data$map)
+  dt <- default_tuning(model.priors = model.priors, phy = jive$data$tree, traits = jive$data$traits, map = jive$data$map, init.lik = init, lik.f = lik.f)
   
   ### Likelihood parameters ###
   jive$lik <- dt$lik
   
-  #### Models for means ####
-  jive$prior.mean <- dt$prior.mean
-  
-  #### Models for variance ####
-  jive$prior.var <- dt$prior.var
+  #### priors ####
+  jive$priors <- dt$priors
   
   if(!no.tree){
-    done <- F
-    while(!done){
-      # Calculate expectation and var/covar matrices #
-      mat.mean <- try(jive$prior.mean$model(x = jive$lik$init$m.sp, n = jive$data$n, pars = jive$prior.mean$init,
-                                                        Pi = jive$prior.mean$Pi, par.n = 1:ncol(jive$prior.mean$Pi), 
-                                                        data = list(), map = jive$prior.mean$map), silent = T)
-
-      # Calculate expectation and var/covar matrices #
-      mat.var <- try(jive$prior.var$model(x = log(jive$lik$init$v.sp), n = jive$data$n, pars = jive$prior.var$init,
-                                                        Pi = jive$prior.var$Pi, par.n = 1:ncol(jive$prior.var$Pi), 
-                                                        data = list(), map = jive$prior.var$map), silent = T)
+      mat.priors <- list()
       
-      if(all(!grepl("Error", mat.mean)) & all(!grepl("Error", mat.var))){
+      for(i in 1:length(model.priors)){
+        # Calculate expectation and var/covar matrices #
+        mat.priors[[i]] <- try(jive$priors[[i]]$model(x = jive$lik$init[[i]], n = jive$data$n, pars = jive$priors[[i]]$init,
+                                            Pi = jive$priors[[i]]$Pi, par.n = 1:ncol(jive$priors[[i]]$Pi), 
+                                            data = list(), map = jive$priors[[i]]$map), silent = TRUE)
         
-        jive$prior.mean$data <- mat.mean$data
-        jive$prior.mean$value <- mat.mean$loglik
-        jive$prior.var$data <- mat.var$data
-        jive$prior.var$value <- mat.var$loglik
-        done <- T
-        
-      } else {
-        # new initial conditions
-        dt <- default_tuning(model.mean = model.mean, model.var = model.var, phy = jive$data$tree, traits = jive$data$traits, map = jive$data$map)
-        
-        jive$prior.mean <- dt$prior.mean
-        jive$prior.var <- dt$prior.var
-      }
+        if(any(grepl("Error", mat.priors[[i]]))){
+          warning(sprintf("Initial values for %s prior return an error: %s\nConsider changing initial values using control_jive()",
+                  names(jive$priors)[i], mat.priors[[i]][1]))
+        } else {
+          jive$priors[[i]]$data <- mat.priors[[i]]$data
+          jive$priors[[i]]$value <- mat.priors[[i]]$loglik
+        }
     }
   }
   
-  cat("Mean prior model: ",model.mean[1]," [",ncol(dt$prior.mean$map$beta),"]","\n",sep="")
-  cat("Variance prior model: ",model.var[1]," [",ncol(dt$prior.var$map$beta),"]","\n",sep="")
+  for(i in 1:length(model.priors)){
+    message(names(jive$priors)[i], " prior model: ",jive$priors[[i]]$name)
+  }
+  
   
   ## Checks
   check_tuning(jive)
   
   #### Prepare headers of log file ####
   
-  jive$header <- c("iter", "posterior", "log.lik", "prior.mean", "prior.var", 
-                   paste("mean", names(jive$prior.mean$init), sep ="."),
-                   paste("var", names(jive$prior.var$init), sep ="."),
-                   paste(names(jive$data$traits), "_m", sep=""),
-                   paste(names(jive$data$traits), "_v", sep=""),
-                   "acc", "temperature")			
+  jive$header <- c("iter", "posterior", "log.lik", sprintf("prior.%s", names(model.priors)),
+                   unlist(lapply(1:length(model.priors), function(i){
+                     c(paste(names(model.priors)[i], names(jive$priors[[i]]$init), sep ="."),
+                     paste(names(model.priors)[i], names(jive$data$traits), sep="_"))
+                   })), "acc", "temperature")			
   
   class(jive) <- c("JIVE", "list")
   return(jive)

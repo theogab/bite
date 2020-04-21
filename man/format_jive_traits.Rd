@@ -10,6 +10,9 @@ format_jive_traits(obs)
 \arguments{
 \item{obs}{a dataframe with species names in the first column and individual trait values in the second columns}
 }
+\value{
+a list of size equal to the number of species. Each element contains a vector of numerical values representing individual observation for that species.
+}
 \description{
 This function takes a dataframe with indivdual observations ans species names and returns a traits matrix to to parse into \code{\link{make_jive}} function
 }

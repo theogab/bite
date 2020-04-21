@@ -7,7 +7,8 @@
 \usage{
 plot_pvo(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1,
   conf = 0.95, stat = "median", trait.lab = "x", col = NULL,
-  lab = T, lolipop = c(0.4, 0.4), cex.tip = par("cex"), ...)
+  lab = TRUE, lolipop = c(0.4, 0.4), cex.tip = par("cex"),
+  var.f = NULL, ...)
 }
 \arguments{
 \item{phy}{phylogenetic tree provided as either a simmap or a phylo object}
@@ -18,7 +19,7 @@ plot_pvo(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1,
 
 \item{mcmc.log}{the output file of a \code{\link{mcmc_bite}} run}
 
-\item{tip}{An integer giving the row corresponding to the species to be plotted. If tip == NA, the posterior distribution of every tip is plotted along with the phylogenetic tree}
+\item{tip}{A string giving the species to be plotted. If tip == NA, the posterior distribution of every tip is plotted along with the phylogenetic tree}
 
 \item{burnin}{The size of the burnin in number of iterations or the proportion of iteration you want to remove}
 
@@ -32,9 +33,11 @@ plot_pvo(phy, traits, map = NULL, mcmc.log, tip = NA, burnin = 0.1,
 
 \item{lab}{logical indicating whether to show species name in the plot. Only evaluated if tip =! NA}
 
-\item{lolipop}{a logical specifying wether the sample positions should be presented as lolipops}
+\item{lolipop}{size and width of the lolipops representing samples}
 
 \item{cex.tip}{size of the tips}
+
+\item{var.f}{alternative distribution used to model intraspecific variation of the form function(n, pars). The function must return n samples from the given distribution.}
 
 \item{...}{Additional parameters that can be parsed to plot}
 }
@@ -43,22 +46,19 @@ Density plot representing estimated species trait distributions under a jive mod
 This function plots the mean or median density distribution and the HPD distributions assuming that the trait is normally distributed
 }
 \examples{
-\dontrun{
- ## Load test data
- data(Anolis_traits)
- data(Anolis_tree)
- data(Anolis_map)
- 
- # Run a simple MCMC chain
- my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var=c("OU"), model.mean="BM")
- mcmc_bite(my.jive, log.file="my.jive_mcmc.log", sampling.freq=100, print.freq=100, ngen=50000) 
+## Load test data
+data(Anolis_traits)
+data(Anolis_tree)
+data(Anolis_map)
+# Run a simple MCMC chain
+my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3],  model.priors=list(mean="BM", logvar = "OU"))
+bite_ex <- tempdir()
+logfile <- sprintf("\%s/my.jive_mcmc.log", bite_ex)
+mcmc_bite(my.jive, log.file=logfile, sampling.freq=1, print.freq=1, ngen=500) 
+# import the results in R
+res <- read.csv(logfile, header = TRUE, sep = "\\t")
+ plot_pvo(phy = Anolis_tree, traits = Anolis_traits, tip = NA, mcmc.log = res)
 
- ## import the results in R
- logfile <- "my.jive_mcmc.log"
- res <- read.csv(logfile, header = TRUE, sep = "\\t")
- 
- plot_pvo(Anolis_tree, Anolis_traits, mcmc.log = res)
-}
 }
 \author{
 Theo Gaboriau

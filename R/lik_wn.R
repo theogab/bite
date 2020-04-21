@@ -2,7 +2,7 @@
 
 # input: n - number of species, par.n - which parameter has been updated, pars - c(sig1, ..., sigN, the0), tree and map
 # does: calculate log-likelihood; 
-update_wn <- function(x, n, pars, Pi, par.n, data, map){
+lik_wn <- function(x, n, pars, Pi, par.n, data, map){
   
   sigma <- pars[Pi[1,]==1]
   root <- pars[Pi[2,]==1]
@@ -33,7 +33,7 @@ update_wn <- function(x, n, pars, Pi, par.n, data, map){
   }
   
   ## Log likelihood (multinormal)
-  loglik <- (-n/2 * log(2 * pi) - 1/2 * data$det - 1/2 * (t(x - data$E)%*%data$inv%*%(x - data$E)))
+  loglik <- (-n/2 * log(2 * pi) - 1/2 * data$det - 1/2 * (crossprod(x - data$E,data$inv)%*%(x - data$E)))
   
   if (is.na(loglik) | (class(loglik) == "try-error" )) {
     return(list(loglik = -Inf, data = data))

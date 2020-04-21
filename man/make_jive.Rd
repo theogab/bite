@@ -5,8 +5,9 @@
 \alias{make_jive}
 \title{Create a list that can be used as an input to mcmc_bite}
 \usage{
-make_jive(phy = NULL, traits, map = NULL, model.mean = c("BM"),
-  model.var = c("OU"), scale = F, control = list(), nreg = NULL)
+make_jive(phy = NULL, traits, map = NULL, model.priors = list(mean =
+  "BM", logvar = "OU"), scale = FALSE, nreg = NULL, lik.f = NULL,
+  init = NULL)
 }
 \arguments{
 \item{phy}{phylogenetic tree provided as either a simmap or a phylo object}
@@ -15,18 +16,18 @@ make_jive(phy = NULL, traits, map = NULL, model.mean = c("BM"),
 
 \item{map}{matrix mapping regimes on every edge of phy (see details)}
 
-\item{model.mean}{model specification for trait mean evolution. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed (see details)}
-
-\item{model.var}{model specification for trait variance evolution. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed (see details)}
+\item{model.priors}{list giving model specification for trait evolution preferably given along with variable names. Supported models are "OU", "BM", "WN". The user can also specify if the assumptions of the model should be relaxed and can also enter a function (see details)}
 
 \item{scale}{boolean indicating whether the tree should be scaled to unit length for the model fitting}
 
-\item{control}{list to control tuning parameters of the MCMC algorithm (see details)}
-
 \item{nreg}{integer giving the number of regimes for a Beast analysis. Only evaluated if phy == NULL}
+
+\item{lik.f}{alternative likelihood function of the form function(pars.lik, traits, counts) to model intraspecific variation (see details)}
+
+\item{init}{matrix giving initial values for parameters with the variables in rows and the species in columns (see examples)}
 }
 \value{
-A list of functions and tuning parameters to parse into \code{\link{mcmc_bite}} function.
+A list of functions and tuning parameters (of class "JIVE" and "list") representing the plan of the hierarchical model to parse into \code{\link{mcmc_bite}}.
 }
 \description{
 This function creates a jive object from a matrix of intraspecific observations
@@ -42,32 +43,29 @@ Phylogenetic tree must be provided as either simmap object or as a phylo object.
 
 map is a matrix giving the mapping of regimes on phy edges. Each row correspond to an edge in phy and each column correspond to a regime. If map is provided the map from the simmap object is ignored.   
 
-variance and mean evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas: model.mean/var = c("OU", "theta"), sigmas: model.mean/var = c("OU", "sigma") or stationary variances: model.mean/var = c("OU", "sv") for OU and on sigmas only for WN: model.mean/var = c("WN", "sigma") and BM: model.mean/var = c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: model.mean/var = c("OU", "root") and relax several assumptions at the same tme model.mean/var = c("OU", "root", "theta") 
-Species-specific distributions are modeled as multivariate normal distributions
+trait evolution can be modeled with Ornstein-Uhlenbeck (OU), Brownian Motion (BM) or White Noise (WN) processes. Multiple regimes can be defined for both models and will apply on thetas: c("OU", "theta"), sigmas: c("OU", "sigma") or alphas: c("OU", "alpha") for OU and on sigmas only for WN: c("WN", "sigma") and BM: c("BM", "sigma"). While using the OU model, the user can also relax the stationarity of the root: c("OU", "root") and relax several assumptions at the same time c("OU", "root", "theta") 
+Species-specific distributions are modeled as multivariate normal distributions. User defined functions of trait evolution can be used in model.priors. The function should be of the form: function(tree, x, pars) and return a loglikelihood value with "tree" being the phylogenetic tree, x being a vector of trait value of size equal to the number of species and ordered as tree$tip.label and pars should be a vector of model parameters (see examples)
 
-control is a list containig tuning parameters acting at different levels of the MCMC algorithm ($lik for likelihood level, $prior.mean for mean prior level and $prior.var for variance prior level). Inside each level ($lik, $prior.mean, $prior.var), the user can modify the default value of initial parameter value ($pv), initial window size ($ws), proposal methods ($prop) for $lik, $prior.mean and $prior.var and hyperpriors ($hprior) for $prior.mean and $prior.var. 
-The \code{\link{control_jive}} function provides an easy way to modify control parameters (see examples) 
-
-parameters used in the different models:
+parameters used in the different pre-defined models:
 
 White Noise model (WN):
 \itemize{
- \item theta0: root value, abbreviated wn.the
- \item sigma square: evolutionary rate, abbreviated wn.sig or wn.sig.1, wn.sig.2, ..., wn.sig.n for n regimes if "sigma" is specified in model.mean/var
+ \item root: root value
+ \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in model.priors
 }
  
 Brownian Motion model (BM):
 \itemize{
- \item theta0: root value, abbreviated bm.the
- \item sigma square: evolutionary rate, abbreviated bm.sig or bm.sig.1, bm.sig.2, ..., bm.sig.n for n regimes if "sigma" is specified in model.mean/var
+ \item root: root value
+ \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in model.priors
 }
 
 Ornstein Uhlenbeck model (OU):
 \itemize{
- \item theta0: root value, abbreviated ou.the.0. Only used if "root" is specified in model.mean/var
- \item sigma square: evolutionary rate, abbreviated ou.sig or ou.sig.1, ou.sig.2, ..., ou.sig.n for n regimes if "sigma" is specified in model.mean/var
- \item optimal value, abbreviated ou.the.1 or ou.the.1, ou.the.2, ..., ou.the.n for n regimes if "theta" is specified in model.mean/var
- \item stationary variance (alpha/2*sigma_sq with alpha being the strength of selection), abbreviated ou.sv or ou.sv.1
+ \item root: root value. Only used if "root" is specified in model.priors
+ \item sigma_sq: evolutionary rate, n regimes if "sigma" is specified in model.priors
+ \item theta: optimal value, n regimes if "theta" is specified in model.priors
+ \item alpha: strength of selection, n regimes if "alpha" is specified in model.priors
 }
 }
 \examples{
@@ -78,12 +76,12 @@ data(Anolis_tree)
 data(Anolis_map)
 
 ## JIVE object to run jive with single regimes
-my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits,
- model.mean="BM", model.var= c("OU", "root"))
+my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits[,-3],
+ model.priors = list(mean = "BM", logvar= c("OU", "root")))
 
 ## JIVE object to run jive with multiple regimes
-my.jive <- make_jive(Anolis_tree, Anolis_traits, map = Anolis_map,
- model.mean="BM", model.var=c("OU", "theta", "sv"))
+my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3], map = Anolis_map,
+ model.priors =list(mean = "BM", logvar = c("OU", "theta", "alpha")))
 
 ## JIVE object to run jive from an ancestral state reconstruction (stochastic mapping)
 # First generate simmap object
@@ -96,7 +94,59 @@ names(trait) =  Anolis_tree$tip.label
 mapped_tree=make.simmap(Anolis_tree, trait, model='SYM')
 plotSimmap(mapped_tree)
 
-my.jive <- make_jive(mapped_tree, Anolis_traits, model.mean=c("OU"), model.var=c("OU", "theta"))
+my.jive <- make_jive(mapped_tree, Anolis_traits[,-3]
+, model.priors = list(mean = "OU" , logvar = c("OU", "theta")))
+ 
+ ## Jive object using another model of trait evolution (EB from mvMORPH)
+ library(mvMORPH)
+ early_burst <- function(tree, x, pars){
+  suppressMessages(mvEB(tree, x, method = "inverse", optimization = "fixed", 
+   echo = FALSE)$llik(pars, root.mle = FALSE))
+ }
+ 
+ my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits[,-3]
+, model.priors = list(mean = early_burst , logvar = c("OU", "root")))
+ initial.values <- c(0.1, 1, 50)
+ window.size <- c(0.1, 0.2, 1)
+ proposals <- list("slidingWin", "slidingWin", "slidingWin")
+ hyperprior <- list(hpfun("Gamma", hp.pars = c(1.1, 5)), hpfun("Gamma", hp.pars = c(3, 5)),
+                     hpfun("Uniform", hp.pars = c(30, 80)))
+ names(initial.values) <- names(window.size) <- c("sigma_sq", "beta", "root")
+ names(proposals) <- names(hyperprior) <- c("sigma_sq", "beta", "root")
+ my.jive <- control_jive(jive = my.jive, level = "prior", intvar = "mean",
+  pars = names(initial.values), window.size = window.size,
+  initial.values = initial.values, proposals = proposals, hyperprior = hyperprior)
+ 
+ ## Jive object using another model of intraspecific variation (uniform model)
+ lik_unif <- function(pars.lik, traits, counts){
+   if(!"mid" \%in\% names(pars.lik)) stop("'mid' parameter cannot be found in model.priors")
+   if(!"logrange" \%in\% names(pars.lik)){
+    stop("'logrange' parameter cannot be found in model.priors")
+   }
+
+   min.sp <- pars.lik$mid - 1/2*exp(pars.lik$logrange)
+   max.sp <- pars.lik$mid + 1/2*exp(pars.lik$logrange)
+   
+   log.lik.U <- sapply(1:length(traits), function(i){
+   sum(dunif(traits[[i]], min.sp[i], max.sp[i], log = TRUE))
+   })
+   
+   if (is.na(sum(log.lik.U))) {
+     return(-Inf)
+   } else {
+     return(log.lik.U)
+   }
+ }
+ 
+ init_unif <- sapply(Anolis_tree$tip.label, function(sp){
+  logrange <- log(diff(range(Anolis_traits[Anolis_traits[,1] == sp, 3])) + 2)
+  mid <- mean(range(Anolis_traits[Anolis_traits[,1] == sp, 3]))
+  c(mid = mid, logrange = logrange)
+ })
+ 
+ my.jive <- make_jive(phy = Anolis_tree, traits = Anolis_traits[,-2],  
+ model.priors = list(mid = "BM" , logrange = c("OU", "root")),
+ lik.f = lik_unif, init = init_unif)
  
 }
 \seealso{

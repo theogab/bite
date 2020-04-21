@@ -14,11 +14,9 @@
 #' @param bty,... additional parameters that can be passed to a density function and  \code{\link[graphics]{par}}
 #' @export
 #' @author Theo Gaboriau
-#' @return plot
 #' @encoding UTF-8
 #' @examples
 #'
-#' \dontrun{
 #'  ## Load test data
 #'  data(Anolis_traits)
 #'  data(Anolis_tree)
@@ -26,40 +24,36 @@
 #'  my.hp <- hpfun(hpf="Uniform", hp.pars=c(1,2))
 #'  plot_hp(my.hp)
 #'  
-#'  my.jive <- make_jive(Anolis_tree, Anolis_traits, model.mean="BM", model.var="OU")
+#'  my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3], model.priors = list(mean="BM", logvar="OU"))
 #'  plot_hp(my.jive, cex.main = .8)
-#' }
+
 
 
 plot_hp <- function(hpf, col = c("#bfdbf7", "#f49e4c"), border = c("#2e86ab", "#a31621"), bty = "n", ...){
   
   if("JIVE" %in% class(hpf)){
-    n <- length(hpf$prior.mean$hprior)+length(hpf$prior.var$hprior)
+    n <- sum(sapply(hpf$priors, function(x) length(x$hprior)))
     nrow <- floor(sqrt(n))
     ncol <- ceiling(sqrt(n))
     ro <- 1
     co <- 1
-    for(i in 1:length(hpf$prior.mean$hprior)){
-      par(fig = c((co-1)/ncol,co/ncol,ro/nrow,1-(ro-1)/nrow), new = ifelse(ro == 1 & co == 1, FALSE, TRUE))
-      plot_hyper(hpf$prior.mean$hprior[[i]], col = col[1], border = border[1], xlab = paste("M-",names(hpf$prior.mean$hprior)[i], sep = ""), bty = bty, ...)
-      if(co == ncol){
-        co <- 1
-        ro <- ro + 1
-      } else {
-        co <- co + 1
+    oldpar <- par(no.readonly = T)
+    on.exit(par(oldpar))
+    for(p in 1:length(hpf$priors)){
+      for(i in 1:length(hpf$priors[[p]]$hprior)){
+        par(fig = c((co-1)/ncol,co/ncol,1-ro/nrow,1-(ro-1)/nrow), new = ifelse(ro == 1 & co == 1, FALSE, TRUE))
+        plot_hyper(hpf$priors[[p]]$hprior[[i]], col = col[p], border = border[p],
+                   xlab = paste(names(hpf$priors[[p]]$hprior)[i], "[", names(hpf$priors)[p], "]", sep = ""),
+                   bty = bty, ...)
+        if(co == ncol){
+          co <- 1
+          ro <- ro + 1
+        } else {
+          co <- co + 1
+        }
       }
     }
-    for(i in 1:length(hpf$prior.var$hprior)){
-      par(fig = c((co-1)/ncol,co/ncol,1-ro/nrow,1-(ro-1)/nrow), new = TRUE)
-      plot_hyper(hpf$prior.var$hprior[[i]], col = col[2], border = border[2], xlab = paste("V-", names(hpf$prior.var$hprior)[i], sep = ""), bty = bty, ...)
-      if(co == ncol){
-        co <- 1
-        ro <- ro + 1
-      } else {
-        co <- co + 1
-      }
-      par(fig = c(0,1,0,1))
-    }
+
   } else {
     plot_hyper(hpf, col = col[1], border = border[1], bty = bty, ...)
   }

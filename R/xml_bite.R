@@ -1,7 +1,7 @@
 #' @title Write xml file with model
-#' @description Modifies a xml file from beauti to include a model model in the Beast 2 analysis
+#' @description Modifies a .xml file from beauti to include a model model in the Beast 2 analysis
 #' 
-#' @details This function takes a xml file generated with Beauti and a model object generated with \code{\link{make_jive}}
+#' @details This function takes a .xml file generated with Beauti and a model object generated with \code{\link{make_jive}}
 #' Only model objects that use models supported by the Beast implementation of model ("BM", c("BM", "sigma"), "WN", "OU", c("OU", "theta"), c("OU", "root"), c("OU", "root", "theta"))
 #' 
 #' @param model an object of class "model" (see details)
@@ -9,8 +9,9 @@
 #' @param out where to write the edited xml
 #' @import xml2
 #' @export
+#' @return no return value, called for side effects
 #' @author Theo Gaboriau
-#' @return none
+#' @return No return value: Modifies the .xml file given in xml in the user's filespace. 
 #' @encoding UTF-8
 
 

@@ -134,7 +134,7 @@ map_to_simmap<- function(phy, map){
   ## mapped.edge
   phy$mapped.edge <- t(sapply(phy$maps, function(x){
     sapply(st, function(a){
-      sum(x[a], na.rm = T)
+      sum(x[a], na.rm = TRUE)
     })
   }))
   

@@ -2,15 +2,32 @@ Package: bite
 Type: Package
 Title: Bayesian Integrative Models of Trait Evolution
 Version: 0.3
-Date: 2020-03-17
-Author: Theo Gaboriau <theo.gaboriau@unil.ch>, Anna Kostikova <anna.kostikova@unil.ch>, Daniele Silvestro <daniele.Silvestro@unil.ch>, Sacha Laurent <Sacha.Laurent@unil.ch>, Martha Serrano <martha.serrano@unil.ch>, Glenn Litsios <glenn.litsios@unil.ch>, Wim Hordijk <wim@WorldWideWanderings.net>, Nicolas Salamin <nicolas.salamin@unil.ch>, Simon Joly <joly.simon@gmail.com>
-Maintainer: Theo Gaboriau <theo.gaboriau@unil.ch>
-Description: Includes several Bayesian models of trait evolution that tend to incorporate various type of data into comparative phylogenetic models.
+Date: 2020-04-09
+Authors@R: c(person("Theo", "Gaboriau", role = c("aut", "cre"),
+                     email = "theo.gaboriau@unil.ch"),
+              person("Anna", "Kostikova", role = "aut",
+              		 email = "anna.kostikova@unil.ch"),
+              person("Daniele", "Silvestro", role = "aut",
+                     email = "daniele.silvestro@unil.ch"), 
+              person("Sacha", "Laurent", role = "crt",
+              		 email = "Sacha.Laurent@unil.ch"),
+              person("Martha", "Serrano", role = "crt",
+              		 email = "martha.serrano@unil.ch"),
+              person("Glenn", "Litsios", role = "crt",
+               		 email = "glenn.litsios@unil.ch"),
+              person("Wim", "Hordijk", role = "crt",
+              		 email = "wim@WorldWideWanderings.net"),
+              person("Simon", "Joly", role = "crt",
+              		  email = "joly.simon@gmail.com"),
+              person("Nicolas", "Salamin", role = "aut", 
+              		 email = "nicolas.salamin@unil.ch"))
+Description: Contains the JIVE (joint inter and intra-specific model of variance evolution) model and other Bayesian models aimed at understanding trait evolution. The goal of the package is to join phylogenetic comparative models (PCM) that tend to integrate various type of data (individual observations, environmental data, fossil data) into a hierarchical Bayesian framework. It contains various PCMs as well as functions to join those models into a hierarchical Bayesian framework in a flexible and user friendly way. It contains various Markov chain Monte-Carlo (MCMC) algorithms, methods for model comparison and many plotting function for pre- and post-processing data visualization. Finally, this package integrates functions allowing bridges between 'R' and the 'BEAST2' implementations of PCMs. Kostikova A, Silvestro D, Pearman PB, Salamin N (2016) <doi:10.1093/sysbio/syw010>. Gaboriau T, Mendes FK, Joly S, Silvestro D, Salamin N (in prep).
 Depends: R (>= 3.0.3)
 Imports: ape, MASS, phytools, coda, sm, vioplot, xml2
+Suggests: mvMORPH
 License: GPL-2
 Repository: CRAN
 NeedsCompilation: no
-Packaged: 2020-03-17 17:01:47 UTC; theogab
+Packaged: 2020-04-09 17:01:47 UTC; theogab
 Encoding: UTF-8
 RoxygenNote: 6.1.1

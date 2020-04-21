@@ -4,9 +4,9 @@
 #' @param burnin number or proportion of iteration to delete
 #' @param method one of "TI" for thermodynamic integration and "SS" for stepping stone integration (the default)
 #' @export
+#' @return a length one numeric double giving the marginal likelihood of the model.
 #' @author Theo Gaboriau and Simon Joly 
 #' @examples 
-#' \dontrun{
 #' ## Load test data
 #' data(Anolis_traits)
 #' data(Anolis_tree)
@@ -14,12 +14,14 @@
 #' 
 #' ## Run a MCMC chain with thermodynamic Integration
 #' set.seed(300)
-#' my.jive <- make_jive(Anolis_tree, Anolis_traits,  model.var="OU", model.mean="BM")
-#' mcmc_bite(my.jive, log.file="my.jive_MCMC_TI.log", ncat=10, sampling.freq=10,
-#'  print.freq=100, ngen=5000, burnin=0) 
+#' my.jive <- make_jive(Anolis_tree, Anolis_traits[,-3],
+#'   model.priors = list(mean="BM", logvar="OU"))
+#' bite_ex <- tempdir()
+#' logfile <- sprintf("%s/my.jive_mcmc_TI.log", bite_ex)
+#' mcmc_bite(my.jive, log.file=logfile, ncat=10, sampling.freq=10,
+#'  print.freq=100, ngen=1000, burnin=0) 
 #'  
 #' ## import the results in R
-#' logfile <- "my.jive_MCMC_TI.log"
 #' res <- read.csv(logfile, header = TRUE, sep = "\t")
 #'  
 #' mlikTI <- marginal_lik(res, burnin = 0.1, method = "TI")
@@ -27,14 +29,11 @@
 #' 
 #' mlikSS <- marginal_lik(res, burnin = 0.1, method = "SS")
 #' mlikSS
-#' }
 #' @encoding UTF-8
 
 
 marginal_lik <- function(mcmc.log, burnin = 0, method = "SS") {
 
-	if (!("prior.mean" %in% colnames(mcmc.log))) stop('No \'prior.mean\' column in the log file')
-  if (!("prior.var" %in% colnames(mcmc.log))) stop('No \'prior.var\' column in the log file')
 	if (!("temperature" %in% colnames(mcmc.log))) stop('No \'temperature\' column in the log file')
   
   temp <- unique(mcmc.log$temperature)
@@ -44,7 +43,7 @@ marginal_lik <- function(mcmc.log, burnin = 0, method = "SS") {
     else burnin <- sapply(temp, function(t) min(mcmc.log$iter[mcmc.log$temperature == t])) + burnin
     burn <- unlist(lapply(1:length(temp), function(t) mcmc.log[mcmc.log$temperature == temp[t],"iter"] <= burnin[t]))
   } else {
-    burn <- rep(F, nrow(mcmc.log))
+    burn <- rep(FALSE, nrow(mcmc.log))
   }
     
 	
@@ -58,7 +57,7 @@ marginal_lik <- function(mcmc.log, burnin = 0, method = "SS") {
 	if(method == "TI"){
 	  
 	  # Get mean marginal likelihood for each temperature
-	  lik <- sapply(temp, function(t) mean(mcmc.log$prior.mean[mcmc.log$temperature == t & !burn] + mcmc.log$prior.var[mcmc.log$temperature == t & !burn], na.rm = T)) 
+	  lik <- sapply(temp, function(t) mean(rowSums(mcmc.log[mcmc.log$temperature == t & !burn, grepl("prior", colnames(mcmc.log))], na.rm = TRUE))) 
 	  
 	  if (length(lik)<=1) warning('Only one temerature for the thermodynamic integration')
 	  
@@ -72,7 +71,7 @@ marginal_lik <- function(mcmc.log, burnin = 0, method = "SS") {
 	   
 	   ## Estimate RSS for each k and sum it
 	   for(i in 1:length(intervals)) {
-	     betaliks <- mcmc.log$prior.mean[mcmc.log$temperature == temp[i] & !burn] + mcmc.log$prior.var[mcmc.log$temperature == temp[i] & !burn]
+	     betaliks <- rowSums(mcmc.log[mcmc.log$temperature == temp[i] & !burn, grepl("prior", colnames(mcmc.log))])
 	     Lmax <- max(betaliks)
 	     n <- length(betaliks)
 	     lik.ti = lik.ti + intervals[i]*Lmax + log(1/n * sum(exp(intervals[i]*(betaliks - Lmax)))) 
