@@ -182,7 +182,7 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.priors = list(mean =
   } else {
     if(is.null(init)){
       var.sp <- sapply(traits, var, na.rm = TRUE)
-      var.sp[is.na(var.sp)] <- var(var.sp, na.rm = TRUE)
+      var.sp[is.na(var.sp)|var.sp == 0] <- var(var.sp, na.rm = TRUE)
       mean.sp <- sapply(traits, mean, na.rm = TRUE)
       mean.sp[is.na(mean.sp)] <- mean(mean.sp, na.rm = TRUE)
       init <- rbind(mean = mean.sp, logvar = log(var.sp))
