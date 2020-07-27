@@ -167,7 +167,9 @@ make_jive <- function(phy = NULL, traits, map = NULL, model.priors = list(mean =
     } 
   }
   if(length(missing) > 0){
-    warning(sprintf("species: %s can not be found in traits. Check matching between species names in phy and traits\nIgnore if you have no data for %s", paste0(missing, collapse = ", ")))
+    for(sp in missing){
+      warning(sprintf("species: %s can not be found in traits. Check matching between species names in phy and traits\nIgnore if you have no data for %s", rep(paste0(missing, collapse = ", "))))
+    }
   }
   
   if(is.null(names(model.priors))) names(model.priors) <- sprintf("Prior.mod%s", 1:length(model.priors))
