@@ -133,7 +133,7 @@ default_tuning <- function(model.priors, phy, traits, map, init.lik, lik.f = NUL
         # model
         model <- lik_ou
         # map and nreg
-        if(any(c("sigma", "theta", "aplha") %in% model.priors[[i]])){
+        if(any(c("sigma", "theta", "alpha") %in% model.priors[[i]])){
           nreg <-  ncol(map$beta)
           newmap <- map
         } else {
@@ -168,7 +168,7 @@ default_tuning <- function(model.priors, phy, traits, map, init.lik, lik.f = NUL
         j <- 1
         while(j <= (ralp + rsig + rroot + rthe)){
           if (j <= ralp) prop[[j]] <- proposal("multiplierProposal")
-          else if (j <= (ralp + rsig)) prop[[i]] <- proposal("multiplierProposal")
+          else if (j <= (ralp + rsig)) prop[[j]] <- proposal("multiplierProposal")
           else prop[[j]] <- proposal("slidingWin")
           j <- j + 1
         }
