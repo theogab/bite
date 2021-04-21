@@ -57,10 +57,12 @@ marginal_lik <- function(mcmc.log, burnin = 0, method = "SS") {
 	if(method == "TI"){
 	  
 	  # Get mean marginal likelihood for each temperature
-	  lik <- sapply(temp, function(t) mean(rowSums(mcmc.log[mcmc.log$temperature == t & !burn, grepl("prior", colnames(mcmc.log))], na.rm = TRUE))) 
-	  
+	  if(sum(grepl("prior", colnames(mcmc.log)))>1){
+	    lik <- sapply(temp, function(t) mean(rowSums(mcmc.log[mcmc.log$temperature == t & !burn, grepl("prior", colnames(mcmc.log))], na.rm = TRUE))) 
+	  } else {
+	    lik <- sapply(temp, function(t) mean(mcmc.log[mcmc.log$temperature == t & !burn, grepl("prior", colnames(mcmc.log))], na.rm = TRUE)) 
+	  }
 	  if (length(lik)<=1) warning('Only one temerature for the thermodynamic integration')
-	  
 	  
 	  # Estimate the integral
 	  for (i in 1:length(intervals)) {
@@ -71,7 +73,11 @@ marginal_lik <- function(mcmc.log, burnin = 0, method = "SS") {
 	   
 	   ## Estimate RSS for each k and sum it
 	   for(i in 1:length(intervals)) {
-	     betaliks <- rowSums(mcmc.log[mcmc.log$temperature == temp[i] & !burn, grepl("prior", colnames(mcmc.log))])
+	     if(sum(grepl("prior", colnames(mcmc.log)))>1){
+	      betaliks <- rowSums(mcmc.log[mcmc.log$temperature == temp[i] & !burn, grepl("prior", colnames(mcmc.log))])
+	     } else {
+	       betaliks <- mcmc.log[mcmc.log$temperature == temp[i] & !burn, grepl("prior", colnames(mcmc.log))]
+	     }
 	     Lmax <- max(betaliks)
 	     n <- length(betaliks)
 	     lik.ti = lik.ti + intervals[i]*Lmax + log(1/n * sum(exp(intervals[i]*(betaliks - Lmax)))) 
