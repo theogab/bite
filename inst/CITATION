@@ -1,6 +1,6 @@
 citHeader("To cite package 'bite' in publications use:")
 
-year <- "in prep"
+year <- "2021"
 
 citEntry(entry="article",
          title = "A multi-platform package for the analysis of intra- and interspecific trait evolution",
