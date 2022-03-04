@@ -53,9 +53,6 @@
 control_jive <- function(jive, level = c("lik", "prior"), intvar = NULL,  pars = NULL, window.size = NULL,
                          initial.values = NULL, proposals = NULL, hyperprior = NULL, update.freq = NULL){
   
-  if(is.null(intvar)) stop("intvar must be specified")
-  if(!intvar %in% names(jive$priors)) stop(sprintf("variable %s not found in jive object", intvar))
-  
   ### Likelihood level ###
   if (level == "lik"){
     
@@ -86,6 +83,9 @@ control_jive <- function(jive, level = c("lik", "prior"), intvar = NULL,  pars =
       jive$lik$update.freq <- update.freq
     }
   } else {### Prior level ###
+    
+    if(is.null(intvar)) stop("intvar must be specified")
+    if(!intvar %in% names(jive$priors)) stop(sprintf("variable %s not found in jive object", intvar))
     if(is.null(pars)) pars <- names(jive$priors[[intvar]]$ws) 
     
     # window size

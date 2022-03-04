@@ -54,7 +54,7 @@ default_tuning <- function(model.priors, phy, traits, map, init.lik, lik.f = NUL
       # White Noise #
       if ("WN" %in% model.priors[[i]]){
         # model
-        model <- lik_bm
+        model <- lik_wn
         # map and nreg
         if("sigma" %in% model.priors[[i]]){
           nreg <- ncol(map$beta)
