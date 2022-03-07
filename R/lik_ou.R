@@ -26,7 +26,7 @@ lik_ou <- function(x, n, pars, Pi, par.n, data, map){
   }
   
   ## Expectation
-  if(any(upd %in% c(3,4))){
+  if(any(upd %in% c(1,3,4))){
     data$E <- t(theta %*% W)
   }
   
