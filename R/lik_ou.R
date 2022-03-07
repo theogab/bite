@@ -8,7 +8,7 @@ lik_ou <- function(x, n, pars, Pi, par.n, data, map){
   alpha <- pars[Pi[1,]==1]
   sigma <- pars[Pi[2,]==1]
   theta <- pars[Pi[3,]==1]
-  if(sum(Pi[1,]) > sum(Pi[3,])|sum(Pi[1,]) > sum(Pi[3,])) theta <- rep(theta, max(sum(Pi[1,]), sum(Pi[2,])))
+  if(sum(Pi[1,]) > sum(Pi[3,])|sum(Pi[2,]) > sum(Pi[3,])) theta <- rep(theta, max(sum(Pi[1,]), sum(Pi[2,])))
   if(nrow(Pi) == 4) theta <- c(pars[Pi[4,]==1], theta)
   upd <- apply(Pi, 2,function(x) which(x == 1))[par.n]
   
