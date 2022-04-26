@@ -18,7 +18,7 @@ lik_ou <- function(x, n, pars, Pi, par.n, data, map){
   
   ## Weight matrix
   var.reg <- -alpha * crossprod((S[,2]-S[,1]) * beta, gamma)
-  W <- exp(var.reg) * (exp(alpha*t(S[,2]*beta))-exp(alpha*t(S[,1]*beta)))%*%gamma
+  W <- exp(colSums(var.reg)) * t(beta[,]*(exp(alpha*S[,2])-exp(alpha*S[,1])))%*%gamma
   
   if(nrow(Pi) == 4){
     W <- rbind(exp(colSums(var.reg)), W)
