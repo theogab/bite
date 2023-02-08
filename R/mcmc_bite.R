@@ -41,7 +41,8 @@
 
 
 mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, print.freq = 1000, 
-                      ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0)
+                      ncat = 1, beta.param = 0.3, ngen = 5000000, burnin = 0, sample.pars = T,
+                      continue = F, ls.file = "ls_bite_mcmc.log")
 {
   
   # General syntax
@@ -68,7 +69,30 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
   }
   
   # likelihood level
-  pars.lik0 <- model$lik$init
+  if(continue){ ## get the previous log file to start from the last sampled point
+    ## retrieve data from previous samples
+    res <- read.table(log.file, header = T)
+    if(sample.pars){
+      last.line <- last.samp <- res[nrow(res),]
+    } else {
+      last.samp <- read.table(ls.file)
+      names(last.samp) <- model$header
+      last.line <- res[nrow(res),]
+    }
+    rm(res)
+    
+    ## Set conditions at the last sample
+    pars.lik0 <- list()
+    for(p in 1:length(model$priors)){
+      pars.lik0[[p]] <- unlist(last.samp[grep(paste0(names(model$priors)[p], "_"), names(last.samp))])
+      names(pars.lik0[[p]]) <-  gsub(paste0(names(model$priors)[p], "_"), "", names(pars.lik0[[p]]))
+    }
+    names(pars.lik0) <- names(model$lik$init)
+  } else {
+    ## Get defined initial conditions
+    pars.lik0 <- model$lik$init
+  }
+  
   lik0 <- model$lik$model(pars.lik0, model$data$traits, model$data$counts)
   
   # prior level
@@ -76,20 +100,45 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
   priors0 <- c()
   hpriors0 <- list()
   
-  for(p in 1:length(model$priors)){
-    pars.priors0[[p]] <- model$priors[[p]]$init
-    priors0[p] <- model$priors[[p]]$value
-    hpriors0[[p]] <- unlist(mapply(do.call, model$priors[[p]]$hprior, lapply(pars.priors0[[p]], list))[1,])
+  
+  if(continue){
+    iter <-last.line$iter 
+    for(p in 1:length(model$priors)){
+      priors0[p] <- unlist(last.line[paste("prior",names(model$priors)[p], sep = ".")])
+      pars.priors0[[p]] <- unlist(last.line[grep(paste0(names(model$priors)[p], "."), names(last.line))])
+      names(pars.priors0[[p]]) <- names(model$priors[[p]]$init)
+      hpriors0[[p]] <- unlist(mapply(do.call, model$priors[[p]]$hprior, lapply(pars.priors0[[p]], list))[1,])
+    }
+  } else {
+    for(p in 1:length(model$priors)){
+      pars.priors0[[p]] <- model$priors[[p]]$init
+      priors0[p] <- model$priors[[p]]$value
+      hpriors0[[p]] <- unlist(mapply(do.call, model$priors[[p]]$hprior, lapply(pars.priors0[[p]], list))[1,])
+    }
+    iter <- 1
   }
+  
   
   # mcmc parameters
   if(print.freq > 0){
     cat("generation\tposterior\n")
-    cat(paste(model$header, collapse = "\t"), "\n", append = FALSE, file = log.file)
+    if(!continue){
+      if(sample.pars){
+        cat(paste(model$header, collapse = "\t"), "\n", append = FALSE, file = log.file)
+      } else {
+        cat(paste(model$header[-c(grep("mean_", model$header), grep("logvar_", model$header))], collapse = "\t"), "\n", append = FALSE, file = log.file)
+      }
+    }
   }
   
-  it.beta <- 1
-  bet <- beta.class[it.beta]
+  if(continue){
+    bet <- last.line$temperature
+    it.beta <- which(abs(beta.class - bet) < 1e-6)
+  } else {
+    it.beta <- 1
+    bet <- beta.class[it.beta]
+  }
+  
   if(ncat > 1) cat("beta = ", bet, "\n")
   # making sure the update frequencies sum to 1
   update.freq <- c(model$lik$update.freq, sapply(model$priors, function(x) x$update.freq))
@@ -100,9 +149,9 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
   # posterior level
   post0 <- (sum(lik0) + sum(priors0 * bet) + sum(unlist(hpriors0)))
   
-  
+
   ## Start iterations
-  for (i in 1:(it*ncat)) {
+  for (i in iter:(it*ncat)) {
     
     # test whether we update parameters, or hyper parameters
     r <- min(which(runif(1) <= update.freq))
@@ -186,8 +235,15 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
     
     # log to file with frequency sampling.freq
     if (i %% sampling.freq == 0 & i >= burnin) {
-      cat(paste(c(i, post0, sum(lik0), priors0, unlist(sapply(1:length(model$priors), function(p) c(pars.priors0[[p]], pars.lik0[[p]]))), sum(proposals.accepted)/i, bet), collapse = "\t"), "\n",
-       append=TRUE, file=log.file) 
+      if(sample.pars){
+        cat(paste(c(i, post0, sum(lik0), priors0, unlist(sapply(1:length(model$priors), function(p) c(pars.priors0[[p]], pars.lik0[[p]]))), sum(proposals.accepted)/i, bet), collapse = "\t"), "\n",
+            append=TRUE, file=log.file) 
+      } else {
+        cat(paste(c(i, post0, sum(lik0), priors0, unlist(sapply(1:length(model$priors), function(p) pars.priors0[[p]])), sum(proposals.accepted)/i, bet), collapse = "\t"), "\n",
+            append=TRUE, file=log.file)
+        cat(paste(c(i, post0, sum(lik0), priors0, unlist(sapply(1:length(model$priors), function(p) c(pars.priors0[[p]], pars.lik0[[p]]))), sum(proposals.accepted)/i, bet), collapse = "\t"), "\n",
+            append=FALSE, file=ls.file) 
+      }
     }
     
     # Print to screen
