@@ -7,7 +7,7 @@ lik_norm <- function(pars.lik, traits, counts){#m - mean (horizontal), s - sigma
   m.sp <- pars.lik$mean
   logv.sp <- pars.lik$logvar
   
-	log.lik.N <- -counts/2 * log(2 * pi) - 1/2 * counts * logv.sp - 1/2 * (sapply(1:length(traits), function(i) sum((traits[[i]] - m.sp[i])^2))/exp(logv.sp))
+	log.lik.N <- -counts/2 * log(2 * pi) - 1/2 * counts * logv.sp - 1/2 * (sapply(1:length(traits), function(i) sum((traits[[i]] - m.sp[i])^2, na.rm = T))/exp(logv.sp))
 	
 	if (is.na(sum(log.lik.N))) {
 			return(-Inf)
