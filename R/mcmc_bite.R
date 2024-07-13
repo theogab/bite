@@ -211,7 +211,7 @@ mcmc_bite <- function(model, log.file = "bite_mcmc.log", sampling.freq = 1000, p
     post0 <- (sum(lik0) + sum(priors0 * bet) + sum(unlist(hpriors0)))
     
     # acceptance probability (log scale)
-    if(any(is.infinite(c(lik0, priors0, unlist(hpriors0))))){
+    if(any(is.infinite(c(lik0, priors0, unlist(hpriors0))))|is.na(post0)){
       pr <- -Inf
     } else {
       pr <- post0 - post1 + hasting.ratio
