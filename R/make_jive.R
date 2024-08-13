@@ -79,7 +79,7 @@
 #' , model.priors = list(mean = "OU" , logvar = c("OU", "theta")))
 #'  
 #'  ## Jive object using another model of trait evolution (EB from mvMORPH)
-#'  library(mvMORPH)
+#'  \dontrun{library(mvMORPH)
 #'  early_burst <- function(tree, x, pars){
 #'   suppressMessages(mvEB(tree, x, method = "inverse", optimization = "fixed", 
 #'    echo = FALSE)$llik(pars, root.mle = FALSE))
@@ -96,7 +96,7 @@
 #'  names(proposals) <- names(hyperprior) <- c("sigma_sq", "beta", "root")
 #'  my.jive <- control_jive(jive = my.jive, level = "prior", intvar = "mean",
 #'   pars = names(initial.values), window.size = window.size,
-#'   initial.values = initial.values, proposals = proposals, hyperprior = hyperprior)
+#'   initial.values = initial.values, proposals = proposals, hyperprior = hyperprior)}
 #'  
 #'  ## Jive object using another model of intraspecific variation (uniform model)
 #'  lik_unif <- function(pars.lik, traits, counts){
