@@ -5,9 +5,19 @@
 \alias{mcmc_bite}
 \title{MCMC algorithm}
 \usage{
-mcmc_bite(model, log.file = "bite_mcmc.log", sampling.freq = 1000,
-  print.freq = 1000, ncat = 1, beta.param = 0.3, ngen = 5e+06,
-  burnin = 0)
+mcmc_bite(
+  model,
+  log.file = "bite_mcmc.log",
+  sampling.freq = 1000,
+  print.freq = 1000,
+  ncat = 1,
+  beta.param = 0.3,
+  ngen = 5e+06,
+  burnin = 0,
+  sample.pars = T,
+  continue = F,
+  ls.file = "ls_bite_mcmc.log"
+)
 }
 \arguments{
 \item{model}{an object of class "jive" or other objects from the bite package (see details)}
@@ -25,6 +35,12 @@ mcmc_bite(model, log.file = "bite_mcmc.log", sampling.freq = 1000,
 \item{ngen}{number of generation in MCMC chain}
 
 \item{burnin}{a burning phase of MCMC chain (has to be specified for thermodynamic integration)}
+
+\item{sample.pars}{logical, if TRUE the likelihood parameters will be saved in the log file, if FALSE only the last sampled point will be saved in the ls.file path}
+
+\item{continue}{logical, if TRUE the chain will continue from the last sampled point in the log file which has been saved in the ls.file path}
+
+\item{ls.file}{character, path to the last sampled point in the log file}
 }
 \value{
 Generates a log file in the users filespace at the path defined by log.file

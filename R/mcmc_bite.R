@@ -15,6 +15,9 @@
 #' @param beta.param beta value to define classes for thermodynamic integration (see details)
 #' @param ngen number of generation in MCMC chain
 #' @param burnin a burning phase of MCMC chain (has to be specified for thermodynamic integration)
+#' @param sample.pars logical, if TRUE the likelihood parameters will be saved in the log file, if FALSE only the last sampled point will be saved in the ls.file path
+#' @param continue logical, if TRUE the chain will continue from the last sampled point in the log file which has been saved in the ls.file path
+#' @param ls.file character, path to the last sampled point in the log file
 #' @export
 #' @author Theo Gaboriau, Anna Kostikova, Daniele Silvestro, and Simon Joly
 #' @return Generates a log file in the users filespace at the path defined by log.file
